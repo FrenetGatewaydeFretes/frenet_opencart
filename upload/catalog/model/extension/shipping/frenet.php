@@ -51,10 +51,21 @@ class ModelExtensionShippingFrenet extends Model {
 			$qty = $prod['quantity'];
             $shippingItem = new stdClass();
 
-            $shippingItem->Weight = $this->getPesoEmKg($prod['weight_class_id'], $prod['weight']) / $qty;
-            $shippingItem->Length = $this->getDimensaoEmCm($prod['length_class_id'], $prod['length']);
-            $shippingItem->Height = $this->getDimensaoEmCm($prod['length_class_id'], $prod['height']);
-            $shippingItem->Width = $this->getDimensaoEmCm($prod['length_class_id'], $prod['width']);
+            $weight = (float) $prod['weight'];
+            $length = (float) $prod['length'];
+            $width = (float) $prod['width'];
+            $height = (float) $prod['height'];
+
+            if(!empty($prod['weight']) || $prod['weight'] == 0) $weight = 0.100;
+            if(!empty($prod['length']) || $prod['length'] == 0) $length = 15;
+            if(!empty($prod['width']) || $prod['width'] == 0) $width = 10;
+            if(!empty($prod['height']) || $prod['height'] == 0) $height = 1;
+
+            $shippingItem->Weight = $this->getPesoEmKg($prod['weight_class_id'], $weight) / $qty;
+            $shippingItem->Length = $this->getDimensaoEmCm($prod['length_class_id'], $length);
+            $shippingItem->Height = $this->getDimensaoEmCm($prod['length_class_id'], $height);
+            $shippingItem->Width = $this->getDimensaoEmCm($prod['length_class_id'], $width);
+		
             $shippingItem->Diameter = 0;
             $shippingItem->SKU = '';
             $shippingItem->Category = '';
