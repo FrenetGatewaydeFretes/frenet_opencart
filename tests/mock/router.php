@@ -37,6 +37,9 @@ if ($path === '/shipping/quote') {
 	} elseif (empty($_SERVER['HTTP_TOKEN'])) {
 		http_response_code(401);
 		echo json_encode(['Message' => 'Authorization has been denied for this request.']);
+	} elseif (preg_match('#^status-(\d{3})$#', $_SERVER['HTTP_TOKEN'], $match)) {
+		http_response_code((int)$match[1]);
+		echo json_encode(['Message' => 'Mock answering HTTP ' . $match[1]]);
 	} else {
 		$request_log = getenv('FRENET_MOCK_LOG');
 

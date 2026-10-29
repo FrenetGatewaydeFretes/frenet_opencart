@@ -56,6 +56,16 @@ class ApiTest extends TestCase {
 		}
 	}
 
+	public function testRefusesAnErrorAnswer(): void {
+		try {
+			(new Api(new Client(), 'status-503', '3.0.5.1', getenv('FRENET_MOCK_URL') . '/shipping/quote'))->quote($this->request());
+			static::fail('Expected the API error to be reported');
+		} catch (Exception $exception) {
+			static::assertSame(503, $exception->getCode());
+			static::assertSame('The Frenet API answered with HTTP 503', $exception->getMessage());
+		}
+	}
+
 	/**
 	 * @return Request
 	 */
