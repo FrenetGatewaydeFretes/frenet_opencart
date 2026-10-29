@@ -38,7 +38,16 @@ if ($path === '/shipping/quote') {
 		http_response_code(401);
 		echo json_encode(['Message' => 'Authorization has been denied for this request.']);
 	} else {
-		readfile(__DIR__ . '/fixtures/quote.json');
+		$request_log = getenv('FRENET_MOCK_LOG');
+
+		if ($request_log) {
+			file_put_contents($request_log, json_encode([
+				'headers' => array_change_key_case(getallheaders(), CASE_LOWER),
+				'body'    => json_decode((string)file_get_contents('php://input'), true)
+			], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . PHP_EOL, FILE_APPEND);
+		}
+
+		readfile(__DIR__ . '/fixtures/' . ($_SERVER['HTTP_TOKEN'] === 'single-service' ? 'quote-single.json' : 'quote.json'));
 	}
 
 	return;
