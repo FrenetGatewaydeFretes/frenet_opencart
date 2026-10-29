@@ -3,3 +3,6 @@
 hml_stage
 .vscode
 /.vs
+/vendor/
+/.cache/
+/.php-cs-fixer.cache
