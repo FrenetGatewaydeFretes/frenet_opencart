@@ -13,6 +13,8 @@ class ConfigTest extends TestCase {
 			'shipping_frenet_token'      => 'abc123',
 			'shipping_frenet_postcode'   => '01310100',
 			'shipping_frenet_msg_prazo'  => '%s - em até %d dia(s)',
+			'shipping_frenet_weight_class_id' => '1',
+			'shipping_frenet_length_class_id' => '2',
 			'shipping_frenet_sort_order' => '3'
 		]);
 
@@ -20,6 +22,8 @@ class ConfigTest extends TestCase {
 		static::assertSame('abc123', $config->getToken());
 		static::assertSame('01310100', $config->getOriginPostcode());
 		static::assertSame('%s - em até %d dia(s)', $config->getDeliveryTimeMessage());
+		static::assertSame(1, $config->getWeightClassId());
+		static::assertSame(2, $config->getLengthClassId());
 		static::assertSame(3, $config->getSortOrder());
 	}
 
@@ -30,6 +34,8 @@ class ConfigTest extends TestCase {
 		static::assertSame('', $config->getToken());
 		static::assertSame('', $config->getOriginPostcode());
 		static::assertSame('', $config->getDeliveryTimeMessage());
+		static::assertSame(0, $config->getWeightClassId());
+		static::assertSame(0, $config->getLengthClassId());
 		static::assertSame(0, $config->getSortOrder());
 	}
 
