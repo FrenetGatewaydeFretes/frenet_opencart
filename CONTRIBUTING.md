@@ -112,13 +112,15 @@ Os ambientes vêm do [instalador do OpenCart 3](https://github.com/Frenet-BR/ope
 | OpenCart | PHP |
 | --- | --- |
 | 3.0.0.0 | 7.1 |
-| 3.0.3.4 | 7.4 |
+| 3.0.3.3 | 7.4 |
 | 3.0.3.8 | 7.4 |
 | 3.0.5.1 | 8.2 |
 
 ```bash
 OC_VERSION=3.0.0.0 OC_PHP_VERSION=7.1 SITE_URL=http://localhost:8300 ./install.sh
 ```
+
+A 3.0.3.3 representa o fim da primeira faixa: a 3.0.3.4 só tem pacotes de pré-lançamento no GitHub, que não batem com o código da tag, e o instalador a recusa.
 
 O pacote é instalado pelo admin, em **Extensões → Instalador**.
 
