@@ -4,6 +4,12 @@ use Frenet\Module;
 class ControllerExtensionShippingFrenet extends Controller {
 	private const PANEL_URL = 'https://painel.frenet.com.br/';
 
+	private const LEGACY_KEYS = [
+		'shipping_frenet_contrato_codigo',
+		'shipping_frenet_contrato_senha',
+		'shipping_frenet_contrato_token'
+	];
+
 	private const FIELDS = [
 		'shipping_frenet_status',
 		'shipping_frenet_postcode',
@@ -23,6 +29,8 @@ class ControllerExtensionShippingFrenet extends Controller {
 		$this->load->model('setting/setting');
 
 		$settings = $this->model_setting_setting->getSetting('shipping_frenet');
+
+		$data['migrated'] = $this->removeLegacySettings($settings);
 
 		$saved_token = (string)($settings['shipping_frenet_token'] ?? '');
 
@@ -102,6 +110,18 @@ class ControllerExtensionShippingFrenet extends Controller {
 		}
 
 		return !$this->error;
+	}
+
+	private function removeLegacySettings(array $settings): bool {
+		$legacy = array_intersect_key($settings, array_flip(self::LEGACY_KEYS));
+
+		if (!$legacy) {
+			return false;
+		}
+
+		$this->model_setting_setting->editSetting('shipping_frenet', array_diff_key($settings, $legacy));
+
+		return true;
 	}
 
 	private function findClassId(array $classes, string $id_key, string $unit): int {

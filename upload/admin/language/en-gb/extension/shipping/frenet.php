@@ -7,6 +7,7 @@ $_['text_extension']        = 'Extensions';
 $_['text_success']          = 'Success: You have modified Frenet shipping!';
 $_['text_edit']             = 'Edit Frenet Shipping';
 $_['text_version']          = 'Frenet module %s';
+$_['text_migrated']         = 'The key and password of the previous version were removed: Frenet now authenticates with the token only.';
 $_['text_token_required']   = 'Frenet cannot quote without a token. Generate it in the Frenet panel and paste it into the Token field.';
 $_['text_token_saved']      = 'Token saved. Leave blank to keep it.';
 $_['text_panel']            = 'Open the Frenet panel';

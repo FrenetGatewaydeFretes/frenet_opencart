@@ -7,6 +7,7 @@ $_['text_extension']        = 'Extensões';
 $_['text_success']          = 'Frete Frenet modificado com sucesso!';
 $_['text_edit']             = 'Editando Frenet';
 $_['text_version']          = 'Módulo Frenet %s';
+$_['text_migrated']         = 'A Chave e a Senha da versão anterior foram removidas: a Frenet agora autentica só pelo token.';
 $_['text_token_required']   = 'Sem token, a Frenet não cota. Gere o token no painel Frenet e cole no campo Token.';
 $_['text_token_saved']      = 'Token salvo. Deixe em branco para mantê-lo.';
 $_['text_panel']            = 'Abrir o painel Frenet';

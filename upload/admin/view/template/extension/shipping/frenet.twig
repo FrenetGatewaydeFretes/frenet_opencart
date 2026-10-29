@@ -20,6 +20,11 @@
       <button type="button" class="close" data-dismiss="alert">&times;</button>
     </div>
     {% endif %}
+    {% if migrated %}
+    <div class="alert alert-info alert-dismissible" id="frenet-migrated"><i class="fa fa-info-circle"></i> {{ text_migrated }}
+      <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endif %}
     {% if not token_saved %}
     <div class="alert alert-warning" id="frenet-token-required"><i class="fa fa-exclamation-triangle"></i> {{ text_token_required }} <a href="{{ panel_url|escape }}" target="_blank" rel="noopener noreferrer">{{ text_panel }}</a></div>
     {% endif %}
