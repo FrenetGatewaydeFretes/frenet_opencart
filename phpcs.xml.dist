@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<ruleset name="Frenet OpenCart 3">
+    <description>Keeps the extension runnable on every PHP version OpenCart 3 stores use, from 7.1 to 8.5.</description>
+
+    <file>upload</file>
+    <arg name="extensions" value="php"/>
+    <arg name="colors"/>
+    <arg value="sp"/>
+
+    <config name="testVersion" value="7.1-"/>
+    <rule ref="PHPCompatibility"/>
+</ruleset>
