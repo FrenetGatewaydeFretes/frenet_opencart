@@ -101,6 +101,8 @@ class ControllerExtensionShippingFrenet extends Controller {
 		$data['column_left'] = $this->load->controller('common/column_left');
 		$data['footer'] = $this->load->controller('common/footer');
 
+		$this->config->set('template_cache', false);
+
 		$this->response->setOutput($this->load->view('extension/shipping/frenet', $data));
 	}
 
