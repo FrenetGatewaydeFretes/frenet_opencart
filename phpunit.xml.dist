@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="tests/bootstrap.php"
+         cacheDirectory=".cache/phpunit"
+         colors="true"
+         failOnRisky="true"
+         failOnWarning="true">
+    <testsuites>
+        <testsuite name="unit">
+            <directory>tests/unit</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>upload/system/library/frenet</directory>
+        </include>
+    </source>
+    <php>
+        <env name="FRENET_MOCK_URL" value="http://127.0.0.1:8765"/>
+    </php>
+</phpunit>
