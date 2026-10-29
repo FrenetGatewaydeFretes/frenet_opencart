@@ -1,0 +1,28 @@
+{
+    "ShippingSevicesArray": [
+        {
+            "ServiceCode": "03298",
+            "ServiceDescription": "PAC",
+            "Carrier": "Correios",
+            "CarrierCode": "COR",
+            "ShippingPrice": "25.90",
+            "OriginalShippingPrice": "25.90",
+            "DeliveryTime": "7",
+            "OriginalDeliveryTime": "7",
+            "Error": false,
+            "Msg": ""
+        },
+        {
+            "ServiceCode": "03220",
+            "ServiceDescription": "SEDEX",
+            "Carrier": "Correios",
+            "CarrierCode": "COR",
+            "ShippingPrice": "42.50",
+            "OriginalShippingPrice": "42.50",
+            "DeliveryTime": "3",
+            "OriginalDeliveryTime": "3",
+            "Error": false,
+            "Msg": ""
+        }
+    ]
+}
