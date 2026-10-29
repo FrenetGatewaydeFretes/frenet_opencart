@@ -47,6 +47,7 @@ upload/                         vai para o .ocmod.zip; espelha a raiz da loja
   admin/...                     controller, idiomas e template do admin
   catalog/...                   model de frete e idiomas da loja
   system/library/frenet/        classes do módulo (namespace Frenet)
+    quote/                      montagem da requisição e leitura da resposta da cotação
 tests/
   unit/                         PHPUnit das classes de system/library/frenet
   mock/                         mock da API da Frenet (servidor embutido do PHP)
@@ -56,6 +57,19 @@ tests/
 O autoloader do OpenCart 3 transforma o nome da classe no caminho do arquivo em minúsculas: `Frenet\Http\Client` fica em `system/library/frenet/http/client.php`. Por isso todo arquivo da biblioteca tem nome minúsculo.
 
 As classes de `system/library/frenet/` recebem no construtor tudo o que usam (configuração, log, cliente HTTP). Controllers e models do OpenCart montam essas classes; as classes não buscam nada no registry.
+
+A cotação passa por estas classes:
+
+| Classe | Papel |
+| --- | --- |
+| `Frenet\Quote\Builder` | monta a `Request` a partir do carrinho e do endereço, convertendo peso e medidas para as classes de quilo e centímetro escolhidas no admin |
+| `Frenet\Quote\Request` e `Item` | corpo do `POST /shipping/quote` |
+| `Frenet\Api` | envia a cotação com o token e o `User-Agent` com a versão do módulo |
+| `Frenet\Quote\Parser` e `Service` | leem os serviços da resposta, mesmo quando vem um só, e descartam os que têm erro ou não têm código ou preço |
+
+A versão do módulo fica em `Frenet\Module::VERSION`.
+
+Ao criar uma classe nova, rode `composer dump-autoload` antes dos testes: o autoload de desenvolvimento é um classmap de `system/library/frenet/`.
 
 ## Padrão de código
 
@@ -95,6 +109,8 @@ docker run --rm -v "$PWD":/app -w /app php:7.1-cli sh -c 'find upload -name "*.p
 | --- | --- |
 | `POST /shipping/quote` sem header `token` | 401 |
 | `POST /shipping/quote` com header `token` | 200 com PAC e SEDEX (`tests/mock/fixtures/quote.json`) |
+| `POST /shipping/quote` com `token: single-service` | 200 só com SEDEX (`tests/mock/fixtures/quote-single.json`) |
+| `POST /shipping/quote` com `token: status-503` (ou outro código) | responde com esse status HTTP |
 | `/mock/status/{código}` | responde com esse status HTTP |
 | `/mock/delay/{segundos}` | espera antes de responder, para testar tempo limite |
 | `/mock/echo` | devolve método, headers e corpo recebidos |
@@ -104,6 +120,8 @@ Para usar fora dos testes:
 ```bash
 php -S 127.0.0.1:8765 tests/mock/router.php
 ```
+
+Com a variável `FRENET_MOCK_LOG` apontando para um arquivo, o mock grava ali os headers e o corpo de cada cotação atendida, uma linha JSON por cotação.
 
 ## Ambientes de teste
 
