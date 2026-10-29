@@ -5,4 +5,5 @@ parameters:
         - upload/system/library/frenet
     bootstrapFiles:
         - tests/stubs/opencart.php
+        - tests/stubs/cart.php
     tmpDir: .cache/phpstan
