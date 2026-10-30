@@ -64,8 +64,8 @@ A cotação passa por estas classes:
 | --- | --- |
 | `Frenet\Quote\Builder` | monta a `Request` a partir do carrinho e do endereço, convertendo peso e medidas para as classes de quilo e centímetro escolhidas no admin |
 | `Frenet\Quote\Request` e `Item` | corpo do `POST /shipping/quote` |
-| `Frenet\Api` | envia a cotação com o token e o `User-Agent` com a versão do módulo |
-| `Frenet\Quote\Parser` e `Service` | leem os serviços da resposta, mesmo quando vem um só, e descartam os que têm erro ou não têm código ou preço |
+| `Frenet\Api` | envia a cotação com o token e o `User-Agent` com a versão do módulo. Repete timeout, falha de conexão, 5xx e JSON inválido até o número de tentativas, com 300 ms entre elas; nunca repete 4xx. Esgotadas as tentativas, lança `Frenet\Quote\UnavailableException` |
+| `Frenet\Quote\Parser`, `Result` e `Service` | leem os serviços da resposta, mesmo quando vem um só. Separam os que podem ser oferecidos dos que vieram com `Error`, guardando o `Msg`, e leem o `Message` da resposta |
 
 A versão do módulo fica em `Frenet\Module::VERSION`.
 
@@ -110,6 +110,9 @@ docker run --rm -v "$PWD":/app -w /app php:7.1-cli sh -c 'find upload -name "*.p
 | `POST /shipping/quote` sem header `token` | 401 |
 | `POST /shipping/quote` com header `token` | 200 com PAC e SEDEX (`tests/mock/fixtures/quote.json`) |
 | `POST /shipping/quote` com `token: single-service` | 200 só com SEDEX (`tests/mock/fixtures/quote-single.json`) |
+| `POST /shipping/quote` com `token: empty` | 200 sem serviços, com `Message` (`tests/mock/fixtures/quote-empty.json`) |
+| `POST /shipping/quote` com `token: with-errors` | 200 com SEDEX, Jadlog sem `DeliveryTime` e Mini Envios com `Error` (`tests/mock/fixtures/quote-errors.json`) |
+| `POST /shipping/quote` com `token: flaky` | alterna 503 e 200, começando pelo 503; o contador fica em `frenet-mock-flaky`, no diretório temporário do mock |
 | `POST /shipping/quote` com `token: status-503` (ou outro código) | responde com esse status HTTP |
 | `/mock/status/{código}` | responde com esse status HTTP |
 | `/mock/delay/{segundos}` | espera antes de responder, para testar tempo limite |
@@ -121,7 +124,7 @@ Para usar fora dos testes:
 php -S 127.0.0.1:8765 tests/mock/router.php
 ```
 
-Com a variável `FRENET_MOCK_LOG` apontando para um arquivo, o mock grava ali os headers e o corpo de cada cotação atendida, uma linha JSON por cotação.
+Com a variável `FRENET_MOCK_LOG` apontando para um arquivo, o mock grava ali os headers e o corpo de cada `POST /shipping/quote` recebido, uma linha JSON por requisição. Isso serve para contar as tentativas.
 
 ## Ambientes de teste
 
