@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 require __DIR__ . '/stubs/opencart.php';
+require __DIR__ . '/stubs/cart.php';
 
 $mock_host = (string)parse_url((string)getenv('FRENET_MOCK_URL'), PHP_URL_HOST);
 $mock_port = (int)parse_url((string)getenv('FRENET_MOCK_URL'), PHP_URL_PORT);

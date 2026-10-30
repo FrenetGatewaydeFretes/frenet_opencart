@@ -1,0 +1,16 @@
+{
+    "ShippingSevicesArray": [
+        {
+            "ServiceCode": "03220",
+            "ServiceDescription": "SEDEX",
+            "Carrier": "Correios",
+            "CarrierCode": "COR",
+            "ShippingPrice": "42.50",
+            "OriginalShippingPrice": "42.50",
+            "DeliveryTime": "3",
+            "OriginalDeliveryTime": "3",
+            "Error": false,
+            "Msg": ""
+        }
+    ]
+}

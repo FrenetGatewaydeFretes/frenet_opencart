@@ -61,6 +61,24 @@ class Config {
 	}
 
 	/**
+	 * Weight class the store owner mapped to kilograms, the unit the Frenet API expects.
+	 *
+	 * @return int
+	 */
+	public function getWeightClassId(): int {
+		return (int)$this->get('weight_class_id');
+	}
+
+	/**
+	 * Length class the store owner mapped to centimetres, the unit the Frenet API expects.
+	 *
+	 * @return int
+	 */
+	public function getLengthClassId(): int {
+		return (int)$this->get('length_class_id');
+	}
+
+	/**
 	 * Position of Frenet among the shipping methods at checkout.
 	 *
 	 * @return int
