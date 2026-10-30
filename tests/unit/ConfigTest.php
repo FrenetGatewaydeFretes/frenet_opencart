@@ -49,6 +49,32 @@ class ConfigTest extends TestCase {
 		static::assertSame('01310100', $config->getOriginPostcode());
 	}
 
+	public function testReadsTheTimeoutTheAttemptsAndTheDebugSwitch(): void {
+		$config = $this->createConfig(['shipping_frenet_timeout' => '8', 'shipping_frenet_attempts' => '2', 'shipping_frenet_debug' => '1']);
+
+		static::assertSame(8, $config->getTimeout());
+		static::assertSame(2, $config->getAttempts());
+		static::assertTrue($config->isDebug());
+	}
+
+	public function testUsesTheDefaultTimeoutAndAttemptsWhenNothingIsSaved(): void {
+		$config = $this->createConfig(['shipping_frenet_timeout' => '']);
+
+		static::assertSame(5, $config->getTimeout());
+		static::assertSame(3, $config->getAttempts());
+		static::assertFalse($config->isDebug());
+	}
+
+	public function testKeepsTheTimeoutAndAttemptsWithinTheSupportedRange(): void {
+		$low = $this->createConfig(['shipping_frenet_timeout' => '0', 'shipping_frenet_attempts' => '-1']);
+		$high = $this->createConfig(['shipping_frenet_timeout' => '60', 'shipping_frenet_attempts' => '9']);
+
+		static::assertSame(2, $low->getTimeout());
+		static::assertSame(1, $low->getAttempts());
+		static::assertSame(10, $high->getTimeout());
+		static::assertSame(3, $high->getAttempts());
+	}
+
 	/**
 	 * @param array<string, mixed> $settings
 	 * @return Config

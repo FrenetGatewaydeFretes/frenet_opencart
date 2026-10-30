@@ -13,6 +13,36 @@ class Config {
 	private const PREFIX = 'shipping_frenet_';
 
 	/**
+	 * @var int
+	 */
+	public const TIMEOUT_MIN = 2;
+
+	/**
+	 * @var int
+	 */
+	public const TIMEOUT_MAX = 10;
+
+	/**
+	 * @var int
+	 */
+	public const TIMEOUT_DEFAULT = 5;
+
+	/**
+	 * @var int
+	 */
+	public const ATTEMPTS_MIN = 1;
+
+	/**
+	 * @var int
+	 */
+	public const ATTEMPTS_MAX = 3;
+
+	/**
+	 * @var int
+	 */
+	public const ATTEMPTS_DEFAULT = 3;
+
+	/**
 	 * @var \Config
 	 */
 	private $config;
@@ -79,12 +109,56 @@ class Config {
 	}
 
 	/**
+	 * Seconds each quote attempt may take, kept within the supported range.
+	 *
+	 * @return int
+	 */
+	public function getTimeout(): int {
+		return $this->getInRange('timeout', self::TIMEOUT_DEFAULT, self::TIMEOUT_MIN, self::TIMEOUT_MAX);
+	}
+
+	/**
+	 * How many times a failed quote is sent, kept within the supported range.
+	 *
+	 * @return int
+	 */
+	public function getAttempts(): int {
+		return $this->getInRange('attempts', self::ATTEMPTS_DEFAULT, self::ATTEMPTS_MIN, self::ATTEMPTS_MAX);
+	}
+
+	/**
+	 * Whether every request and response goes to frenet.log, besides the errors.
+	 *
+	 * @return bool
+	 */
+	public function isDebug(): bool {
+		return (bool)$this->get('debug');
+	}
+
+	/**
 	 * Position of Frenet among the shipping methods at checkout.
 	 *
 	 * @return int
 	 */
 	public function getSortOrder(): int {
 		return (int)$this->get('sort_order');
+	}
+
+	/**
+	 * @param string $key
+	 * @param int $default
+	 * @param int $min
+	 * @param int $max
+	 * @return int
+	 */
+	private function getInRange(string $key, int $default, int $min, int $max): int {
+		$value = $this->get($key);
+
+		if ($value === null || $value === '') {
+			return $default;
+		}
+
+		return max($min, min($max, (int)$value));
 	}
 
 	/**
