@@ -4,25 +4,26 @@ declare(strict_types=1);
 namespace Frenet\Quote;
 
 /**
- * Reads the services of a quote response, keeping only the ones that can be offered at checkout.
+ * Reads a quote response, splitting the services that can be offered at checkout from the ones reported with an error.
  */
 class Parser {
 	/**
 	 * @param string $body
-	 * @return Service[]
+	 * @return Result
 	 * @throws Exception
 	 */
-	public function parse(string $body): array {
+	public function parse(string $body): Result {
 		$data = json_decode($body, true);
 
 		if (!is_array($data)) {
 			throw new Exception('The Frenet API answered with invalid JSON');
 		}
 
+		$message = is_scalar($data['Message'] ?? null) ? (string)$data['Message'] : '';
 		$entries = $data['ShippingSevicesArray'] ?? [];
 
 		if (!is_array($entries)) {
-			return [];
+			return new Result([], [], $message);
 		}
 
 		if (isset($entries['ServiceCode'])) {
@@ -30,9 +31,24 @@ class Parser {
 		}
 
 		$services = [];
+		$errors = [];
 
 		foreach ($entries as $entry) {
-			if (!is_array($entry) || !empty($entry['Error']) || !isset($entry['ServiceCode'], $entry['ShippingPrice']) || (string)$entry['ServiceCode'] === '') {
+			if (!is_array($entry)) {
+				continue;
+			}
+
+			if (!empty($entry['Error'])) {
+				$errors[] = [
+					'code'        => (string)($entry['ServiceCode'] ?? ''),
+					'description' => (string)($entry['ServiceDescription'] ?? ''),
+					'message'     => (string)($entry['Msg'] ?? '')
+				];
+
+				continue;
+			}
+
+			if (!isset($entry['ServiceCode'], $entry['ShippingPrice']) || (string)$entry['ServiceCode'] === '') {
 				continue;
 			}
 
@@ -44,6 +60,6 @@ class Parser {
 			);
 		}
 
-		return $services;
+		return new Result($services, $errors, $message);
 	}
 }

@@ -73,6 +73,32 @@
             </div>
           </div>
           <div class="form-group">
+            <label class="col-sm-2 control-label" for="input-timeout"><span data-toggle="tooltip" title="{{ help_timeout }}">{{ entry_timeout }}</span></label>
+            <div class="col-sm-10">
+              <input type="number" name="shipping_frenet_timeout" value="{{ shipping_frenet_timeout|escape }}" min="{{ timeout_min }}" max="{{ timeout_max }}" step="1" required id="input-timeout" class="form-control" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="col-sm-2 control-label" for="input-attempts"><span data-toggle="tooltip" title="{{ help_attempts }}">{{ entry_attempts }}</span></label>
+            <div class="col-sm-10">
+              <input type="number" name="shipping_frenet_attempts" value="{{ shipping_frenet_attempts|escape }}" min="{{ attempts_min }}" max="{{ attempts_max }}" step="1" required id="input-attempts" class="form-control" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="col-sm-2 control-label" for="input-debug"><span data-toggle="tooltip" title="{{ help_debug }}">{{ entry_debug }}</span></label>
+            <div class="col-sm-10">
+              <select name="shipping_frenet_debug" id="input-debug" class="form-control">
+                {% if shipping_frenet_debug %}
+                <option value="1" selected="selected">{{ text_enabled }}</option>
+                <option value="0">{{ text_disabled }}</option>
+                {% else %}
+                <option value="1">{{ text_enabled }}</option>
+                <option value="0" selected="selected">{{ text_disabled }}</option>
+                {% endif %}
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
             <label class="col-sm-2 control-label" for="input-status">{{ entry_status }}</label>
             <div class="col-sm-10">
               <select name="shipping_frenet_status" id="input-status" class="form-control">
