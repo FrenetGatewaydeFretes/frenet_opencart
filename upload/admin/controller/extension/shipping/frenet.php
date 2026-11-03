@@ -17,6 +17,10 @@ class ControllerExtensionShippingFrenet extends Controller {
 		'shipping_frenet_msg_prazo',
 		'shipping_frenet_weight_class_id',
 		'shipping_frenet_length_class_id',
+		'shipping_frenet_minimum_height',
+		'shipping_frenet_minimum_width',
+		'shipping_frenet_minimum_length',
+		'shipping_frenet_default_weight',
 		'shipping_frenet_timeout',
 		'shipping_frenet_attempts',
 		'shipping_frenet_debug',
@@ -26,6 +30,13 @@ class ControllerExtensionShippingFrenet extends Controller {
 	private const RANGES = [
 		'shipping_frenet_timeout'  => ['entry_timeout', FrenetConfig::TIMEOUT_MIN, FrenetConfig::TIMEOUT_MAX],
 		'shipping_frenet_attempts' => ['entry_attempts', FrenetConfig::ATTEMPTS_MIN, FrenetConfig::ATTEMPTS_MAX]
+	];
+
+	private const MINIMUMS = [
+		'shipping_frenet_minimum_height' => ['entry_minimum_height', FrenetConfig::DEFAULT_HEIGHT],
+		'shipping_frenet_minimum_width'  => ['entry_minimum_width', FrenetConfig::DEFAULT_WIDTH],
+		'shipping_frenet_minimum_length' => ['entry_minimum_length', FrenetConfig::DEFAULT_LENGTH],
+		'shipping_frenet_default_weight' => ['entry_default_weight', FrenetConfig::DEFAULT_WEIGHT]
 	];
 
 	private $error = [];
@@ -62,6 +73,17 @@ class ControllerExtensionShippingFrenet extends Controller {
 				}
 
 				$values[$field] = $value;
+			}
+
+			foreach (self::MINIMUMS as $field => [$label, $default]) {
+				$value = str_replace(',', '.', trim((string)$values[$field]));
+
+				if (!is_numeric($value) || (float)$value <= 0) {
+					$adjusted[] = sprintf($this->language->get('text_default_used'), $this->language->get($label), $this->formatNumber($default));
+					$value = $default;
+				}
+
+				$values[$field] = (string)(float)$value;
 			}
 
 			$this->model_setting_setting->editSetting('shipping_frenet', $values);
@@ -106,6 +128,10 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 		$data['shipping_frenet_timeout'] = $frenet_config->getTimeout();
 		$data['shipping_frenet_attempts'] = $frenet_config->getAttempts();
+		$data['shipping_frenet_minimum_height'] = $this->formatNumber($frenet_config->getMinimumHeight());
+		$data['shipping_frenet_minimum_width'] = $this->formatNumber($frenet_config->getMinimumWidth());
+		$data['shipping_frenet_minimum_length'] = $this->formatNumber($frenet_config->getMinimumLength());
+		$data['shipping_frenet_default_weight'] = $this->formatNumber($frenet_config->getDefaultWeight());
 		$data['timeout_min'] = FrenetConfig::TIMEOUT_MIN;
 		$data['timeout_max'] = FrenetConfig::TIMEOUT_MAX;
 		$data['attempts_min'] = FrenetConfig::ATTEMPTS_MIN;
@@ -154,6 +180,10 @@ class ControllerExtensionShippingFrenet extends Controller {
 		$this->model_setting_setting->editSetting('shipping_frenet', array_diff_key($settings, $legacy));
 
 		return true;
+	}
+
+	private function formatNumber(float $value): string {
+		return rtrim(rtrim(number_format($value, 3, '.', ''), '0'), '.');
 	}
 
 	private function findClassId(array $classes, string $id_key, string $unit): int {
