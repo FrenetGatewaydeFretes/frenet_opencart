@@ -111,6 +111,44 @@ class Config {
 	}
 
 	/**
+	 * Whether the rate title shows the delivery days, on until the store owner turns it off.
+	 *
+	 * @return bool
+	 */
+	public function isDeliveryTimeShown(): bool {
+		$value = $this->get('delivery_time');
+
+		return $value === null || $value === '' || (bool)$value;
+	}
+
+	/**
+	 * Days the store owner adds to the delivery time of every service, never negative.
+	 *
+	 * @return int
+	 */
+	public function getAdditionalDays(): int {
+		return max(0, (int)$this->get('additional_days'));
+	}
+
+	/**
+	 * Tax class charged on the shipping cost, 0 for none.
+	 *
+	 * @return int
+	 */
+	public function getTaxClassId(): int {
+		return (int)$this->get('tax_class_id');
+	}
+
+	/**
+	 * Geo zone where Frenet is offered, 0 for every address.
+	 *
+	 * @return int
+	 */
+	public function getGeoZoneId(): int {
+		return (int)$this->get('geo_zone_id');
+	}
+
+	/**
 	 * Weight class the store owner mapped to kilograms, the unit the Frenet API expects.
 	 *
 	 * @return int

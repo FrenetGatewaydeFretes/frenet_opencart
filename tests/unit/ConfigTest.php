@@ -75,6 +75,33 @@ class ConfigTest extends TestCase {
 		static::assertSame(3, $high->getAttempts());
 	}
 
+	public function testReadsTheDeliveryTimeTheTaxClassAndTheGeoZone(): void {
+		$config = $this->createConfig([
+			'shipping_frenet_delivery_time'   => '0',
+			'shipping_frenet_additional_days' => '2',
+			'shipping_frenet_tax_class_id'    => '9',
+			'shipping_frenet_geo_zone_id'     => '4'
+		]);
+
+		static::assertFalse($config->isDeliveryTimeShown());
+		static::assertSame(2, $config->getAdditionalDays());
+		static::assertSame(9, $config->getTaxClassId());
+		static::assertSame(4, $config->getGeoZoneId());
+	}
+
+	public function testShowsTheDeliveryTimeEverywhereWithoutTaxWhenNothingIsSaved(): void {
+		$config = $this->createConfig(['shipping_frenet_delivery_time' => '']);
+
+		static::assertTrue($config->isDeliveryTimeShown());
+		static::assertSame(0, $config->getAdditionalDays());
+		static::assertSame(0, $config->getTaxClassId());
+		static::assertSame(0, $config->getGeoZoneId());
+	}
+
+	public function testNeverSubtractsDaysFromTheDeliveryTime(): void {
+		static::assertSame(0, $this->createConfig(['shipping_frenet_additional_days' => '-3'])->getAdditionalDays());
+	}
+
 	public function testReadsTheMinimumMeasuresAndTheDefaultWeight(): void {
 		$config = $this->createConfig([
 			'shipping_frenet_minimum_height' => '3',
