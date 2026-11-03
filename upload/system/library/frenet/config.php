@@ -201,14 +201,24 @@ class Config {
 	}
 
 	/**
+	 * Number typed in the admin, with comma or dot decimals, or null when it is not greater than zero.
+	 *
+	 * @param mixed $value
+	 * @return float|null
+	 */
+	public static function parsePositive($value): ?float {
+		$number = str_replace(',', '.', trim((string)$value));
+
+		return is_numeric($number) && (float)$number > 0 ? (float)$number : null;
+	}
+
+	/**
 	 * @param string $key
 	 * @param float $default
 	 * @return float
 	 */
 	private function getPositive(string $key, float $default): float {
-		$value = str_replace(',', '.', trim((string)$this->get($key)));
-
-		return is_numeric($value) && (float)$value > 0 ? (float)$value : $default;
+		return self::parsePositive($this->get($key)) ?? $default;
 	}
 
 	/**

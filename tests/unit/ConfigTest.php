@@ -98,6 +98,15 @@ class ConfigTest extends TestCase {
 		static::assertSame(1.0, $config->getDefaultWeight());
 	}
 
+	public function testParsesPositiveNumbersTypedInTheAdmin(): void {
+		static::assertSame(12.5, Config::parsePositive(' 12,5 '));
+		static::assertSame(0.0004, Config::parsePositive('0.0004'));
+		static::assertNull(Config::parsePositive('0'));
+		static::assertNull(Config::parsePositive('-3'));
+		static::assertNull(Config::parsePositive('abc'));
+		static::assertNull(Config::parsePositive(null));
+	}
+
 	/**
 	 * @param array<string, mixed> $settings
 	 * @return Config

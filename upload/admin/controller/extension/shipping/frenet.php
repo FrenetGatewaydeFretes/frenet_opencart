@@ -76,14 +76,14 @@ class ControllerExtensionShippingFrenet extends Controller {
 			}
 
 			foreach (self::MINIMUMS as $field => [$label, $default]) {
-				$value = str_replace(',', '.', trim((string)$values[$field]));
+				$value = FrenetConfig::parsePositive($values[$field]);
 
-				if (!is_numeric($value) || (float)$value <= 0) {
+				if ($value === null) {
 					$adjusted[] = sprintf($this->language->get('text_default_used'), $this->language->get($label), $this->formatNumber($default));
 					$value = $default;
 				}
 
-				$values[$field] = (string)(float)$value;
+				$values[$field] = $this->formatNumber($value);
 			}
 
 			$this->model_setting_setting->editSetting('shipping_frenet', $values);
@@ -183,7 +183,7 @@ class ControllerExtensionShippingFrenet extends Controller {
 	}
 
 	private function formatNumber(float $value): string {
-		return rtrim(rtrim(number_format($value, 3, '.', ''), '0'), '.');
+		return rtrim(rtrim(number_format($value, 6, '.', ''), '0'), '.');
 	}
 
 	private function findClassId(array $classes, string $id_key, string $unit): int {
