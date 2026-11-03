@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Frenet\Quote;
 
 /**
- * Reads what the cart does not carry for each product: the code sent as SKU and the category names.
+ * Reads what the cart does not carry for each product: the code sent as SKU and the category names the shopper sees.
  */
 class Catalog {
 	/**
@@ -28,18 +28,25 @@ class Catalog {
 	private $language_id;
 
 	/**
+	 * @var int
+	 */
+	private $store_id;
+
+	/**
 	 * @param \DB $db
 	 * @param string $prefix
 	 * @param int $language_id
+	 * @param int $store_id
 	 */
-	public function __construct(\DB $db, string $prefix, int $language_id) {
+	public function __construct(\DB $db, string $prefix, int $language_id, int $store_id) {
 		$this->db = $db;
 		$this->prefix = $prefix;
 		$this->language_id = $language_id;
+		$this->store_id = $store_id;
 	}
 
 	/**
-	 * SKU, or the model when the SKU is empty, and the category names joined by |, per product id.
+	 * SKU, or the model when the SKU is empty, and the names of the enabled categories of this store joined by |.
 	 *
 	 * @param int[] $product_ids
 	 * @return array<int, array{sku: string, category: string}>
@@ -59,7 +66,7 @@ class Catalog {
 			$products[(int)$row['product_id']] = ['sku' => $sku !== '' ? $sku : $this->decode($row['model']), 'categories' => []];
 		}
 
-		foreach ($this->db->query("SELECT p2c.`product_id`, cd.`name` FROM `" . $this->prefix . "product_to_category` p2c INNER JOIN `" . $this->prefix . "category_description` cd ON (cd.`category_id` = p2c.`category_id` AND cd.`language_id` = '" . $this->language_id . "') WHERE p2c.`product_id` IN (" . $ids . ") ORDER BY cd.`name`")->rows as $row) {
+		foreach ($this->db->query("SELECT p2c.`product_id`, cd.`name` FROM `" . $this->prefix . "product_to_category` p2c INNER JOIN `" . $this->prefix . "category` c ON (c.`category_id` = p2c.`category_id` AND c.`status` = '1') INNER JOIN `" . $this->prefix . "category_to_store` c2s ON (c2s.`category_id` = p2c.`category_id` AND c2s.`store_id` = '" . $this->store_id . "') INNER JOIN `" . $this->prefix . "category_description` cd ON (cd.`category_id` = p2c.`category_id` AND cd.`language_id` = '" . $this->language_id . "') WHERE p2c.`product_id` IN (" . $ids . ") ORDER BY cd.`name`")->rows as $row) {
 			if (isset($products[(int)$row['product_id']])) {
 				$products[(int)$row['product_id']]['categories'][] = str_replace(self::CATEGORY_SEPARATOR, '/', $this->decode($row['name']));
 			}

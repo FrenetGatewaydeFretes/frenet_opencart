@@ -21,7 +21,7 @@ class ModelExtensionShippingFrenet extends Model {
 		$products = $this->cart->getProducts();
 
 		try {
-			$catalog = (new Catalog($this->db, DB_PREFIX, (int)$this->config->get('config_language_id')))->getProducts(array_column($builder->filterShipped($products), 'product_id'));
+			$catalog = (new Catalog($this->db, DB_PREFIX, (int)$this->config->get('config_language_id'), (int)$this->config->get('config_store_id')))->getProducts(array_column($builder->filterShipped($products), 'product_id'));
 		} catch (\Throwable $exception) {
 			$log->error('SKU and categories could not be read, quoting with the model only: ' . $exception->getMessage());
 			$catalog = [];
