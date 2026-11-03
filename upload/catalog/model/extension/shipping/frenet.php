@@ -60,7 +60,7 @@ class ModelExtensionShippingFrenet extends Model {
 		foreach ($result->getServices() as $service) {
 			$quote_data[$service->getCode()] = [
 				'code'         => 'frenet.' . $service->getCode(),
-				'title'        => $service->getTitle($config->getDeliveryTimeMessage()),
+				'title'        => $service->getTitle($config->getDeliveryTimeMessage(), $config->getAdditionalDays()),
 				'cost'         => $service->getPrice(),
 				'tax_class_id' => 0,
 				'text'         => $this->currency->format($this->tax->calculate($service->getPrice(), 0, $this->config->get('config_tax')), $this->session->data['currency'])

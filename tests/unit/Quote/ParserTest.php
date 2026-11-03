@@ -57,7 +57,7 @@ class ParserTest extends TestCase {
 
 		static::assertSame(3, $services[0]->getDeliveryTime());
 		static::assertSame(0, $services[1]->getDeliveryTime());
-		static::assertSame('Jadlog Package', $services[1]->getTitle('%s - Em média %d dia(s)'));
+		static::assertSame('Jadlog Package', $services[1]->getTitle('%s - Em média %d dia(s)', 0));
 	}
 
 	public function testReturnsNoServiceWhenTheResponseHasNone(): void {

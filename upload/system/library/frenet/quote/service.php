@@ -71,16 +71,19 @@ class Service {
 	}
 
 	/**
-	 * Rate title from the store owner's template, where %s is the service name and %d the delivery days.
+	 * Rate title from the store owner's template, where %s is the service name and %d the delivery days plus the additional ones.
 	 *
 	 * @param string $template
+	 * @param int $additional_days
 	 * @return string
 	 */
-	public function getTitle(string $template): string {
-		if ($template === '' || $this->delivery_time < 1) {
+	public function getTitle(string $template, int $additional_days): string {
+		$days = $this->delivery_time + max(0, $additional_days);
+
+		if ($template === '' || $days < 1) {
 			return $this->description;
 		}
 
-		return strtr($template, ['%s' => $this->description, '%d' => (string)$this->delivery_time]);
+		return strtr($template, ['%s' => $this->description, '%d' => (string)$days]);
 	}
 }
