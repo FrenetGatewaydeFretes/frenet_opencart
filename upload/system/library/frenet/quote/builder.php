@@ -82,9 +82,10 @@ class Builder {
 			}
 
 			$details = $catalog[(int)$product['product_id']] ?? ['sku' => (string)($product['model'] ?? ''), 'category' => ''];
+			$weight = $this->toKilograms((float)$product['weight'] / $quantity, $product['weight_class_id'], $weight_class_id);
 
 			$items[] = new Item(
-				$this->orDefault($this->toKilograms((float)$product['weight'] / $quantity, $product['weight_class_id'], $weight_class_id), $this->config->getDefaultWeight()),
+				$weight > 0 ? $weight : $this->config->getDefaultWeight(),
 				$this->orDefault($this->toCentimetres($product['length'], $product['length_class_id'], $length_class_id), $this->config->getMinimumLength()),
 				$this->orDefault($this->toCentimetres($product['height'], $product['length_class_id'], $length_class_id), $this->config->getMinimumHeight()),
 				$this->orDefault($this->toCentimetres($product['width'], $product['length_class_id'], $length_class_id), $this->config->getMinimumWidth()),
@@ -129,7 +130,7 @@ class Builder {
 	 * @return float
 	 */
 	private function toKilograms(float $value, $from, int $to): float {
-		return round((float)$this->weight->convert($value, $from, $to), 3);
+		return round((float)$this->weight->convert($value, $from, $to), 6);
 	}
 
 	/**
