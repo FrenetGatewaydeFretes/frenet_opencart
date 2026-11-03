@@ -1,0 +1,34 @@
+{
+    "ShippingSevicesArray": [
+        {
+            "ServiceCode": "03220",
+            "ServiceDescription": "SEDEX",
+            "Carrier": "Correios",
+            "CarrierCode": "COR",
+            "ShippingPrice": "42.50",
+            "OriginalShippingPrice": "42.50",
+            "DeliveryTime": "3",
+            "OriginalDeliveryTime": "3",
+            "Error": false,
+            "Msg": ""
+        },
+        {
+            "ServiceCode": "F_3",
+            "ServiceDescription": "Jadlog Package",
+            "Carrier": "Jadlog",
+            "CarrierCode": "JAD",
+            "ShippingPrice": "18.06",
+            "OriginalShippingPrice": "18.06",
+            "Error": false,
+            "Msg": ""
+        },
+        {
+            "ServiceCode": "04227",
+            "ServiceDescription": "Mini Envios",
+            "Carrier": "Correios",
+            "CarrierCode": "COR",
+            "Error": true,
+            "Msg": "Erro: Peso excedido."
+        }
+    ]
+}

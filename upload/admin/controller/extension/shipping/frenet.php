@@ -1,4 +1,5 @@
 <?php
+use Frenet\Config as FrenetConfig;
 use Frenet\Module;
 
 class ControllerExtensionShippingFrenet extends Controller {
@@ -16,7 +17,15 @@ class ControllerExtensionShippingFrenet extends Controller {
 		'shipping_frenet_msg_prazo',
 		'shipping_frenet_weight_class_id',
 		'shipping_frenet_length_class_id',
+		'shipping_frenet_timeout',
+		'shipping_frenet_attempts',
+		'shipping_frenet_debug',
 		'shipping_frenet_sort_order'
+	];
+
+	private const RANGES = [
+		'shipping_frenet_timeout'  => ['entry_timeout', FrenetConfig::TIMEOUT_MIN, FrenetConfig::TIMEOUT_MAX],
+		'shipping_frenet_attempts' => ['entry_attempts', FrenetConfig::ATTEMPTS_MIN, FrenetConfig::ATTEMPTS_MAX]
 	];
 
 	private $error = [];
@@ -43,9 +52,21 @@ class ControllerExtensionShippingFrenet extends Controller {
 				$values[$field] = $this->request->post[$field] ?? '';
 			}
 
+			$adjusted = [];
+
+			foreach (self::RANGES as $field => [$label, $min, $max]) {
+				$value = max($min, min($max, (int)$values[$field]));
+
+				if ((string)$value !== trim((string)$values[$field])) {
+					$adjusted[] = sprintf($this->language->get('text_adjusted'), $this->language->get($label), $value, $min, $max);
+				}
+
+				$values[$field] = $value;
+			}
+
 			$this->model_setting_setting->editSetting('shipping_frenet', $values);
 
-			$this->session->data['success'] = $this->language->get('text_success');
+			$this->session->data['success'] = implode(' ', array_merge([$this->language->get('text_success')], $adjusted));
 
 			$this->response->redirect($this->url->link('marketplace/extension', 'user_token=' . $this->session->data['user_token'] . '&type=shipping', true));
 		}
@@ -80,6 +101,15 @@ class ControllerExtensionShippingFrenet extends Controller {
 		foreach (self::FIELDS as $field) {
 			$data[$field] = $this->request->post[$field] ?? $this->config->get($field);
 		}
+
+		$frenet_config = new FrenetConfig($this->config);
+
+		$data['shipping_frenet_timeout'] = $frenet_config->getTimeout();
+		$data['shipping_frenet_attempts'] = $frenet_config->getAttempts();
+		$data['timeout_min'] = FrenetConfig::TIMEOUT_MIN;
+		$data['timeout_max'] = FrenetConfig::TIMEOUT_MAX;
+		$data['attempts_min'] = FrenetConfig::ATTEMPTS_MIN;
+		$data['attempts_max'] = FrenetConfig::ATTEMPTS_MAX;
 
 		$this->load->model('localisation/weight_class');
 

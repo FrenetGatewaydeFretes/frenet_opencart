@@ -8,36 +8,45 @@ use Frenet\Quote\Builder;
 class ModelExtensionShippingFrenet extends Model {
 	public function getQuote($address) {
 		$config = new FrenetConfig($this->config);
-		$log = new FrenetLog(new \Log(FrenetLog::FILENAME), false);
+		$log = new FrenetLog(new \Log(FrenetLog::FILENAME), $config->isDebug());
 
 		if ($config->getToken() === '') {
-			$log->error('Quote skipped: the token is not configured');
+			$log->error('Quote skipped: the token is not configured', ['postcode' => $address['postcode'] ?? '']);
 
 			return [];
 		}
-
-		$builder = new Builder($config, $this->weight, $this->length, VERSION);
-		$api = new Api(new Client(), $config->getToken(), VERSION);
 
 		try {
-			$request = $builder->build($address, $this->cart->getProducts(), (float)$this->cart->getSubTotal(), (string)($this->session->data['coupon'] ?? ''));
+			$request = (new Builder($config, $this->weight, $this->length, VERSION))->build($address, $this->cart->getProducts(), (float)$this->cart->getSubTotal(), (string)($this->session->data['coupon'] ?? ''));
+		} catch (\Throwable $exception) {
+			$log->error('Quote skipped: ' . $exception->getMessage(), ['postcode' => $address['postcode'] ?? '']);
 
-			$services = $api->quote($request);
-		} catch (\RuntimeException $exception) {
-			$log->error('Quote failed: ' . $exception->getMessage(), ['postcode' => $address['postcode'] ?? '']);
-
-			return [];
-		}
-
-		if (!$services) {
 			return [];
 		}
 
 		$this->load->language('extension/shipping/frenet');
 
+		try {
+			$result = (new Api(new Client(), $log, $config->getToken(), VERSION, $config->getTimeout(), $config->getAttempts()))->quote($request);
+		} catch (\Throwable $exception) {
+			$log->error('Quote failed: ' . $exception->getMessage(), ['request' => $request->toArray()]);
+
+			return $this->method($config, [], $this->language->get('error_unavailable'));
+		}
+
+		if ($result->getErrors()) {
+			$log->error('Services with an error were left out of the quote', ['services' => $result->getErrors(), 'request' => $request->toArray()]);
+		}
+
+		if (!$result->getServices()) {
+			$log->error('Quote returned no service' . ($result->getMessage() !== '' ? ': ' . $result->getMessage() : ''), ['request' => $request->toArray()]);
+
+			return $this->method($config, [], $this->language->get('error_no_services'));
+		}
+
 		$quote_data = [];
 
-		foreach ($services as $service) {
+		foreach ($result->getServices() as $service) {
 			$quote_data[$service->getCode()] = [
 				'code'         => 'frenet.' . $service->getCode(),
 				'title'        => $service->getTitle($config->getDeliveryTimeMessage()),
@@ -47,12 +56,16 @@ class ModelExtensionShippingFrenet extends Model {
 			];
 		}
 
+		return $this->method($config, $quote_data, false);
+	}
+
+	private function method(FrenetConfig $config, array $quote_data, $error) {
 		return [
 			'code'       => 'frenet',
 			'title'      => $this->language->get('text_title'),
 			'quote'      => $quote_data,
 			'sort_order' => $config->getSortOrder(),
-			'error'      => false
+			'error'      => $error
 		];
 	}
 }
