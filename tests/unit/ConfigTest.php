@@ -75,6 +75,29 @@ class ConfigTest extends TestCase {
 		static::assertSame(3, $high->getAttempts());
 	}
 
+	public function testReadsTheMinimumMeasuresAndTheDefaultWeight(): void {
+		$config = $this->createConfig([
+			'shipping_frenet_minimum_height' => '3',
+			'shipping_frenet_minimum_width'  => '12,5',
+			'shipping_frenet_minimum_length' => '18',
+			'shipping_frenet_default_weight' => '0.3'
+		]);
+
+		static::assertSame(3.0, $config->getMinimumHeight());
+		static::assertSame(12.5, $config->getMinimumWidth());
+		static::assertSame(18.0, $config->getMinimumLength());
+		static::assertSame(0.3, $config->getDefaultWeight());
+	}
+
+	public function testFallsBackToTheCorreiosMinimumsWhenTheValueIsEmptyOrNotPositive(): void {
+		$config = $this->createConfig(['shipping_frenet_minimum_height' => '0', 'shipping_frenet_minimum_width' => '-4', 'shipping_frenet_minimum_length' => 'abc']);
+
+		static::assertSame(2.0, $config->getMinimumHeight());
+		static::assertSame(11.0, $config->getMinimumWidth());
+		static::assertSame(16.0, $config->getMinimumLength());
+		static::assertSame(1.0, $config->getDefaultWeight());
+	}
+
 	/**
 	 * @param array<string, mixed> $settings
 	 * @return Config

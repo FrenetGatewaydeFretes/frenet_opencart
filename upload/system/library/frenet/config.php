@@ -43,6 +43,26 @@ class Config {
 	public const ATTEMPTS_DEFAULT = 3;
 
 	/**
+	 * @var float
+	 */
+	public const DEFAULT_HEIGHT = 2.0;
+
+	/**
+	 * @var float
+	 */
+	public const DEFAULT_WIDTH = 11.0;
+
+	/**
+	 * @var float
+	 */
+	public const DEFAULT_LENGTH = 16.0;
+
+	/**
+	 * @var float
+	 */
+	public const DEFAULT_WEIGHT = 1.0;
+
+	/**
 	 * @var \Config
 	 */
 	private $config;
@@ -109,6 +129,42 @@ class Config {
 	}
 
 	/**
+	 * Height in centimetres sent for a product registered without one.
+	 *
+	 * @return float
+	 */
+	public function getMinimumHeight(): float {
+		return $this->getPositive('minimum_height', self::DEFAULT_HEIGHT);
+	}
+
+	/**
+	 * Width in centimetres sent for a product registered without one.
+	 *
+	 * @return float
+	 */
+	public function getMinimumWidth(): float {
+		return $this->getPositive('minimum_width', self::DEFAULT_WIDTH);
+	}
+
+	/**
+	 * Length in centimetres sent for a product registered without one.
+	 *
+	 * @return float
+	 */
+	public function getMinimumLength(): float {
+		return $this->getPositive('minimum_length', self::DEFAULT_LENGTH);
+	}
+
+	/**
+	 * Weight in kilograms sent for a product registered without one.
+	 *
+	 * @return float
+	 */
+	public function getDefaultWeight(): float {
+		return $this->getPositive('default_weight', self::DEFAULT_WEIGHT);
+	}
+
+	/**
 	 * Seconds each quote attempt may take, kept within the supported range.
 	 *
 	 * @return int
@@ -142,6 +198,17 @@ class Config {
 	 */
 	public function getSortOrder(): int {
 		return (int)$this->get('sort_order');
+	}
+
+	/**
+	 * @param string $key
+	 * @param float $default
+	 * @return float
+	 */
+	private function getPositive(string $key, float $default): float {
+		$value = str_replace(',', '.', trim((string)$this->get($key)));
+
+		return is_numeric($value) && (float)$value > 0 ? (float)$value : $default;
 	}
 
 	/**
