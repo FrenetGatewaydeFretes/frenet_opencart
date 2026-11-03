@@ -66,6 +66,16 @@ class BuilderTest extends TestCase {
 		static::assertEqualsWithDelta(30.0, $items[2]['Length'], 0.0001);
 	}
 
+	public function testRoundsTheWeightToGramsAndTheMeasuresToTenthsOfAMillimetre(): void {
+		$items = $this->items([
+			$this->product(['weight' => 2.2046, 'weight_class_id' => self::LB, 'length' => 10, 'height' => 1, 'width' => 5, 'length_class_id' => self::INCH]),
+			$this->product(['weight' => 0.4, 'weight_class_id' => self::G, 'length' => 1, 'height' => 1, 'width' => 1, 'length_class_id' => self::MM])
+		]);
+
+		static::assertSame([1.0, 25.4, 2.54, 12.7], [$items[0]['Weight'], $items[0]['Length'], $items[0]['Height'], $items[0]['Width']]);
+		static::assertSame([1.0, 0.1, 0.1, 0.1], [$items[1]['Weight'], $items[1]['Length'], $items[1]['Height'], $items[1]['Width']]);
+	}
+
 	public function testUsesTheClassesTheStoreOwnerMappedEvenWhenGramsAreTheStoreDefault(): void {
 		$weight = new Weight([self::KG => ['unit' => 'kg', 'value' => 0.001], self::G => ['unit' => 'g', 'value' => 1.0]]);
 

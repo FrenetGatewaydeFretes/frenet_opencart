@@ -129,7 +129,7 @@ class Builder {
 	 * @return float
 	 */
 	private function toKilograms(float $value, $from, int $to): float {
-		return (float)$this->weight->convert($value, $from, $to);
+		return round((float)$this->weight->convert($value, $from, $to), 3);
 	}
 
 	/**
@@ -139,6 +139,6 @@ class Builder {
 	 * @return float
 	 */
 	private function toCentimetres($value, $from, int $to): float {
-		return (float)$this->length->convert((float)$value, $from, $to);
+		return round((float)$this->length->convert((float)$value, $from, $to), 2);
 	}
 }
