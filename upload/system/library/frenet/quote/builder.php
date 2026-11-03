@@ -71,6 +71,11 @@ class Builder {
 			throw new Exception('The length class mapped to centimetres does not exist: ' . $length_class_id);
 		}
 
+		$default_weight = $this->config->getDefaultWeight();
+		$minimum_length = $this->config->getMinimumLength();
+		$minimum_height = $this->config->getMinimumHeight();
+		$minimum_width = $this->config->getMinimumWidth();
+
 		$items = [];
 		$invoice_value = 0.0;
 
@@ -85,10 +90,10 @@ class Builder {
 			$weight = $this->toKilograms((float)$product['weight'] / $quantity, $product['weight_class_id'], $weight_class_id);
 
 			$items[] = new Item(
-				$weight > 0 ? $weight : $this->config->getDefaultWeight(),
-				$this->orDefault($this->toCentimetres($product['length'], $product['length_class_id'], $length_class_id), $this->config->getMinimumLength()),
-				$this->orDefault($this->toCentimetres($product['height'], $product['length_class_id'], $length_class_id), $this->config->getMinimumHeight()),
-				$this->orDefault($this->toCentimetres($product['width'], $product['length_class_id'], $length_class_id), $this->config->getMinimumWidth()),
+				$weight > 0 ? $weight : $default_weight,
+				$this->atLeast($this->toCentimetres($product['length'], $product['length_class_id'], $length_class_id), $minimum_length),
+				$this->atLeast($this->toCentimetres($product['height'], $product['length_class_id'], $length_class_id), $minimum_height),
+				$this->atLeast($this->toCentimetres($product['width'], $product['length_class_id'], $length_class_id), $minimum_width),
 				$quantity,
 				$details['sku'],
 				$details['category']
@@ -116,11 +121,11 @@ class Builder {
 
 	/**
 	 * @param float $value
-	 * @param float $default
+	 * @param float $minimum
 	 * @return float
 	 */
-	private function orDefault(float $value, float $default): float {
-		return $value > 0 ? $value : $default;
+	private function atLeast(float $value, float $minimum): float {
+		return round(max($value, $minimum), 2);
 	}
 
 	/**
@@ -140,6 +145,6 @@ class Builder {
 	 * @return float
 	 */
 	private function toCentimetres($value, $from, int $to): float {
-		return round((float)$this->length->convert((float)$value, $from, $to), 2);
+		return (float)$this->length->convert((float)$value, $from, $to);
 	}
 }

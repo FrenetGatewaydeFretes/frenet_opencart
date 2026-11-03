@@ -79,6 +79,16 @@ class BuilderTest extends TestCase {
 		static::assertSame(1000, $items[2]['Quantity']);
 	}
 
+	public function testRaisesMeasuresBelowTheMinimumToTheMinimum(): void {
+		$items = $this->items([
+			$this->product(['length' => 10, 'height' => 0.5, 'width' => 5]),
+			$this->product(['length' => 1, 'height' => 1, 'width' => 1, 'length_class_id' => self::MM])
+		]);
+
+		static::assertSame([16.0, 2.0, 11.0], [$items[0]['Length'], $items[0]['Height'], $items[0]['Width']]);
+		static::assertSame([16.0, 2.0, 11.0], [$items[1]['Length'], $items[1]['Height'], $items[1]['Width']]);
+	}
+
 	public function testUsesTheClassesTheStoreOwnerMappedEvenWhenGramsAreTheStoreDefault(): void {
 		$weight = new Weight([self::KG => ['unit' => 'kg', 'value' => 0.001], self::G => ['unit' => 'g', 'value' => 1.0]]);
 

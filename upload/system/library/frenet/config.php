@@ -129,7 +129,7 @@ class Config {
 	}
 
 	/**
-	 * Height in centimetres sent for a product registered without one.
+	 * Smallest height in centimetres sent for a product, also used when the product has none.
 	 *
 	 * @return float
 	 */
@@ -138,7 +138,7 @@ class Config {
 	}
 
 	/**
-	 * Width in centimetres sent for a product registered without one.
+	 * Smallest width in centimetres sent for a product, also used when the product has none.
 	 *
 	 * @return float
 	 */
@@ -147,7 +147,7 @@ class Config {
 	}
 
 	/**
-	 * Length in centimetres sent for a product registered without one.
+	 * Smallest length in centimetres sent for a product, also used when the product has none.
 	 *
 	 * @return float
 	 */
