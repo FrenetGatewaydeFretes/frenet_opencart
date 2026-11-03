@@ -63,3 +63,51 @@ if (!class_exists('Log', false)) {
 		}
 	}
 }
+
+if (!class_exists('DB', false)) {
+	/**
+	 * Same query API as the OpenCart 3 core DB, answering from a queue of row sets and recording every SQL.
+	 */
+	class DB {
+		/**
+		 * @var string[]
+		 */
+		public $queries = [];
+
+		/**
+		 * @var array<int, array<int, array<string, mixed>>>
+		 */
+		private $results;
+
+		/**
+		 * @param array<int, array<int, array<string, mixed>>> $results
+		 */
+		public function __construct(array $results) {
+			$this->results = $results;
+		}
+
+		/**
+		 * @param string $sql
+		 * @return \stdClass
+		 */
+		public function query($sql) {
+			$this->queries[] = $sql;
+			$rows = array_shift($this->results) ?? [];
+
+			$result = new \stdClass();
+			$result->rows = $rows;
+			$result->row = $rows[0] ?? [];
+			$result->num_rows = count($rows);
+
+			return $result;
+		}
+
+		/**
+		 * @param string $value
+		 * @return string
+		 */
+		public function escape($value) {
+			return addslashes($value);
+		}
+	}
+}
