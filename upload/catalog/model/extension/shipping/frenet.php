@@ -4,6 +4,7 @@ use Frenet\Config as FrenetConfig;
 use Frenet\Http\Client;
 use Frenet\Log as FrenetLog;
 use Frenet\Quote\Builder;
+use Frenet\Quote\Catalog;
 
 class ModelExtensionShippingFrenet extends Model {
 	public function getQuote($address) {
@@ -17,7 +18,10 @@ class ModelExtensionShippingFrenet extends Model {
 		}
 
 		try {
-			$request = (new Builder($config, $this->weight, $this->length, VERSION))->build($address, $this->cart->getProducts(), (float)$this->cart->getSubTotal(), (string)($this->session->data['coupon'] ?? ''));
+			$products = $this->cart->getProducts();
+			$catalog = (new Catalog($this->db, DB_PREFIX, (int)$this->config->get('config_language_id')))->getProducts(array_column($products, 'product_id'));
+
+			$request = (new Builder($config, $this->weight, $this->length, VERSION))->build($address, $products, $catalog, (string)($this->session->data['coupon'] ?? ''));
 		} catch (\Throwable $exception) {
 			$log->error('Quote skipped: ' . $exception->getMessage(), ['postcode' => $address['postcode'] ?? '']);
 

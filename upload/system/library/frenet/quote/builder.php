@@ -8,7 +8,7 @@ use Cart\Weight;
 use Frenet\Config;
 
 /**
- * Turns the OpenCart cart and shipping address into a quote request, converting every product to kg and cm.
+ * Turns the OpenCart cart and shipping address into a quote request with the shipped products only, in kg and cm.
  */
 class Builder {
 	/**
@@ -50,16 +50,16 @@ class Builder {
 	}
 
 	/**
-	 * Builds the request for the products of Cart::getProducts(), whose weight is the line total.
+	 * Builds the request for the products of Cart::getProducts() that require shipping, whose weight is the line total.
 	 *
 	 * @param array<string, mixed> $address
 	 * @param array<int|string, array<string, mixed>> $products
-	 * @param float $invoice_value
+	 * @param array<int, array{sku: string, category: string}> $catalog
 	 * @param string $coupon
 	 * @return Request
 	 * @throws Exception
 	 */
-	public function build(array $address, array $products, float $invoice_value, string $coupon): Request {
+	public function build(array $address, array $products, array $catalog, string $coupon): Request {
 		$weight_class_id = $this->config->getWeightClassId();
 		$length_class_id = $this->config->getLengthClassId();
 
@@ -72,21 +72,32 @@ class Builder {
 		}
 
 		$items = [];
+		$invoice_value = 0.0;
 
 		foreach ($products as $product) {
 			$quantity = (int)$product['quantity'];
 
-			if ($quantity < 1) {
+			if ($quantity < 1 || !$product['shipping']) {
 				continue;
 			}
 
+			$details = $catalog[(int)$product['product_id']] ?? ['sku' => (string)($product['model'] ?? ''), 'category' => ''];
+
 			$items[] = new Item(
-				$this->toKilograms((float)$product['weight'] / $quantity, $product['weight_class_id'], $weight_class_id),
-				$this->toCentimetres($product['length'], $product['length_class_id'], $length_class_id),
-				$this->toCentimetres($product['height'], $product['length_class_id'], $length_class_id),
-				$this->toCentimetres($product['width'], $product['length_class_id'], $length_class_id),
-				$quantity
+				$this->orDefault($this->toKilograms((float)$product['weight'] / $quantity, $product['weight_class_id'], $weight_class_id), $this->config->getDefaultWeight()),
+				$this->orDefault($this->toCentimetres($product['length'], $product['length_class_id'], $length_class_id), $this->config->getMinimumLength()),
+				$this->orDefault($this->toCentimetres($product['height'], $product['length_class_id'], $length_class_id), $this->config->getMinimumHeight()),
+				$this->orDefault($this->toCentimetres($product['width'], $product['length_class_id'], $length_class_id), $this->config->getMinimumWidth()),
+				$quantity,
+				$details['sku'],
+				$details['category']
 			);
+
+			$invoice_value += (float)$product['total'];
+		}
+
+		if (!$items) {
+			throw new Exception('No product in the cart requires shipping');
 		}
 
 		$country = (string)($address['iso_code_2'] ?? '');
@@ -95,11 +106,20 @@ class Builder {
 			$this->config->getOriginPostcode(),
 			(string)preg_replace('/\D/', '', (string)($address['postcode'] ?? '')),
 			$country !== '' ? $country : self::DEFAULT_COUNTRY,
-			$invoice_value,
+			round($invoice_value, 2),
 			$coupon,
 			$items,
 			$this->platform_version
 		);
+	}
+
+	/**
+	 * @param float $value
+	 * @param float $default
+	 * @return float
+	 */
+	private function orDefault(float $value, float $default): float {
+		return $value > 0 ? $value : $default;
 	}
 
 	/**
