@@ -79,14 +79,9 @@ class Builder {
 		$items = [];
 		$invoice_value = 0.0;
 
-		foreach ($products as $product) {
+		foreach ($this->filterShipped($products) as $product) {
 			$quantity = (int)$product['quantity'];
-
-			if ($quantity < 1 || !$product['shipping']) {
-				continue;
-			}
-
-			$details = $catalog[(int)$product['product_id']] ?? ['sku' => (string)($product['model'] ?? ''), 'category' => ''];
+			$details = $catalog[(int)$product['product_id']] ?? ['sku' => $this->decode($product['model'] ?? ''), 'category' => ''];
 			$weight = $this->toKilograms((float)$product['weight'] / $quantity, $product['weight_class_id'], $weight_class_id);
 
 			$items[] = new Item(
@@ -120,12 +115,32 @@ class Builder {
 	}
 
 	/**
+	 * Products of Cart::getProducts() that go into the quote: the ones that require shipping.
+	 *
+	 * @param array<int|string, array<string, mixed>> $products
+	 * @return array<int|string, array<string, mixed>>
+	 */
+	public function filterShipped(array $products): array {
+		return array_filter($products, static function (array $product): bool {
+			return (int)$product['quantity'] > 0 && (bool)$product['shipping'];
+		});
+	}
+
+	/**
 	 * @param float $value
 	 * @param float $minimum
 	 * @return float
 	 */
 	private function atLeast(float $value, float $minimum): float {
 		return round(max($value, $minimum), 2);
+	}
+
+	/**
+	 * @param mixed $value
+	 * @return string
+	 */
+	private function decode($value): string {
+		return trim(html_entity_decode((string)$value, ENT_QUOTES, 'UTF-8'));
 	}
 
 	/**

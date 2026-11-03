@@ -133,11 +133,21 @@ class BuilderTest extends TestCase {
 		static::assertSame('DESCONTO10', $request['Coupom']);
 	}
 
-	public function testSendsTheModelWhenTheCatalogHasNoDetailsForTheProduct(): void {
-		$items = $this->items([$this->product(['product_id' => 99, 'model' => 'MOD-99'])]);
+	public function testSendsTheDecodedModelWhenTheCatalogHasNoDetailsForTheProduct(): void {
+		$items = $this->items([$this->product(['product_id' => 99, 'model' => 'A&amp;B-01'])]);
 
-		static::assertSame('MOD-99', $items[0]['SKU']);
+		static::assertSame('A&B-01', $items[0]['SKU']);
 		static::assertSame('', $items[0]['Category']);
+	}
+
+	public function testKeepsOnlyTheProductsThatRequireShipping(): void {
+		$products = [
+			'a' => $this->product(['product_id' => 41]),
+			'b' => $this->product(['product_id' => 50, 'shipping' => '0']),
+			'c' => $this->product(['product_id' => 51, 'quantity' => 0])
+		];
+
+		static::assertSame(['a'], array_keys($this->createBuilder()->filterShipped($products)));
 	}
 
 	public function testRefusesACartWithoutProductsToShip(): void {

@@ -17,11 +17,18 @@ class ModelExtensionShippingFrenet extends Model {
 			return [];
 		}
 
-		try {
-			$products = $this->cart->getProducts();
-			$catalog = (new Catalog($this->db, DB_PREFIX, (int)$this->config->get('config_language_id')))->getProducts(array_column($products, 'product_id'));
+		$builder = new Builder($config, $this->weight, $this->length, VERSION);
+		$products = $this->cart->getProducts();
 
-			$request = (new Builder($config, $this->weight, $this->length, VERSION))->build($address, $products, $catalog, (string)($this->session->data['coupon'] ?? ''));
+		try {
+			$catalog = (new Catalog($this->db, DB_PREFIX, (int)$this->config->get('config_language_id')))->getProducts(array_column($builder->filterShipped($products), 'product_id'));
+		} catch (\Throwable $exception) {
+			$log->error('SKU and categories could not be read, quoting with the model only: ' . $exception->getMessage());
+			$catalog = [];
+		}
+
+		try {
+			$request = $builder->build($address, $products, $catalog, (string)($this->session->data['coupon'] ?? ''));
 		} catch (\Throwable $exception) {
 			$log->error('Quote skipped: ' . $exception->getMessage(), ['postcode' => $address['postcode'] ?? '']);
 
