@@ -62,7 +62,8 @@ A cotação passa por estas classes:
 
 | Classe | Papel |
 | --- | --- |
-| `Frenet\Quote\Builder` | monta a `Request` a partir do carrinho e do endereço, convertendo peso e medidas para as classes de quilo e centímetro escolhidas no admin |
+| `Frenet\Quote\Builder` | monta a `Request` só com os itens que exigem envio (`shipping = 1`). Converte peso e medidas para as classes de quilo e centímetro escolhidas no admin, arredonda em 3 e 2 casas e usa os mínimos do admin quando o produto não tem o valor. O valor declarado é a soma do `total` desses itens: preço de venda × quantidade, sem cupom e sem imposto |
+| `Frenet\Quote\Catalog` | busca, para os produtos do carrinho, o SKU (ou o modelo, quando o SKU está vazio) e os nomes das categorias no idioma da loja, separados por `\|` |
 | `Frenet\Quote\Request` e `Item` | corpo do `POST /shipping/quote` |
 | `Frenet\Api` | envia a cotação com o token e o `User-Agent` com a versão do módulo. Repete timeout, falha de conexão, 5xx e JSON inválido até o número de tentativas, com 300 ms entre elas; nunca repete 4xx. Esgotadas as tentativas, lança `Frenet\Quote\UnavailableException` |
 | `Frenet\Quote\Parser`, `Result` e `Service` | leem os serviços da resposta, mesmo quando vem um só. Separam os que podem ser oferecidos dos que vieram com `Error`, guardando o `Msg`, e leem o `Message` da resposta |
