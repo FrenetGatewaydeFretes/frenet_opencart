@@ -50,6 +50,6 @@ class ApiMockTest extends TestCase {
 	 * @return Request
 	 */
 	private function request(): Request {
-		return new Request('01310100', '20040020', 'BR', 100.0, '', [new Item(1.0, 16.0, 2.0, 11.0, 1)], '3.0.5.1');
+		return new Request('01310100', '20040020', 'BR', 100.0, '', [new Item(1.0, 16.0, 2.0, 11.0, 1, 'CAM-01', 'Camisetas')], '3.0.5.1');
 	}
 }

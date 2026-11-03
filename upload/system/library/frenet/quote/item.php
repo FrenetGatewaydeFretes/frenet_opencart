@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Frenet\Quote;
 
 /**
- * One cart line in the units the Frenet API expects: kilograms per unit and centimetres.
+ * One cart line in the units the Frenet API expects, kilograms per unit and centimetres, with its code and categories.
  */
 class Item {
 	/**
@@ -33,18 +33,32 @@ class Item {
 	private $quantity;
 
 	/**
+	 * @var string
+	 */
+	private $sku;
+
+	/**
+	 * @var string
+	 */
+	private $category;
+
+	/**
 	 * @param float $weight
 	 * @param float $length
 	 * @param float $height
 	 * @param float $width
 	 * @param int $quantity
+	 * @param string $sku
+	 * @param string $category
 	 */
-	public function __construct(float $weight, float $length, float $height, float $width, int $quantity) {
+	public function __construct(float $weight, float $length, float $height, float $width, int $quantity, string $sku, string $category) {
 		$this->weight = $weight;
 		$this->length = $length;
 		$this->height = $height;
 		$this->width = $width;
 		$this->quantity = $quantity;
+		$this->sku = $sku;
+		$this->category = $category;
 	}
 
 	/**
@@ -59,8 +73,8 @@ class Item {
 			'Height'    => $this->height,
 			'Width'     => $this->width,
 			'Diameter'  => 0,
-			'SKU'       => '',
-			'Category'  => '',
+			'SKU'       => $this->sku,
+			'Category'  => $this->category,
 			'isFragile' => false,
 			'Quantity'  => $this->quantity
 		];
