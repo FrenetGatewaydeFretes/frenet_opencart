@@ -37,7 +37,10 @@
         "cs": "php-cs-fixer fix --dry-run --diff",
         "cs-fix": "php-cs-fixer fix",
         "compat": "phpcs --standard=phpcs.xml.dist",
-        "phpstan": "phpstan analyse --no-progress",
+        "phpstan": [
+            "phpstan analyse --no-progress",
+            "phpstan analyse --no-progress --configuration=phpstan.tests.neon.dist"
+        ],
         "test": "phpunit",
         "check": [
             "@cs",

@@ -3,7 +3,10 @@ parameters:
     phpVersion: 70100
     paths:
         - upload/system/library/frenet
+        - upload/admin/controller/extension/shipping/frenet.php
+        - upload/catalog/model/extension/shipping/frenet.php
     bootstrapFiles:
         - tests/stubs/opencart.php
         - tests/stubs/cart.php
+        - tests/stubs/engine.php
     tmpDir: .cache/phpstan
