@@ -104,12 +104,12 @@ class Api {
 		}
 
 		$key = $this->cache->getKey($this->token, $body);
-		$cached = $this->cache->get($key);
+		$cached = $this->readCache($key);
 
 		if ($cached !== null) {
 			$this->log->debug('Quote served from the cache', ['key' => $key, 'body' => $payload]);
 
-			return (new Parser())->parse($cached);
+			return $cached;
 		}
 
 		$headers = [
@@ -160,13 +160,46 @@ class Api {
 			}
 
 			if ($result->getServices()) {
-				$this->cache->set($key, $response->getBody());
+				$this->writeCache($key, $response->getBody());
 			}
 
 			return $result;
 		}
 
 		throw new UnavailableException('The Frenet API gave no usable answer after ' . $this->attempts . ' attempt(s). Last error: ' . $error);
+	}
+
+	/**
+	 * Returns the cached answer, treating any cache failure as a miss so the quote still reaches the API.
+	 *
+	 * @param string $key
+	 * @return Result|null
+	 */
+	private function readCache(string $key): ?Result {
+		try {
+			$body = $this->cache->get($key);
+
+			return $body !== null ? (new Parser())->parse($body) : null;
+		} catch (\Throwable $exception) {
+			$this->log->error('Quote cache could not be read, asking the Frenet API: ' . $exception->getMessage());
+
+			return null;
+		}
+	}
+
+	/**
+	 * Stores the answer, logging a cache failure instead of losing a quote the API already answered.
+	 *
+	 * @param string $key
+	 * @param string $body
+	 * @return void
+	 */
+	private function writeCache(string $key, string $body): void {
+		try {
+			$this->cache->set($key, $body);
+		} catch (\Throwable $exception) {
+			$this->log->error('Quote cache could not be written: ' . $exception->getMessage());
+		}
 	}
 
 	/**

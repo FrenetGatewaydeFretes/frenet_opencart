@@ -240,6 +240,47 @@ class ApiTest extends TestCase {
 		static::assertCount(2, $client->requests);
 	}
 
+	public function testQuotesTheApiWhenTheCacheCannotBeRead(): void {
+		$this->store = new class extends \Cache {
+			public function get($key) {
+				throw new \ValueError('fread(): Argument #2 ($length) must be greater than 0');
+			}
+		};
+		$client = new FakeClient([new Response(200, self::SERVICES)]);
+
+		$result = $this->createApi($client, 3)->quote($this->request());
+
+		static::assertCount(1, $client->requests);
+		static::assertCount(1, $result->getServices());
+		static::assertSame(['ERROR Quote cache could not be read, asking the Frenet API: fread(): Argument #2 ($length) must be greater than 0'], $this->writer->lines);
+	}
+
+	public function testQuotesTheApiWhenTheCachedAnswerCannotBeParsed(): void {
+		$client = new FakeClient([new Response(200, self::SERVICES)]);
+		$api = $this->createApi($client, 3);
+		$this->store->set((new Cache($this->store))->getKey('abc123', (string)json_encode($this->request()->toArray())), ['expires' => time() + 60, 'body' => '<html>Bad gateway</html>']);
+
+		$result = $api->quote($this->request());
+
+		static::assertCount(1, $client->requests);
+		static::assertCount(1, $result->getServices());
+		static::assertSame(['ERROR Quote cache could not be read, asking the Frenet API: The Frenet API answered with invalid JSON'], $this->writer->lines);
+	}
+
+	public function testReturnsTheQuoteWhenTheCacheCannotBeWritten(): void {
+		$this->store = new class extends \Cache {
+			public function set($key, $value) {
+				throw new \TypeError('flock(): Argument #1 ($stream) must be of type resource, bool given');
+			}
+		};
+		$client = new FakeClient([new Response(200, self::SERVICES)]);
+
+		$result = $this->createApi($client, 3)->quote($this->request());
+
+		static::assertCount(1, $result->getServices());
+		static::assertSame(['ERROR Quote cache could not be written: flock(): Argument #1 ($stream) must be of type resource, bool given'], $this->writer->lines);
+	}
+
 	public function testLogsACachedQuoteWithoutTheTokenWhenDebugIsOn(): void {
 		$client = new FakeClient([new Response(200, self::SERVICES)]);
 		$api = $this->createApi($client, 3, 5, true);
