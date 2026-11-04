@@ -125,6 +125,22 @@ class ConfigTest extends TestCase {
 		static::assertSame(1.0, $config->getDefaultWeight());
 	}
 
+	public function testFormatsThePostcodeTypedInTheAdmin(): void {
+		static::assertSame('01310-100', Config::parsePostcode('01310100'));
+		static::assertSame('01310-100', Config::parsePostcode(' 01310-100 '));
+		static::assertSame('01310-100', Config::parsePostcode('01.310-100'));
+		static::assertSame('01310-100', Config::parsePostcode('01310 100'));
+	}
+
+	public function testRefusesAPostcodeWithoutEightDigits(): void {
+		static::assertNull(Config::parsePostcode('0131010'));
+		static::assertNull(Config::parsePostcode('013101000'));
+		static::assertNull(Config::parsePostcode('01310-10A'));
+		static::assertNull(Config::parsePostcode('CEP 01310100'));
+		static::assertNull(Config::parsePostcode(''));
+		static::assertNull(Config::parsePostcode(null));
+	}
+
 	public function testParsesPositiveNumbersTypedInTheAdmin(): void {
 		static::assertSame(12.5, Config::parsePositive(' 12,5 '));
 		static::assertSame(0.0004, Config::parsePositive('0.0004'));

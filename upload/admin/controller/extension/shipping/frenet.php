@@ -67,7 +67,7 @@ class ControllerExtensionShippingFrenet extends Controller {
 				$values[$field] = $this->request->post[$field] ?? '';
 			}
 
-			$values['shipping_frenet_postcode'] = trim((string)$values['shipping_frenet_postcode']);
+			$values['shipping_frenet_postcode'] = FrenetConfig::parsePostcode($values['shipping_frenet_postcode']);
 
 			$adjusted = [];
 
@@ -204,7 +204,7 @@ class ControllerExtensionShippingFrenet extends Controller {
 			$this->error['warning'] = $this->language->get('error_permission');
 		}
 
-		if (!preg_match('/^\d{5}-?\d{3}$/', trim((string)($this->request->post['shipping_frenet_postcode'] ?? '')))) {
+		if (FrenetConfig::parsePostcode($this->request->post['shipping_frenet_postcode'] ?? '') === null) {
 			$this->error['postcode'] = $this->language->get('error_postcode');
 		}
 
