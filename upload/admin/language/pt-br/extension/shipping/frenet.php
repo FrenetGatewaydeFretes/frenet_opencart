@@ -13,6 +13,7 @@ $_['text_token_saved']      = 'Token salvo. Deixe em branco para mantê-lo.';
 $_['text_panel']            = 'Abrir o painel Frenet';
 $_['text_adjusted']         = '%s ajustado para %d (aceita de %d a %d).';
 $_['text_default_used']     = '%s precisa ser maior que zero: usado %s.';
+$_['text_adjusted_min']     = '%s aceita só números inteiros a partir de 0: usado %d.';
 
 // Entry
 $_['entry_token']           = 'Token';
@@ -29,10 +30,14 @@ $_['entry_attempts']        = 'Tentativas';
 $_['entry_debug']           = 'Debug';
 $_['entry_status']          = 'Situação';
 $_['entry_sort_order']      = 'Posição';
+$_['entry_delivery_time']   = 'Exibir prazo';
+$_['entry_additional_days'] = 'Dias adicionais';
+$_['entry_tax_class']       = 'Grupo de impostos';
+$_['entry_geo_zone']        = 'Região geográfica';
 
 // Help
 $_['help_token']            = 'Token gerado no painel Frenet. Por segurança, o token salvo nunca é exibido.';
-$_['help_msg_prazo']        = 'Nome do frete na loja: %s é o serviço e %d os dias de entrega. Em branco, mostra só o serviço.';
+$_['help_msg_prazo']        = 'Nome do frete na loja: %s é o serviço e %d os dias de entrega. Em branco, usa a mensagem do exemplo.';
 $_['help_weight_class']     = 'Classe de peso da loja que corresponde ao quilograma. O peso de cada produto é convertido para ela.';
 $_['help_length_class']     = 'Classe de medida da loja que corresponde ao centímetro. As medidas de cada produto são convertidas para ela.';
 $_['help_minimum_height']   = 'Menor altura enviada à Frenet: produto mais baixo ou sem altura vai com este valor. Padrão: 2 cm, a mínima dos Correios.';
@@ -42,6 +47,9 @@ $_['help_default_weight']   = 'Peso enviado à Frenet para o produto cadastrado 
 $_['help_timeout']          = 'Quanto cada tentativa de cotação espera a Frenet responder, de 2 a 10 segundos.';
 $_['help_attempts']         = 'Quantas vezes a cotação é enviada quando a Frenet não responde ou responde com erro do servidor, de 1 a 3. Token inválido e outros erros 4xx nunca são repetidos.';
 $_['help_debug']            = 'Grava em frenet.log cada requisição e resposta da cotação, sem o token. Os erros são gravados sempre.';
+$_['help_delivery_time']    = 'Mostra no nome do frete o prazo da Frenet mais os dias adicionais, com a mensagem abaixo.';
+$_['help_additional_days']  = 'Dias somados ao prazo de todos os serviços Frenet, como o tempo para separar o pedido. Somados também quando a transportadora não informa o prazo.';
+$_['help_geo_zone']         = 'O frete Frenet só aparece para endereços desta região. Em Todas as regiões, aparece para qualquer endereço.';
 $_['placeholder_msg_prazo'] = '%s - Em média %d dia(s)';
 
 // Error

@@ -14,7 +14,9 @@ class ControllerExtensionShippingFrenet extends Controller {
 	private const FIELDS = [
 		'shipping_frenet_status',
 		'shipping_frenet_postcode',
+		'shipping_frenet_delivery_time',
 		'shipping_frenet_msg_prazo',
+		'shipping_frenet_additional_days',
 		'shipping_frenet_weight_class_id',
 		'shipping_frenet_length_class_id',
 		'shipping_frenet_minimum_height',
@@ -24,6 +26,8 @@ class ControllerExtensionShippingFrenet extends Controller {
 		'shipping_frenet_timeout',
 		'shipping_frenet_attempts',
 		'shipping_frenet_debug',
+		'shipping_frenet_tax_class_id',
+		'shipping_frenet_geo_zone_id',
 		'shipping_frenet_sort_order'
 	];
 
@@ -74,6 +78,14 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 				$values[$field] = $value;
 			}
+
+			$additional_days = max(0, (int)$values['shipping_frenet_additional_days']);
+
+			if (trim((string)$values['shipping_frenet_additional_days']) !== '' && (string)$additional_days !== trim((string)$values['shipping_frenet_additional_days'])) {
+				$adjusted[] = sprintf($this->language->get('text_adjusted_min'), $this->language->get('entry_additional_days'), $additional_days);
+			}
+
+			$values['shipping_frenet_additional_days'] = $additional_days;
 
 			foreach (self::MINIMUMS as $field => [$label, $default]) {
 				$value = FrenetConfig::parsePositive($values[$field]);
@@ -126,6 +138,8 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 		$frenet_config = new FrenetConfig($this->config);
 
+		$data['shipping_frenet_delivery_time'] = $frenet_config->isDeliveryTimeShown();
+		$data['shipping_frenet_additional_days'] = $frenet_config->getAdditionalDays();
 		$data['shipping_frenet_timeout'] = $frenet_config->getTimeout();
 		$data['shipping_frenet_attempts'] = $frenet_config->getAttempts();
 		$data['shipping_frenet_minimum_height'] = $this->formatNumber($frenet_config->getMinimumHeight());
@@ -152,6 +166,14 @@ class ControllerExtensionShippingFrenet extends Controller {
 		if (!$data['shipping_frenet_length_class_id']) {
 			$data['shipping_frenet_length_class_id'] = $this->findClassId($data['length_classes'], 'length_class_id', 'cm');
 		}
+
+		$this->load->model('localisation/tax_class');
+
+		$data['tax_classes'] = $this->model_localisation_tax_class->getTaxClasses();
+
+		$this->load->model('localisation/geo_zone');
+
+		$data['geo_zones'] = $this->model_localisation_geo_zone->getGeoZones();
 
 		$data['header'] = $this->load->controller('common/header');
 		$data['column_left'] = $this->load->controller('common/column_left');
