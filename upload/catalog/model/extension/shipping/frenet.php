@@ -64,8 +64,8 @@ class ModelExtensionShippingFrenet extends Model {
 				'code'         => 'frenet.' . $service->getCode(),
 				'title'        => $service->getTitle($template, $config->getAdditionalDays()),
 				'cost'         => $service->getPrice(),
-				'tax_class_id' => 0,
-				'text'         => $this->currency->format($this->tax->calculate($service->getPrice(), 0, $this->config->get('config_tax')), $this->session->data['currency'])
+				'tax_class_id' => $config->getTaxClassId(),
+				'text'         => $this->currency->format($this->tax->calculate($service->getPrice(), $config->getTaxClassId(), $this->config->get('config_tax')), $this->session->data['currency'])
 			];
 		}
 
