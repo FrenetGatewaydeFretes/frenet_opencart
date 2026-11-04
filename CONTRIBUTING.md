@@ -51,7 +51,7 @@ upload/                         vai para o .ocmod.zip; espelha a raiz da loja
 tests/
   unit/                         PHPUnit das classes de system/library/frenet
   mock/                         mock da API da Frenet (servidor embutido do PHP)
-  stubs/                        Config e Log com a mesma API do core, para os testes
+  stubs/                        Config, Log, DB e Cache com a mesma API do core, para os testes
 ```
 
 O autoloader do OpenCart 3 transforma o nome da classe no caminho do arquivo em minúsculas: `Frenet\Http\Client` fica em `system/library/frenet/http/client.php`. Por isso todo arquivo da biblioteca tem nome minúsculo.
@@ -65,7 +65,8 @@ A cotação passa por estas classes:
 | `Frenet\Quote\Builder` | monta a `Request` só com os itens que exigem envio (`shipping = 1`). Converte peso e medidas para as classes de quilo e centímetro escolhidas no admin. Medidas abaixo dos mínimos do admin sobem para o mínimo, com 2 casas; o peso padrão só entra quando o produto não tem peso, e o peso perde apenas o ruído da conversão (6 casas), para item leve não virar zero. O valor declarado é a soma do `total` desses itens: preço de venda × quantidade, sem cupom e sem imposto |
 | `Frenet\Quote\Catalog` | busca, para os produtos com envio do carrinho, o SKU (ou o modelo, quando o SKU está vazio) e os nomes das categorias ativas da loja atual, no idioma da loja, separados por `\|`. Se a consulta falhar, a cotação segue com o modelo e sem categoria |
 | `Frenet\Quote\Request` e `Item` | corpo do `POST /shipping/quote` |
-| `Frenet\Api` | envia a cotação com o token e o `User-Agent` com a versão do módulo. Repete timeout, falha de conexão, 5xx e JSON inválido até o número de tentativas, com 300 ms entre elas; nunca repete 4xx. Esgotadas as tentativas, lança `Frenet\Quote\UnavailableException` |
+| `Frenet\Api` | responde do cache quando a mesma cotação foi feita há menos de 10 minutos. Senão, envia a cotação com o token e o `User-Agent` com a versão do módulo. Repete timeout, falha de conexão, 5xx e JSON inválido até o número de tentativas, com 300 ms entre elas; nunca repete 4xx. Esgotadas as tentativas, lança `Frenet\Quote\UnavailableException` |
+| `Frenet\Quote\Cache` | guarda no `$this->cache` do OpenCart o corpo da resposta com pelo menos um serviço, mesmo que outros tenham vindo com `Error`. A chave é o hash do token e do corpo da requisição, então outra conta, outro CEP ou qualquer mudança no carrinho ou nas configurações enviadas consulta a Frenet de novo. Falha, 4xx, JSON inválido e resposta sem serviço nunca entram no cache. O cache do core expira tudo pelo `cache_expire` da loja (1 hora por padrão), por isso a entrada leva a própria validade de 10 minutos (`Cache::TTL`) |
 | `Frenet\Quote\Parser`, `Result` e `Service` | leem os serviços da resposta, mesmo quando vem um só. Separam os que podem ser oferecidos dos que vieram com `Error`, guardando o `Msg`, e leem o `Message` da resposta. `Service::getTitle()` monta o nome do frete com a mensagem do prazo, somando os dias adicionais do admin ao `DeliveryTime`, mesmo quando a transportadora não informa o prazo (como o WooCommerce) |
 
 O model `catalog/model/extension/shipping/frenet.php` só cota quando o endereço está na região geográfica escolhida no admin (Todas as regiões = qualquer endereço), com a mesma consulta a `zone_to_geo_zone` dos métodos Peso e Item do core. Se a região escolhida for excluída, o frete Frenet continua escondido, como no core, mas o erro vai para o `frenet.log` e o admin mostra um alerta. O grupo de impostos do admin vai no `tax_class_id` de cada serviço. Com o prazo ligado e a mensagem em branco, o nome usa `text_delivery_time` do idioma da loja.
