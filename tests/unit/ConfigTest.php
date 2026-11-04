@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace Frenet\Tests;
 
 use Frenet\Config;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 
 class ConfigTest extends TestCase {
@@ -125,29 +127,39 @@ class ConfigTest extends TestCase {
 		static::assertSame(1.0, $config->getDefaultWeight());
 	}
 
-	public function testFormatsThePostcodeTypedInTheAdmin(): void {
-		static::assertSame('01310-100', Config::parsePostcode('01310100'));
-		static::assertSame('01310-100', Config::parsePostcode(' 01310-100 '));
-		static::assertSame('01310-100', Config::parsePostcode('01.310-100'));
-		static::assertSame('01310-100', Config::parsePostcode('01310 100'));
+	#[TestWith(['01310100'], 'digits only')]
+	#[TestWith([' 01310-100 '], 'hyphen and spaces around')]
+	#[TestWith(['01.310-100'], 'dot and hyphen')]
+	#[TestWith(['01310 100'], 'space')]
+	public function testFormatsThePostcodeTypedInTheAdmin(string $postcode): void {
+		static::assertSame('01310-100', Config::parsePostcode($postcode));
 	}
 
-	public function testRefusesAPostcodeWithoutEightDigits(): void {
-		static::assertNull(Config::parsePostcode('0131010'));
-		static::assertNull(Config::parsePostcode('013101000'));
-		static::assertNull(Config::parsePostcode('01310-10A'));
-		static::assertNull(Config::parsePostcode('CEP 01310100'));
-		static::assertNull(Config::parsePostcode(''));
-		static::assertNull(Config::parsePostcode(null));
+	#[TestWith(['0131010'], 'seven digits')]
+	#[TestWith(['013101000'], 'nine digits')]
+	#[TestWith(['01310-10A'], 'letter')]
+	#[TestWith(['CEP 01310100'], 'label')]
+	#[TestWith([''], 'empty')]
+	#[TestWith([null], 'null')]
+	public function testRefusesAPostcodeWithoutEightDigits(?string $postcode): void {
+		static::assertNull(Config::parsePostcode($postcode));
 	}
 
-	public function testParsesPositiveNumbersTypedInTheAdmin(): void {
-		static::assertSame(12.5, Config::parsePositive(' 12,5 '));
-		static::assertSame(0.0004, Config::parsePositive('0.0004'));
-		static::assertNull(Config::parsePositive('0'));
-		static::assertNull(Config::parsePositive('-3'));
-		static::assertNull(Config::parsePositive('abc'));
-		static::assertNull(Config::parsePositive(null));
+	#[DataProvider('provideParsesPositiveNumbersTypedInTheAdminCases')]
+	public function testParsesPositiveNumbersTypedInTheAdmin(?string $value, ?float $expected): void {
+		static::assertSame($expected, Config::parsePositive($value));
+	}
+
+	/**
+	 * @return iterable<string, array{0: string|null, 1: float|null}>
+	 */
+	public static function provideParsesPositiveNumbersTypedInTheAdminCases(): iterable {
+		yield 'comma decimal' => [' 12,5 ', 12.5];
+		yield 'light weight' => ['0.0004', 0.0004];
+		yield 'zero' => ['0', null];
+		yield 'negative' => ['-3', null];
+		yield 'text' => ['abc', null];
+		yield 'null' => [null, null];
 	}
 
 	/**
