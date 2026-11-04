@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace Frenet\Tests;
 
 use Frenet\Config;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 
 class ConfigTest extends TestCase {
@@ -12,7 +14,7 @@ class ConfigTest extends TestCase {
 			'shipping_frenet_status'     => '1',
 			'shipping_frenet_token'      => 'abc123',
 			'shipping_frenet_postcode'   => '01310100',
-			'shipping_frenet_msg_prazo'  => '%s - em até %d dia(s)',
+			'shipping_frenet_msg_prazo'  => " %s - em até %d dia(s) ",
 			'shipping_frenet_weight_class_id' => '1',
 			'shipping_frenet_length_class_id' => '2',
 			'shipping_frenet_sort_order' => '3'
@@ -75,6 +77,33 @@ class ConfigTest extends TestCase {
 		static::assertSame(3, $high->getAttempts());
 	}
 
+	public function testReadsTheDeliveryTimeTheTaxClassAndTheGeoZone(): void {
+		$config = $this->createConfig([
+			'shipping_frenet_delivery_time'   => '0',
+			'shipping_frenet_additional_days' => '2',
+			'shipping_frenet_tax_class_id'    => '9',
+			'shipping_frenet_geo_zone_id'     => '4'
+		]);
+
+		static::assertFalse($config->isDeliveryTimeShown());
+		static::assertSame(2, $config->getAdditionalDays());
+		static::assertSame(9, $config->getTaxClassId());
+		static::assertSame(4, $config->getGeoZoneId());
+	}
+
+	public function testShowsTheDeliveryTimeEverywhereWithoutTaxWhenNothingIsSaved(): void {
+		$config = $this->createConfig(['shipping_frenet_delivery_time' => '']);
+
+		static::assertTrue($config->isDeliveryTimeShown());
+		static::assertSame(0, $config->getAdditionalDays());
+		static::assertSame(0, $config->getTaxClassId());
+		static::assertSame(0, $config->getGeoZoneId());
+	}
+
+	public function testNeverSubtractsDaysFromTheDeliveryTime(): void {
+		static::assertSame(0, $this->createConfig(['shipping_frenet_additional_days' => '-3'])->getAdditionalDays());
+	}
+
 	public function testReadsTheMinimumMeasuresAndTheDefaultWeight(): void {
 		$config = $this->createConfig([
 			'shipping_frenet_minimum_height' => '3',
@@ -98,13 +127,39 @@ class ConfigTest extends TestCase {
 		static::assertSame(1.0, $config->getDefaultWeight());
 	}
 
-	public function testParsesPositiveNumbersTypedInTheAdmin(): void {
-		static::assertSame(12.5, Config::parsePositive(' 12,5 '));
-		static::assertSame(0.0004, Config::parsePositive('0.0004'));
-		static::assertNull(Config::parsePositive('0'));
-		static::assertNull(Config::parsePositive('-3'));
-		static::assertNull(Config::parsePositive('abc'));
-		static::assertNull(Config::parsePositive(null));
+	#[TestWith(['01310100'], 'digits only')]
+	#[TestWith([' 01310-100 '], 'hyphen and spaces around')]
+	#[TestWith(['01.310-100'], 'dot and hyphen')]
+	#[TestWith(['01310 100'], 'space')]
+	public function testFormatsThePostcodeTypedInTheAdmin(string $postcode): void {
+		static::assertSame('01310-100', Config::parsePostcode($postcode));
+	}
+
+	#[TestWith(['0131010'], 'seven digits')]
+	#[TestWith(['013101000'], 'nine digits')]
+	#[TestWith(['01310-10A'], 'letter')]
+	#[TestWith(['CEP 01310100'], 'label')]
+	#[TestWith([''], 'empty')]
+	#[TestWith([null], 'null')]
+	public function testRefusesAPostcodeWithoutEightDigits(?string $postcode): void {
+		static::assertNull(Config::parsePostcode($postcode));
+	}
+
+	#[DataProvider('provideParsesPositiveNumbersTypedInTheAdminCases')]
+	public function testParsesPositiveNumbersTypedInTheAdmin(?string $value, ?float $expected): void {
+		static::assertSame($expected, Config::parsePositive($value));
+	}
+
+	/**
+	 * @return iterable<string, array{0: string|null, 1: float|null}>
+	 */
+	public static function provideParsesPositiveNumbersTypedInTheAdminCases(): iterable {
+		yield 'comma decimal' => [' 12,5 ', 12.5];
+		yield 'light weight' => ['0.0004', 0.0004];
+		yield 'zero' => ['0', null];
+		yield 'negative' => ['-3', null];
+		yield 'text' => ['abc', null];
+		yield 'null' => [null, null];
 	}
 
 	/**

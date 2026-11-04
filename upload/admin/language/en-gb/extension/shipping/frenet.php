@@ -13,6 +13,8 @@ $_['text_token_saved']      = 'Token saved. Leave blank to keep it.';
 $_['text_panel']            = 'Open the Frenet panel';
 $_['text_adjusted']         = '%s adjusted to %d (accepts %d to %d).';
 $_['text_default_used']     = '%s must be greater than zero: %s used.';
+$_['text_adjusted_min']     = '%s only accepts whole numbers from 0: used %d.';
+$_['text_geo_zone_missing']  = 'The geo zone chosen for Frenet was deleted, so Frenet shipping is offered to no address. Choose another geo zone and save.';
 
 // Entry
 $_['entry_token']           = 'Token';
@@ -29,10 +31,14 @@ $_['entry_attempts']        = 'Attempts';
 $_['entry_debug']           = 'Debug';
 $_['entry_status']          = 'Status';
 $_['entry_sort_order']      = 'Sort Order';
+$_['entry_delivery_time']   = 'Show delivery time';
+$_['entry_additional_days'] = 'Additional days';
+$_['entry_tax_class']       = 'Tax Class';
+$_['entry_geo_zone']        = 'Geo Zone';
 
 // Help
 $_['help_token']            = 'Token generated in the Frenet panel. For security, the saved token is never displayed.';
-$_['help_msg_prazo']        = 'Rate name at checkout: %s is the service and %d the delivery days. Leave blank to show the service only.';
+$_['help_msg_prazo']        = 'Rate name at checkout: %s is the service and %d the delivery days. Leave blank to use the example message.';
 $_['help_weight_class']     = 'Store weight class that matches the kilogram. Each product weight is converted to it.';
 $_['help_length_class']     = 'Store length class that matches the centimetre. Each product dimension is converted to it.';
 $_['help_minimum_height']   = 'Smallest height sent to Frenet: a lower product, or one without height, goes with this value. Default: 2 cm, the Correios minimum.';
@@ -42,7 +48,13 @@ $_['help_default_weight']   = 'Weight sent to Frenet for a product registered wi
 $_['help_timeout']          = 'How long each quote attempt waits for Frenet to answer, from 2 to 10 seconds.';
 $_['help_attempts']         = 'How many times the quote is sent when Frenet does not answer or answers with a server error, from 1 to 3. An invalid token and other 4xx errors are never retried.';
 $_['help_debug']            = 'Writes every quote request and response to frenet.log, without the token. Errors are always written.';
+$_['help_delivery_time']    = 'Shows the Frenet delivery time plus the additional days in the rate name, with the message below.';
+$_['help_additional_days']  = 'Days added to the delivery time of every Frenet service, such as the time to pick the order. Also added when the carrier informs no delivery time.';
+$_['help_geo_zone']         = 'Frenet shipping is only offered to addresses in this geo zone. With All Zones, it is offered to any address.';
 $_['placeholder_msg_prazo'] = '%s - Average %d day(s)';
 
 // Error
 $_['error_permission']      = 'Warning: You do not have permission to modify Frenet shipping!';
+$_['error_warning']         = 'Warning: the settings were not saved. Fix the highlighted fields.';
+$_['error_postcode']        = 'The origin postcode must have 8 digits, such as 01310-100.';
+$_['error_token']           = 'Enter the token generated in the Frenet panel to enable the shipping.';

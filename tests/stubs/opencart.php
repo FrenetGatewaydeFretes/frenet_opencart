@@ -49,9 +49,15 @@ if (!class_exists('Log', false)) {
 		public $lines = [];
 
 		/**
+		 * @var string
+		 */
+		public $filename;
+
+		/**
 		 * @param string $filename
 		 */
 		public function __construct($filename) {
+			$this->filename = $filename;
 		}
 
 		/**

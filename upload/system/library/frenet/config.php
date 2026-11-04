@@ -102,12 +102,50 @@ class Config {
 	}
 
 	/**
-	 * Template for the rate title, where %s is the service name and %d the delivery days.
+	 * Template for the rate title, where %s is the service name and %d the delivery days, empty for the default one.
 	 *
 	 * @return string
 	 */
 	public function getDeliveryTimeMessage(): string {
-		return (string)$this->get('msg_prazo');
+		return trim((string)$this->get('msg_prazo'));
+	}
+
+	/**
+	 * Whether the rate title shows the delivery days, on until the store owner turns it off.
+	 *
+	 * @return bool
+	 */
+	public function isDeliveryTimeShown(): bool {
+		$value = $this->get('delivery_time');
+
+		return $value === null || $value === '' || (bool)$value;
+	}
+
+	/**
+	 * Days the store owner adds to the delivery time of every service, never negative.
+	 *
+	 * @return int
+	 */
+	public function getAdditionalDays(): int {
+		return max(0, (int)$this->get('additional_days'));
+	}
+
+	/**
+	 * Tax class charged on the shipping cost, 0 for none.
+	 *
+	 * @return int
+	 */
+	public function getTaxClassId(): int {
+		return (int)$this->get('tax_class_id');
+	}
+
+	/**
+	 * Geo zone where Frenet is offered, 0 for every address.
+	 *
+	 * @return int
+	 */
+	public function getGeoZoneId(): int {
+		return (int)$this->get('geo_zone_id');
 	}
 
 	/**
@@ -198,6 +236,24 @@ class Config {
 	 */
 	public function getSortOrder(): int {
 		return (int)$this->get('sort_order');
+	}
+
+	/**
+	 * Postcode typed in the admin as 00000-000, accepting dots, hyphens and spaces, or null when it does not have 8 digits.
+	 *
+	 * @param mixed $value
+	 * @return string|null
+	 */
+	public static function parsePostcode($value): ?string {
+		$postcode = trim((string)$value);
+
+		if (!preg_match('/^[0-9.\s-]+$/', $postcode)) {
+			return null;
+		}
+
+		$digits = (string)preg_replace('/\D/', '', $postcode);
+
+		return strlen($digits) === 8 ? substr($digits, 0, 5) . '-' . substr($digits, 5) : null;
 	}
 
 	/**

@@ -7,9 +7,25 @@ use Frenet\Quote\Builder;
 use Frenet\Quote\Catalog;
 
 class ModelExtensionShippingFrenet extends Model {
-	public function getQuote($address) {
+	/**
+	 * @param array<string, mixed> $address
+	 * @return array<string, mixed>
+	 */
+	public function getQuote(array $address): array {
 		$config = new FrenetConfig($this->config);
 		$log = new FrenetLog(new \Log(FrenetLog::FILENAME), $config->isDebug());
+
+		$geo_zone_id = $config->getGeoZoneId();
+
+		if ($geo_zone_id && !$this->inGeoZone($geo_zone_id, $address)) {
+			if ($this->geoZoneExists($geo_zone_id)) {
+				$log->debug('Quote skipped: the address is outside the Frenet geo zone', ['country_id' => $address['country_id'] ?? 0, 'zone_id' => $address['zone_id'] ?? 0]);
+			} else {
+				$log->error('Quote skipped: the geo zone ' . $geo_zone_id . ' chosen for Frenet no longer exists, choose another one in the settings');
+			}
+
+			return [];
+		}
 
 		if ($config->getToken() === '') {
 			$log->error('Quote skipped: the token is not configured', ['postcode' => $address['postcode'] ?? '']);
@@ -55,22 +71,45 @@ class ModelExtensionShippingFrenet extends Model {
 			return $this->method($config, [], $this->language->get('error_no_services'));
 		}
 
+		$template = $config->isDeliveryTimeShown() ? ($config->getDeliveryTimeMessage() ?: $this->language->get('text_delivery_time')) : '';
+
 		$quote_data = [];
 
 		foreach ($result->getServices() as $service) {
 			$quote_data[$service->getCode()] = [
 				'code'         => 'frenet.' . $service->getCode(),
-				'title'        => $service->getTitle($config->getDeliveryTimeMessage()),
+				'title'        => $service->getTitle($template, $config->getAdditionalDays()),
 				'cost'         => $service->getPrice(),
-				'tax_class_id' => 0,
-				'text'         => $this->currency->format($this->tax->calculate($service->getPrice(), 0, $this->config->get('config_tax')), $this->session->data['currency'])
+				'tax_class_id' => $config->getTaxClassId(),
+				'text'         => $this->currency->format($this->tax->calculate($service->getPrice(), $config->getTaxClassId(), $this->config->get('config_tax')), $this->session->data['currency'])
 			];
 		}
 
 		return $this->method($config, $quote_data, false);
 	}
 
-	private function method(FrenetConfig $config, array $quote_data, $error) {
+	/**
+	 * @param int $geo_zone_id
+	 * @param array<string, mixed> $address
+	 * @return bool
+	 */
+	private function inGeoZone(int $geo_zone_id, array $address): bool {
+		$query = $this->db->query("SELECT 1 FROM `" . DB_PREFIX . "zone_to_geo_zone` WHERE `geo_zone_id` = '" . $geo_zone_id . "' AND `country_id` = '" . (int)($address['country_id'] ?? 0) . "' AND (`zone_id` = '" . (int)($address['zone_id'] ?? 0) . "' OR `zone_id` = '0') LIMIT 1");
+
+		return (bool)$query->num_rows;
+	}
+
+	private function geoZoneExists(int $geo_zone_id): bool {
+		return (bool)$this->db->query("SELECT 1 FROM `" . DB_PREFIX . "geo_zone` WHERE `geo_zone_id` = '" . $geo_zone_id . "' LIMIT 1")->num_rows;
+	}
+
+	/**
+	 * @param FrenetConfig $config
+	 * @param array<string, array<string, mixed>> $quote_data
+	 * @param false|string $error
+	 * @return array<string, mixed>
+	 */
+	private function method(FrenetConfig $config, array $quote_data, $error): array {
 		return [
 			'code'       => 'frenet',
 			'title'      => $this->language->get('text_title'),

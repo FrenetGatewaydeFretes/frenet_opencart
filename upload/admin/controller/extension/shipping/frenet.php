@@ -14,7 +14,9 @@ class ControllerExtensionShippingFrenet extends Controller {
 	private const FIELDS = [
 		'shipping_frenet_status',
 		'shipping_frenet_postcode',
+		'shipping_frenet_delivery_time',
 		'shipping_frenet_msg_prazo',
+		'shipping_frenet_additional_days',
 		'shipping_frenet_weight_class_id',
 		'shipping_frenet_length_class_id',
 		'shipping_frenet_minimum_height',
@@ -24,6 +26,8 @@ class ControllerExtensionShippingFrenet extends Controller {
 		'shipping_frenet_timeout',
 		'shipping_frenet_attempts',
 		'shipping_frenet_debug',
+		'shipping_frenet_tax_class_id',
+		'shipping_frenet_geo_zone_id',
 		'shipping_frenet_sort_order'
 	];
 
@@ -39,9 +43,12 @@ class ControllerExtensionShippingFrenet extends Controller {
 		'shipping_frenet_default_weight' => ['entry_default_weight', FrenetConfig::DEFAULT_WEIGHT]
 	];
 
+	/**
+	 * @var array<string, string>
+	 */
 	private $error = [];
 
-	public function index() {
+	public function index(): void {
 		$this->load->language('extension/shipping/frenet');
 
 		$this->document->setTitle($this->language->get('heading_title'));
@@ -54,7 +61,7 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 		$saved_token = (string)($settings['shipping_frenet_token'] ?? '');
 
-		if (($this->request->server['REQUEST_METHOD'] == 'POST') && $this->validate()) {
+		if (($this->request->server['REQUEST_METHOD'] == 'POST') && $this->validate($saved_token)) {
 			$token = trim((string)($this->request->post['shipping_frenet_token'] ?? ''));
 
 			$values = ['shipping_frenet_token' => $token !== '' ? $token : $saved_token];
@@ -62,6 +69,8 @@ class ControllerExtensionShippingFrenet extends Controller {
 			foreach (self::FIELDS as $field) {
 				$values[$field] = $this->request->post[$field] ?? '';
 			}
+
+			$values['shipping_frenet_postcode'] = FrenetConfig::parsePostcode($values['shipping_frenet_postcode']);
 
 			$adjusted = [];
 
@@ -74,6 +83,14 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 				$values[$field] = $value;
 			}
+
+			$additional_days = max(0, (int)$values['shipping_frenet_additional_days']);
+
+			if (trim((string)$values['shipping_frenet_additional_days']) !== '' && (string)$additional_days !== trim((string)$values['shipping_frenet_additional_days'])) {
+				$adjusted[] = sprintf($this->language->get('text_adjusted_min'), $this->language->get('entry_additional_days'), $additional_days);
+			}
+
+			$values['shipping_frenet_additional_days'] = $additional_days;
 
 			foreach (self::MINIMUMS as $field => [$label, $default]) {
 				$value = FrenetConfig::parsePositive($values[$field]);
@@ -94,6 +111,8 @@ class ControllerExtensionShippingFrenet extends Controller {
 		}
 
 		$data['error_warning'] = $this->error['warning'] ?? '';
+		$data['error_token'] = $this->error['token'] ?? '';
+		$data['error_postcode'] = $this->error['postcode'] ?? '';
 
 		$data['breadcrumbs'] = [];
 
@@ -120,18 +139,27 @@ class ControllerExtensionShippingFrenet extends Controller {
 		$data['panel_url'] = self::PANEL_URL;
 		$data['text_version'] = sprintf($this->language->get('text_version'), Module::VERSION);
 
-		foreach (self::FIELDS as $field) {
-			$data[$field] = $this->request->post[$field] ?? $this->config->get($field);
+		if ($this->request->server['REQUEST_METHOD'] == 'POST') {
+			foreach (self::FIELDS as $field) {
+				$data[$field] = $this->request->post[$field] ?? '';
+			}
+		} else {
+			foreach (self::FIELDS as $field) {
+				$data[$field] = $this->config->get($field);
+			}
+
+			$frenet_config = new FrenetConfig($this->config);
+
+			$data['shipping_frenet_delivery_time'] = $frenet_config->isDeliveryTimeShown();
+			$data['shipping_frenet_additional_days'] = $frenet_config->getAdditionalDays();
+			$data['shipping_frenet_timeout'] = $frenet_config->getTimeout();
+			$data['shipping_frenet_attempts'] = $frenet_config->getAttempts();
+			$data['shipping_frenet_minimum_height'] = $this->formatNumber($frenet_config->getMinimumHeight());
+			$data['shipping_frenet_minimum_width'] = $this->formatNumber($frenet_config->getMinimumWidth());
+			$data['shipping_frenet_minimum_length'] = $this->formatNumber($frenet_config->getMinimumLength());
+			$data['shipping_frenet_default_weight'] = $this->formatNumber($frenet_config->getDefaultWeight());
 		}
 
-		$frenet_config = new FrenetConfig($this->config);
-
-		$data['shipping_frenet_timeout'] = $frenet_config->getTimeout();
-		$data['shipping_frenet_attempts'] = $frenet_config->getAttempts();
-		$data['shipping_frenet_minimum_height'] = $this->formatNumber($frenet_config->getMinimumHeight());
-		$data['shipping_frenet_minimum_width'] = $this->formatNumber($frenet_config->getMinimumWidth());
-		$data['shipping_frenet_minimum_length'] = $this->formatNumber($frenet_config->getMinimumLength());
-		$data['shipping_frenet_default_weight'] = $this->formatNumber($frenet_config->getDefaultWeight());
 		$data['timeout_min'] = FrenetConfig::TIMEOUT_MIN;
 		$data['timeout_max'] = FrenetConfig::TIMEOUT_MAX;
 		$data['attempts_min'] = FrenetConfig::ATTEMPTS_MIN;
@@ -153,6 +181,18 @@ class ControllerExtensionShippingFrenet extends Controller {
 			$data['shipping_frenet_length_class_id'] = $this->findClassId($data['length_classes'], 'length_class_id', 'cm');
 		}
 
+		$this->load->model('localisation/tax_class');
+
+		$data['tax_classes'] = $this->model_localisation_tax_class->getTaxClasses();
+
+		$this->load->model('localisation/geo_zone');
+
+		$data['geo_zones'] = $this->model_localisation_geo_zone->getGeoZones();
+
+		$saved_geo_zone_id = (int)$this->config->get('shipping_frenet_geo_zone_id');
+
+		$data['geo_zone_missing'] = $saved_geo_zone_id && !in_array($saved_geo_zone_id, array_map('intval', array_column($data['geo_zones'], 'geo_zone_id')), true);
+
 		$data['header'] = $this->load->controller('common/header');
 		$data['column_left'] = $this->load->controller('common/column_left');
 		$data['footer'] = $this->load->controller('common/footer');
@@ -162,14 +202,30 @@ class ControllerExtensionShippingFrenet extends Controller {
 		$this->response->setOutput($this->load->view('extension/shipping/frenet', $data));
 	}
 
-	protected function validate() {
+	private function validate(string $saved_token): bool {
 		if (!$this->user->hasPermission('modify', 'extension/shipping/frenet')) {
 			$this->error['warning'] = $this->language->get('error_permission');
+		}
+
+		if (FrenetConfig::parsePostcode($this->request->post['shipping_frenet_postcode'] ?? '') === null) {
+			$this->error['postcode'] = $this->language->get('error_postcode');
+		}
+
+		if (!empty($this->request->post['shipping_frenet_status']) && $saved_token === '' && trim((string)($this->request->post['shipping_frenet_token'] ?? '')) === '') {
+			$this->error['token'] = $this->language->get('error_token');
+		}
+
+		if ($this->error && !isset($this->error['warning'])) {
+			$this->error['warning'] = $this->language->get('error_warning');
 		}
 
 		return !$this->error;
 	}
 
+	/**
+	 * @param array<string, mixed> $settings
+	 * @return bool
+	 */
 	private function removeLegacySettings(array $settings): bool {
 		$legacy = array_intersect_key($settings, array_flip(self::LEGACY_KEYS));
 
@@ -186,6 +242,12 @@ class ControllerExtensionShippingFrenet extends Controller {
 		return rtrim(rtrim(number_format($value, 6, '.', ''), '0'), '.');
 	}
 
+	/**
+	 * @param array<int, array<string, mixed>> $classes
+	 * @param string $id_key
+	 * @param string $unit
+	 * @return int
+	 */
 	private function findClassId(array $classes, string $id_key, string $unit): int {
 		foreach ($classes as $class) {
 			if (strtolower(trim($class['unit'])) === $unit) {

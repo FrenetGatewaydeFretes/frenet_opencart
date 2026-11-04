@@ -1,0 +1,9 @@
+parameters:
+    level: 6
+    phpVersion: 80200
+    paths:
+        - tests
+    bootstrapFiles:
+        - tests/stubs/opencart.php
+        - tests/stubs/cart.php
+    tmpDir: .cache/phpstan-tests

@@ -66,7 +66,11 @@ A cotação passa por estas classes:
 | `Frenet\Quote\Catalog` | busca, para os produtos com envio do carrinho, o SKU (ou o modelo, quando o SKU está vazio) e os nomes das categorias ativas da loja atual, no idioma da loja, separados por `\|`. Se a consulta falhar, a cotação segue com o modelo e sem categoria |
 | `Frenet\Quote\Request` e `Item` | corpo do `POST /shipping/quote` |
 | `Frenet\Api` | envia a cotação com o token e o `User-Agent` com a versão do módulo. Repete timeout, falha de conexão, 5xx e JSON inválido até o número de tentativas, com 300 ms entre elas; nunca repete 4xx. Esgotadas as tentativas, lança `Frenet\Quote\UnavailableException` |
-| `Frenet\Quote\Parser`, `Result` e `Service` | leem os serviços da resposta, mesmo quando vem um só. Separam os que podem ser oferecidos dos que vieram com `Error`, guardando o `Msg`, e leem o `Message` da resposta |
+| `Frenet\Quote\Parser`, `Result` e `Service` | leem os serviços da resposta, mesmo quando vem um só. Separam os que podem ser oferecidos dos que vieram com `Error`, guardando o `Msg`, e leem o `Message` da resposta. `Service::getTitle()` monta o nome do frete com a mensagem do prazo, somando os dias adicionais do admin ao `DeliveryTime`, mesmo quando a transportadora não informa o prazo (como o WooCommerce) |
+
+O model `catalog/model/extension/shipping/frenet.php` só cota quando o endereço está na região geográfica escolhida no admin (Todas as regiões = qualquer endereço), com a mesma consulta a `zone_to_geo_zone` dos métodos Peso e Item do core. Se a região escolhida for excluída, o frete Frenet continua escondido, como no core, mas o erro vai para o `frenet.log` e o admin mostra um alerta. O grupo de impostos do admin vai no `tax_class_id` de cada serviço. Com o prazo ligado e a mensagem em branco, o nome usa `text_delivery_time` do idioma da loja.
+
+O admin só salva com CEP de origem de 8 dígitos, aceitando ponto, hífen e espaço, e grava no formato `00000-000` (`Frenet\Config::parsePostcode()`). Também recusa habilitar o módulo sem token salvo ou digitado, com a mensagem embaixo do campo. Em caso de erro, o formulário volta com os valores enviados, menos o token, que nunca é exibido.
 
 A versão do módulo fica em `Frenet\Module::VERSION`.
 
@@ -77,6 +81,10 @@ Ao criar uma classe nova, rode `composer dump-autoload` antes dos testes: o auto
 O módulo segue o [padrão de código do OpenCart](https://github.com/opencart/opencart/wiki/Coding-standards): tabs, variáveis e arquivos em snake_case, classes e métodos em camelCase. O `.php-cs-fixer.php` é o da versão 3.0.5.1 do OpenCart, com três regras desligadas porque gerariam sintaxe acima do PHP 7.1 (`??=`, heredoc indentado e vírgula no fim de argumentos).
 
 Os arquivos legados em `upload/admin` e `upload/catalog` entram no fixer à medida que forem reescritos.
+
+Para o PHPStan, `tests/stubs/engine.php` imita o `Controller` e o `Model` do OpenCart 3, que leem os objetos do registry por `__get`, e declara com `@property` cada objeto que o módulo usa (`config`, `db`, `load`, `model_setting_setting`...). Ao usar um objeto novo do registry no controller ou no model, declare-o ali.
+
+Nos testes, casos da mesma regra com entradas diferentes usam `#[DataProvider]` ou `#[TestWith]`, como recomenda a [documentação do PHPUnit](https://docs.phpunit.de/en/11.5/writing-tests-for-phpunit.html#data-providers), com um nome por caso. O fixer exige que o provider se chame `provide<Teste>Cases`.
 
 ## Comandos
 
@@ -92,7 +100,7 @@ docker run --rm -u "$(id -u):$(id -g)" -e COMPOSER_HOME=/tmp/composer -v "$PWD":
 | `composer check` | roda `cs`, `compat`, `phpstan` e `test`, como o CI |
 | `composer cs` / `composer cs-fix` | confere / aplica o padrão de código |
 | `composer compat` | PHPCompatibility do PHP 7.1 em diante em `upload/` |
-| `composer phpstan` | PHPStan nível 6 em `system/library/frenet`, analisando como PHP 7.1 |
+| `composer phpstan` | PHPStan nível 6: `system/library/frenet`, o controller do admin e o model de frete analisados como PHP 7.1 (`phpstan.neon.dist`), e `tests/` como PHP 8.2, o mínimo do PHPUnit 11 (`phpstan.tests.neon.dist`) |
 | `composer test` | PHPUnit; sobe o mock da Frenet sozinho na porta 8765 |
 | `composer lint` | `php -l` em `upload/` com o PHP atual |
 
