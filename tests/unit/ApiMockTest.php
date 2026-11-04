@@ -6,6 +6,7 @@ namespace Frenet\Tests;
 use Frenet\Api;
 use Frenet\Http\Client;
 use Frenet\Log;
+use Frenet\Quote\Cache;
 use Frenet\Quote\Item;
 use Frenet\Quote\Request;
 use PHPUnit\Framework\TestCase;
@@ -22,10 +23,8 @@ class ApiMockTest extends TestCase {
 
 	public function testRetriesTheFlakyMockUntilItAnswers(): void {
 		@unlink(sys_get_temp_dir() . '/frenet-mock-flaky');
-		$api = new Api(new Client(), new Log($this->writer, false), 'flaky', '3.0.5.1', 5, 3, getenv('FRENET_MOCK_URL') . '/shipping/quote');
-
-		$first = $api->quote($this->request());
-		$second = $api->quote($this->request());
+		$first = $this->createApi('flaky')->quote($this->request());
+		$second = $this->createApi('flaky')->quote($this->request());
 
 		static::assertCount(2, $first->getServices());
 		static::assertCount(2, $second->getServices());
@@ -35,15 +34,22 @@ class ApiMockTest extends TestCase {
 	}
 
 	public function testReadsTheEmptyAndTheErrorFixturesOfTheMock(): void {
-		$url = getenv('FRENET_MOCK_URL') . '/shipping/quote';
-		$empty = (new Api(new Client(), new Log($this->writer, false), 'empty', '3.0.5.1', 5, 3, $url))->quote($this->request());
-		$errors = (new Api(new Client(), new Log($this->writer, false), 'with-errors', '3.0.5.1', 5, 3, $url))->quote($this->request());
+		$empty = $this->createApi('empty')->quote($this->request());
+		$errors = $this->createApi('with-errors')->quote($this->request());
 
 		static::assertSame([], $empty->getServices());
 		static::assertSame('Nenhuma transportadora disponível para o CEP informado', $empty->getMessage());
 		static::assertCount(2, $errors->getServices());
 		static::assertSame(0, $errors->getServices()[1]->getDeliveryTime());
 		static::assertSame('Erro: Peso excedido.', $errors->getErrors()[0]['message']);
+	}
+
+	/**
+	 * @param string $token
+	 * @return Api
+	 */
+	private function createApi(string $token): Api {
+		return new Api(new Client(), new Cache(new \Cache()), new Log($this->writer, false), $token, '3.0.5.1', 5, 3, getenv('FRENET_MOCK_URL') . '/shipping/quote');
 	}
 
 	/**

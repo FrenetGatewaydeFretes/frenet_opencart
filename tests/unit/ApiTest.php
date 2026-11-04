@@ -9,6 +9,7 @@ use Frenet\Http\Exception as HttpException;
 use Frenet\Http\Response;
 use Frenet\Log;
 use Frenet\Module;
+use Frenet\Quote\Cache;
 use Frenet\Quote\Item;
 use Frenet\Quote\Request;
 use Frenet\Quote\UnavailableException;
@@ -22,8 +23,14 @@ class ApiTest extends TestCase {
 	 */
 	private $writer;
 
+	/**
+	 * @var \Cache
+	 */
+	private $store;
+
 	protected function setUp(): void {
 		$this->writer = new \Log('frenet.log');
+		$this->store = new \Cache();
 	}
 
 	public function testPostsTheRequestAsJsonWithTheTokenTheModuleVersionAndTheTimeout(): void {
@@ -112,7 +119,7 @@ class ApiTest extends TestCase {
 	}
 
 	public function testQuotesTheMockOverHttp(): void {
-		$result = (new Api(new Client(), new Log($this->writer, false), 'abc123', '3.0.5.1', 5, 3, getenv('FRENET_MOCK_URL') . '/shipping/quote'))->quote($this->request());
+		$result = (new Api(new Client(), new Cache($this->store), new Log($this->writer, false), 'abc123', '3.0.5.1', 5, 3, getenv('FRENET_MOCK_URL') . '/shipping/quote'))->quote($this->request());
 
 		static::assertCount(2, $result->getServices());
 	}
@@ -125,7 +132,7 @@ class ApiTest extends TestCase {
 	 * @return Api
 	 */
 	private function createApi(FakeClient $client, int $attempts, int $timeout = 5, bool $debug = false): Api {
-		return new Api($client, new Log($this->writer, $debug), 'abc123', '3.0.5.1', $timeout, $attempts);
+		return new Api($client, new Cache($this->store), new Log($this->writer, $debug), 'abc123', '3.0.5.1', $timeout, $attempts);
 	}
 
 	/**

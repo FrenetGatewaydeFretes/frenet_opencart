@@ -117,3 +117,40 @@ if (!class_exists('DB', false)) {
 		}
 	}
 }
+
+if (!class_exists('Cache', false)) {
+	/**
+	 * Same get, set and delete as the OpenCart 3 core Cache, keeping entries in memory instead of an adaptor.
+	 */
+	class Cache {
+		/**
+		 * @var array<string, mixed>
+		 */
+		public $entries = [];
+
+		/**
+		 * @param string $key
+		 * @return mixed
+		 */
+		public function get($key) {
+			return array_key_exists($key, $this->entries) ? $this->entries[$key] : false;
+		}
+
+		/**
+		 * @param string $key
+		 * @param mixed $value
+		 * @return void
+		 */
+		public function set($key, $value) {
+			$this->entries[$key] = $value;
+		}
+
+		/**
+		 * @param string $key
+		 * @return void
+		 */
+		public function delete($key) {
+			unset($this->entries[$key]);
+		}
+	}
+}

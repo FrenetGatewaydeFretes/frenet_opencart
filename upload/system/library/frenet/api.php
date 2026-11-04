@@ -6,6 +6,7 @@ namespace Frenet;
 use Frenet\Http\Client;
 use Frenet\Http\Exception as HttpException;
 use Frenet\Http\Response;
+use Frenet\Quote\Cache;
 use Frenet\Quote\Exception;
 use Frenet\Quote\Parser;
 use Frenet\Quote\Request;
@@ -30,6 +31,11 @@ class Api {
 	 * @var Client
 	 */
 	private $client;
+
+	/**
+	 * @var Cache
+	 */
+	private $cache;
 
 	/**
 	 * @var Log
@@ -63,6 +69,7 @@ class Api {
 
 	/**
 	 * @param Client $client
+	 * @param Cache $cache
 	 * @param Log $log
 	 * @param string $token
 	 * @param string $opencart_version
@@ -70,8 +77,9 @@ class Api {
 	 * @param int $attempts
 	 * @param string $quote_url
 	 */
-	public function __construct(Client $client, Log $log, string $token, string $opencart_version, int $timeout, int $attempts, string $quote_url = self::QUOTE_URL) {
+	public function __construct(Client $client, Cache $cache, Log $log, string $token, string $opencart_version, int $timeout, int $attempts, string $quote_url = self::QUOTE_URL) {
 		$this->client = $client;
+		$this->cache = $cache;
 		$this->log = $log;
 		$this->token = $token;
 		$this->opencart_version = $opencart_version;
@@ -81,7 +89,7 @@ class Api {
 	}
 
 	/**
-	 * Quotes the cart, sending it again after a failure other than a 4xx until the attempts run out.
+	 * Quotes the cart from the cache or the API, sending it again after a failure other than a 4xx until the attempts run out.
 	 *
 	 * @param Request $request
 	 * @return Result
@@ -93,6 +101,15 @@ class Api {
 
 		if ($body === false) {
 			throw new UnavailableException('Could not encode the quote request: ' . json_last_error_msg());
+		}
+
+		$key = $this->cache->getKey($this->token, $body);
+		$cached = $this->cache->get($key);
+
+		if ($cached !== null) {
+			$this->log->debug('Quote served from the cache', ['key' => $key, 'body' => $payload]);
+
+			return (new Parser())->parse($cached);
 		}
 
 		$headers = [
@@ -134,11 +151,19 @@ class Api {
 			}
 
 			try {
-				return (new Parser())->parse($response->getBody());
+				$result = (new Parser())->parse($response->getBody());
 			} catch (Exception $exception) {
 				$error = $exception->getMessage();
 				$this->logAttempt($attempt, $error);
+
+				continue;
 			}
+
+			if ($result->getServices()) {
+				$this->cache->set($key, $response->getBody());
+			}
+
+			return $result;
 		}
 
 		throw new UnavailableException('The Frenet API gave no usable answer after ' . $this->attempts . ' attempt(s). Last error: ' . $error);
