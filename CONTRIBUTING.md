@@ -85,7 +85,7 @@ Os arquivos legados em `upload/admin` e `upload/catalog` entram no fixer à medi
 
 Para o PHPStan, `tests/stubs/engine.php` imita o `Controller` e o `Model` do OpenCart 3, que leem os objetos do registry por `__get`, e declara com `@property` cada objeto que o módulo usa (`config`, `db`, `load`, `model_setting_setting`...). Ao usar um objeto novo do registry no controller ou no model, declare-o ali.
 
-Nos testes, casos da mesma regra com entradas diferentes usam `#[DataProvider]` ou `#[TestWith]`, como recomenda a [documentação do PHPUnit](https://docs.phpunit.de/en/11.5/writing-tests-for-phpunit.html#data-providers), com um nome por caso. O fixer exige que o provider se chame `provide<Teste>Cases`.
+As classes de teste são `final`, como nos exemplos da documentação do PHPUnit, e por isso o fixer do OpenCart exige `self::` nas asserções. Nos testes, casos da mesma regra com entradas diferentes usam `#[DataProvider]` ou `#[TestWith]`, como recomenda a [documentação do PHPUnit](https://docs.phpunit.de/en/11.5/writing-tests-for-phpunit.html#data-providers), com um nome por caso. O fixer exige que o provider se chame `provide<Teste>Cases`.
 
 ## Comandos
 
