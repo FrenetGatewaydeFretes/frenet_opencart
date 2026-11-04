@@ -168,12 +168,8 @@ class ApiTest extends TestCase {
 		static::assertCount(2, $client->requests);
 	}
 
-	/**
-	 * @param HttpException|Response $failure
-	 * @return void
-	 */
 	#[DataProvider('provideQuotesAgainAfterAFailureCases')]
-	public function testQuotesAgainAfterAFailure($failure): void {
+	public function testQuotesAgainAfterAFailure(HttpException|Response $failure): void {
 		$client = new FakeClient([$failure, new Response(200, self::SERVICES)]);
 		$api = $this->createApi($client, 1);
 
