@@ -82,6 +82,10 @@ O módulo segue o [padrão de código do OpenCart](https://github.com/opencart/o
 
 Os arquivos legados em `upload/admin` e `upload/catalog` entram no fixer à medida que forem reescritos.
 
+Para o PHPStan, `tests/stubs/engine.php` imita o `Controller` e o `Model` do OpenCart 3, que leem os objetos do registry por `__get`, e declara com `@property` cada objeto que o módulo usa (`config`, `db`, `load`, `model_setting_setting`...). Ao usar um objeto novo do registry no controller ou no model, declare-o ali.
+
+Nos testes, casos da mesma regra com entradas diferentes usam `#[DataProvider]` ou `#[TestWith]`, como recomenda a [documentação do PHPUnit](https://docs.phpunit.de/en/11.5/writing-tests-for-phpunit.html#data-providers), com um nome por caso. O fixer exige que o provider se chame `provide<Teste>Cases`.
+
 ## Comandos
 
 As ferramentas rodam com o Composer (dependências só de desenvolvimento, fora do pacote). Sem PHP na máquina, use o Docker:
@@ -96,7 +100,7 @@ docker run --rm -u "$(id -u):$(id -g)" -e COMPOSER_HOME=/tmp/composer -v "$PWD":
 | `composer check` | roda `cs`, `compat`, `phpstan` e `test`, como o CI |
 | `composer cs` / `composer cs-fix` | confere / aplica o padrão de código |
 | `composer compat` | PHPCompatibility do PHP 7.1 em diante em `upload/` |
-| `composer phpstan` | PHPStan nível 6 em `system/library/frenet`, analisando como PHP 7.1 |
+| `composer phpstan` | PHPStan nível 6: `system/library/frenet`, o controller do admin e o model de frete analisados como PHP 7.1 (`phpstan.neon.dist`), e `tests/` como PHP 8.2, o mínimo do PHPUnit 11 (`phpstan.tests.neon.dist`) |
 | `composer test` | PHPUnit; sobe o mock da Frenet sozinho na porta 8765 |
 | `composer lint` | `php -l` em `upload/` com o PHP atual |
 
