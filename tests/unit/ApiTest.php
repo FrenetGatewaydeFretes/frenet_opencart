@@ -13,6 +13,7 @@ use Frenet\Quote\Cache;
 use Frenet\Quote\Item;
 use Frenet\Quote\Request;
 use Frenet\Quote\UnavailableException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class ApiTest extends TestCase {
@@ -122,6 +123,134 @@ class ApiTest extends TestCase {
 		$result = (new Api(new Client(), new Cache($this->store), new Log($this->writer, false), 'abc123', '3.0.5.1', 5, 3, getenv('FRENET_MOCK_URL') . '/shipping/quote'))->quote($this->request());
 
 		static::assertCount(2, $result->getServices());
+	}
+
+	public function testServesARepeatedQuoteFromTheCacheWithoutCallingTheApi(): void {
+		$client = new FakeClient([new Response(200, self::SERVICES)]);
+		$api = $this->createApi($client, 3);
+
+		$api->quote($this->request());
+		$result = $api->quote($this->request());
+
+		static::assertCount(1, $client->requests);
+		static::assertSame('SEDEX', $result->getServices()[0]->getDescription());
+		static::assertSame(42.5, $result->getServices()[0]->getPrice());
+	}
+
+	#[DataProvider('provideQuotesAgainWhenTheCartOrThePostcodeChangesCases')]
+	public function testQuotesAgainWhenTheCartOrThePostcodeChanges(Request $changed): void {
+		$client = new FakeClient([new Response(200, self::SERVICES), new Response(200, self::SERVICES)]);
+		$api = $this->createApi($client, 3);
+
+		$api->quote($this->request());
+		$api->quote($changed);
+
+		static::assertCount(2, $client->requests);
+		static::assertSame(json_encode($changed->toArray()), $client->requests[1]['body']);
+	}
+
+	/**
+	 * @return iterable<string, array{Request}>
+	 */
+	public static function provideQuotesAgainWhenTheCartOrThePostcodeChangesCases(): iterable {
+		yield 'another postcode' => [new Request('01310100', '01310100', 'BR', 100.0, '', [new Item(1.0, 16.0, 2.0, 11.0, 1, 'CAM-01', 'Camisetas')], '3.0.5.1')];
+		yield 'another quantity' => [new Request('01310100', '20040020', 'BR', 200.0, '', [new Item(1.0, 16.0, 2.0, 11.0, 2, 'CAM-01', 'Camisetas')], '3.0.5.1')];
+		yield 'another product' => [new Request('01310100', '20040020', 'BR', 100.0, '', [new Item(1.0, 16.0, 2.0, 11.0, 1, 'CAM-02', 'Camisetas')], '3.0.5.1')];
+		yield 'another coupon' => [new Request('01310100', '20040020', 'BR', 100.0, 'FRETE10', [new Item(1.0, 16.0, 2.0, 11.0, 1, 'CAM-01', 'Camisetas')], '3.0.5.1')];
+	}
+
+	public function testQuotesAgainWithAnotherToken(): void {
+		$client = new FakeClient([new Response(200, self::SERVICES), new Response(200, self::SERVICES)]);
+
+		$this->createApi($client, 3)->quote($this->request());
+		(new Api($client, new Cache($this->store), new Log($this->writer, false), 'xyz789', '3.0.5.1', 5, 3))->quote($this->request());
+
+		static::assertCount(2, $client->requests);
+	}
+
+	/**
+	 * @param HttpException|Response $failure
+	 * @return void
+	 */
+	#[DataProvider('provideQuotesAgainAfterAFailureCases')]
+	public function testQuotesAgainAfterAFailure($failure): void {
+		$client = new FakeClient([$failure, new Response(200, self::SERVICES)]);
+		$api = $this->createApi($client, 1);
+
+		try {
+			$api->quote($this->request());
+			static::fail('Expected the quote to be unavailable');
+		} catch (UnavailableException $exception) {
+			static::assertCount(1, $client->requests);
+		}
+
+		$result = $api->quote($this->request());
+
+		static::assertCount(2, $client->requests);
+		static::assertCount(1, $result->getServices());
+	}
+
+	/**
+	 * @return iterable<string, array{HttpException|Response}>
+	 */
+	public static function provideQuotesAgainAfterAFailureCases(): iterable {
+		yield 'timeout' => [new HttpException('Operation timed out after 5000 milliseconds', 28)];
+		yield 'server error' => [new Response(503, '{"Message":"Service Unavailable"}')];
+		yield 'client error' => [new Response(401, '{"Message":"Acesso negado!"}')];
+		yield 'invalid JSON' => [new Response(200, '<html>Bad gateway</html>')];
+	}
+
+	public function testQuotesAgainAfterAnAnswerWithoutServices(): void {
+		$client = new FakeClient([new Response(200, '{"ShippingSevicesArray":[],"Message":"Nenhuma transportadora disponível"}'), new Response(200, self::SERVICES)]);
+		$api = $this->createApi($client, 3);
+
+		$empty = $api->quote($this->request());
+		$result = $api->quote($this->request());
+
+		static::assertSame([], $empty->getServices());
+		static::assertCount(2, $client->requests);
+		static::assertCount(1, $result->getServices());
+	}
+
+	public function testCachesAnAnswerWithSomeServicesInError(): void {
+		$body = '{"ShippingSevicesArray":[{"ServiceCode":"03220","ServiceDescription":"SEDEX","ShippingPrice":"42.50","DeliveryTime":"3"},{"ServiceCode":"04227","ServiceDescription":"Mini Envios","Error":true,"Msg":"Medidas excedidas"}]}';
+		$client = new FakeClient([new Response(200, $body)]);
+		$api = $this->createApi($client, 3);
+
+		$api->quote($this->request());
+		$result = $api->quote($this->request());
+
+		static::assertCount(1, $client->requests);
+		static::assertCount(1, $result->getServices());
+		static::assertSame('Medidas excedidas', $result->getErrors()[0]['message']);
+	}
+
+	public function testQuotesAgainAfterTheCacheExpires(): void {
+		$client = new FakeClient([new Response(200, self::SERVICES), new Response(200, self::SERVICES)]);
+		$api = $this->createApi($client, 3);
+
+		$api->quote($this->request());
+
+		foreach ($this->store->entries as $key => $entry) {
+			$this->store->entries[$key]['expires'] = time();
+		}
+
+		$api->quote($this->request());
+
+		static::assertCount(2, $client->requests);
+	}
+
+	public function testLogsACachedQuoteWithoutTheTokenWhenDebugIsOn(): void {
+		$client = new FakeClient([new Response(200, self::SERVICES)]);
+		$api = $this->createApi($client, 3, 5, true);
+
+		$api->quote($this->request());
+		$api->quote($this->request());
+
+		static::assertCount(3, $this->writer->lines);
+		static::assertStringStartsWith('DEBUG Quote served from the cache {"key":"frenet.quote.', $this->writer->lines[2]);
+		static::assertStringContainsString('"RecipientCEP":"20040020"', $this->writer->lines[2]);
+		static::assertStringNotContainsString('abc123', implode("\n", $this->writer->lines));
 	}
 
 	/**
