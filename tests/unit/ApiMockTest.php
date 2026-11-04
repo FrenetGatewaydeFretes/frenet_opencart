@@ -11,7 +11,7 @@ use Frenet\Quote\Item;
 use Frenet\Quote\Request;
 use PHPUnit\Framework\TestCase;
 
-class ApiMockTest extends TestCase {
+final class ApiMockTest extends TestCase {
 	/**
 	 * @var \Log
 	 */
@@ -26,9 +26,9 @@ class ApiMockTest extends TestCase {
 		$first = $this->createApi('flaky')->quote($this->request());
 		$second = $this->createApi('flaky')->quote($this->request());
 
-		static::assertCount(2, $first->getServices());
-		static::assertCount(2, $second->getServices());
-		static::assertCount(2, array_filter($this->writer->lines, static function (string $line): bool {
+		self::assertCount(2, $first->getServices());
+		self::assertCount(2, $second->getServices());
+		self::assertCount(2, array_filter($this->writer->lines, static function (string $line): bool {
 			return strpos($line, 'HTTP 503: Mock failing every other quote') !== false;
 		}));
 	}
@@ -37,11 +37,11 @@ class ApiMockTest extends TestCase {
 		$empty = $this->createApi('empty')->quote($this->request());
 		$errors = $this->createApi('with-errors')->quote($this->request());
 
-		static::assertSame([], $empty->getServices());
-		static::assertSame('Nenhuma transportadora disponível para o CEP informado', $empty->getMessage());
-		static::assertCount(2, $errors->getServices());
-		static::assertSame(0, $errors->getServices()[1]->getDeliveryTime());
-		static::assertSame('Erro: Peso excedido.', $errors->getErrors()[0]['message']);
+		self::assertSame([], $empty->getServices());
+		self::assertSame('Nenhuma transportadora disponível para o CEP informado', $empty->getMessage());
+		self::assertCount(2, $errors->getServices());
+		self::assertSame(0, $errors->getServices()[1]->getDeliveryTime());
+		self::assertSame('Erro: Peso excedido.', $errors->getErrors()[0]['message']);
 	}
 
 	/**

@@ -16,7 +16,7 @@ use Frenet\Quote\UnavailableException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-class ApiTest extends TestCase {
+final class ApiTest extends TestCase {
 	private const SERVICES = '{"ShippingSevicesArray":[{"ServiceCode":"03220","ServiceDescription":"SEDEX","ShippingPrice":"42.50","DeliveryTime":"3"}]}';
 
 	/**
@@ -39,16 +39,16 @@ class ApiTest extends TestCase {
 
 		$this->createApi($client, 3, 7)->quote($this->request());
 
-		static::assertCount(1, $client->requests);
-		static::assertSame('https://api.frenet.com.br/shipping/quote', $client->requests[0]['url']);
-		static::assertSame(json_encode($this->request()->toArray()), $client->requests[0]['body']);
-		static::assertSame([
+		self::assertCount(1, $client->requests);
+		self::assertSame('https://api.frenet.com.br/shipping/quote', $client->requests[0]['url']);
+		self::assertSame(json_encode($this->request()->toArray()), $client->requests[0]['body']);
+		self::assertSame([
 			'Accept'       => 'application/json',
 			'Content-Type' => 'application/json',
 			'User-Agent'   => 'Frenet-OpenCart3/' . Module::VERSION . ' (OpenCart 3.0.5.1)',
 			'token'        => 'abc123'
 		], $client->requests[0]['headers']);
-		static::assertSame(7, $client->requests[0]['timeout']);
+		self::assertSame(7, $client->requests[0]['timeout']);
 	}
 
 	public function testRetriesATimeoutAndReturnsTheNextAnswer(): void {
@@ -56,9 +56,9 @@ class ApiTest extends TestCase {
 
 		$result = $this->createApi($client, 3)->quote($this->request());
 
-		static::assertCount(2, $client->requests);
-		static::assertSame('SEDEX', $result->getServices()[0]->getDescription());
-		static::assertSame(['ERROR Quote attempt 1/3 failed: Operation timed out after 5000 milliseconds'], $this->writer->lines);
+		self::assertCount(2, $client->requests);
+		self::assertSame('SEDEX', $result->getServices()[0]->getDescription());
+		self::assertSame(['ERROR Quote attempt 1/3 failed: Operation timed out after 5000 milliseconds'], $this->writer->lines);
 	}
 
 	public function testRetriesServerErrorsAndInvalidJsonUntilTheAttemptsRunOut(): void {
@@ -66,13 +66,13 @@ class ApiTest extends TestCase {
 
 		try {
 			$this->createApi($client, 3)->quote($this->request());
-			static::fail('Expected the quote to be unavailable');
+			self::fail('Expected the quote to be unavailable');
 		} catch (UnavailableException $exception) {
-			static::assertSame('The Frenet API gave no usable answer after 3 attempt(s). Last error: Connection refused', $exception->getMessage());
+			self::assertSame('The Frenet API gave no usable answer after 3 attempt(s). Last error: Connection refused', $exception->getMessage());
 		}
 
-		static::assertCount(3, $client->requests);
-		static::assertSame([
+		self::assertCount(3, $client->requests);
+		self::assertSame([
 			'ERROR Quote attempt 1/3 failed: HTTP 503: Service Unavailable',
 			'ERROR Quote attempt 2/3 failed: The Frenet API answered with invalid JSON',
 			'ERROR Quote attempt 3/3 failed: Connection refused'
@@ -84,13 +84,13 @@ class ApiTest extends TestCase {
 
 		try {
 			$this->createApi($client, 3)->quote($this->request());
-			static::fail('Expected the quote to be refused');
+			self::fail('Expected the quote to be refused');
 		} catch (UnavailableException $exception) {
-			static::assertSame(401, $exception->getCode());
-			static::assertSame('The Frenet API refused the quote with HTTP 401: Acesso negado! (not retried)', $exception->getMessage());
+			self::assertSame(401, $exception->getCode());
+			self::assertSame('The Frenet API refused the quote with HTTP 401: Acesso negado! (not retried)', $exception->getMessage());
 		}
 
-		static::assertCount(1, $client->requests);
+		self::assertCount(1, $client->requests);
 	}
 
 	public function testSendsOnceWhenASingleAttemptIsConfigured(): void {
@@ -98,12 +98,12 @@ class ApiTest extends TestCase {
 
 		try {
 			$this->createApi($client, 1)->quote($this->request());
-			static::fail('Expected the quote to be unavailable');
+			self::fail('Expected the quote to be unavailable');
 		} catch (UnavailableException $exception) {
-			static::assertStringEndsWith('Last error: HTTP 500', $exception->getMessage());
+			self::assertStringEndsWith('Last error: HTTP 500', $exception->getMessage());
 		}
 
-		static::assertCount(1, $client->requests);
+		self::assertCount(1, $client->requests);
 	}
 
 	public function testLogsTheRequestAndTheResponseWithoutTheTokenWhenDebugIsOn(): void {
@@ -111,18 +111,18 @@ class ApiTest extends TestCase {
 
 		$this->createApi($client, 3, 5, true)->quote($this->request());
 
-		static::assertCount(2, $this->writer->lines);
-		static::assertStringStartsWith('DEBUG Quote request {"url":"https://api.frenet.com.br/shipping/quote"', $this->writer->lines[0]);
-		static::assertStringContainsString('"token":"********"', $this->writer->lines[0]);
-		static::assertStringContainsString('"RecipientCEP":"20040020"', $this->writer->lines[0]);
-		static::assertStringNotContainsString('abc123', implode("\n", $this->writer->lines));
-		static::assertStringStartsWith('DEBUG Quote response {"attempt":1,"status":200', $this->writer->lines[1]);
+		self::assertCount(2, $this->writer->lines);
+		self::assertStringStartsWith('DEBUG Quote request {"url":"https://api.frenet.com.br/shipping/quote"', $this->writer->lines[0]);
+		self::assertStringContainsString('"token":"********"', $this->writer->lines[0]);
+		self::assertStringContainsString('"RecipientCEP":"20040020"', $this->writer->lines[0]);
+		self::assertStringNotContainsString('abc123', implode("\n", $this->writer->lines));
+		self::assertStringStartsWith('DEBUG Quote response {"attempt":1,"status":200', $this->writer->lines[1]);
 	}
 
 	public function testQuotesTheMockOverHttp(): void {
 		$result = (new Api(new Client(), new Cache($this->store), new Log($this->writer, false), 'abc123', '3.0.5.1', 5, 3, getenv('FRENET_MOCK_URL') . '/shipping/quote'))->quote($this->request());
 
-		static::assertCount(2, $result->getServices());
+		self::assertCount(2, $result->getServices());
 	}
 
 	public function testServesARepeatedQuoteFromTheCacheWithoutCallingTheApi(): void {
@@ -132,9 +132,9 @@ class ApiTest extends TestCase {
 		$api->quote($this->request());
 		$result = $api->quote($this->request());
 
-		static::assertCount(1, $client->requests);
-		static::assertSame('SEDEX', $result->getServices()[0]->getDescription());
-		static::assertSame(42.5, $result->getServices()[0]->getPrice());
+		self::assertCount(1, $client->requests);
+		self::assertSame('SEDEX', $result->getServices()[0]->getDescription());
+		self::assertSame(42.5, $result->getServices()[0]->getPrice());
 	}
 
 	#[DataProvider('provideQuotesAgainWhenTheCartOrThePostcodeChangesCases')]
@@ -145,8 +145,8 @@ class ApiTest extends TestCase {
 		$api->quote($this->request());
 		$api->quote($changed);
 
-		static::assertCount(2, $client->requests);
-		static::assertSame(json_encode($changed->toArray()), $client->requests[1]['body']);
+		self::assertCount(2, $client->requests);
+		self::assertSame(json_encode($changed->toArray()), $client->requests[1]['body']);
 	}
 
 	/**
@@ -165,7 +165,7 @@ class ApiTest extends TestCase {
 		$this->createApi($client, 3)->quote($this->request());
 		(new Api($client, new Cache($this->store), new Log($this->writer, false), 'xyz789', '3.0.5.1', 5, 3))->quote($this->request());
 
-		static::assertCount(2, $client->requests);
+		self::assertCount(2, $client->requests);
 	}
 
 	#[DataProvider('provideQuotesAgainAfterAFailureCases')]
@@ -175,15 +175,15 @@ class ApiTest extends TestCase {
 
 		try {
 			$api->quote($this->request());
-			static::fail('Expected the quote to be unavailable');
+			self::fail('Expected the quote to be unavailable');
 		} catch (UnavailableException $exception) {
-			static::assertCount(1, $client->requests);
+			self::assertCount(1, $client->requests);
 		}
 
 		$result = $api->quote($this->request());
 
-		static::assertCount(2, $client->requests);
-		static::assertCount(1, $result->getServices());
+		self::assertCount(2, $client->requests);
+		self::assertCount(1, $result->getServices());
 	}
 
 	/**
@@ -203,9 +203,9 @@ class ApiTest extends TestCase {
 		$empty = $api->quote($this->request());
 		$result = $api->quote($this->request());
 
-		static::assertSame([], $empty->getServices());
-		static::assertCount(2, $client->requests);
-		static::assertCount(1, $result->getServices());
+		self::assertSame([], $empty->getServices());
+		self::assertCount(2, $client->requests);
+		self::assertCount(1, $result->getServices());
 	}
 
 	public function testCachesAnAnswerWithSomeServicesInError(): void {
@@ -216,9 +216,9 @@ class ApiTest extends TestCase {
 		$api->quote($this->request());
 		$result = $api->quote($this->request());
 
-		static::assertCount(1, $client->requests);
-		static::assertCount(1, $result->getServices());
-		static::assertSame('Medidas excedidas', $result->getErrors()[0]['message']);
+		self::assertCount(1, $client->requests);
+		self::assertCount(1, $result->getServices());
+		self::assertSame('Medidas excedidas', $result->getErrors()[0]['message']);
 	}
 
 	public function testQuotesAgainAfterTheCacheExpires(): void {
@@ -233,7 +233,7 @@ class ApiTest extends TestCase {
 
 		$api->quote($this->request());
 
-		static::assertCount(2, $client->requests);
+		self::assertCount(2, $client->requests);
 	}
 
 	public function testQuotesTheApiWhenTheCacheCannotBeRead(): void {
@@ -246,9 +246,9 @@ class ApiTest extends TestCase {
 
 		$result = $this->createApi($client, 3)->quote($this->request());
 
-		static::assertCount(1, $client->requests);
-		static::assertCount(1, $result->getServices());
-		static::assertSame(['ERROR Quote cache could not be read, asking the Frenet API: fread(): Argument #2 ($length) must be greater than 0'], $this->writer->lines);
+		self::assertCount(1, $client->requests);
+		self::assertCount(1, $result->getServices());
+		self::assertSame(['ERROR Quote cache could not be read, asking the Frenet API: fread(): Argument #2 ($length) must be greater than 0'], $this->writer->lines);
 	}
 
 	public function testQuotesTheApiWhenTheCachedAnswerCannotBeParsed(): void {
@@ -258,9 +258,9 @@ class ApiTest extends TestCase {
 
 		$result = $api->quote($this->request());
 
-		static::assertCount(1, $client->requests);
-		static::assertCount(1, $result->getServices());
-		static::assertSame(['ERROR Quote cache could not be read, asking the Frenet API: The Frenet API answered with invalid JSON'], $this->writer->lines);
+		self::assertCount(1, $client->requests);
+		self::assertCount(1, $result->getServices());
+		self::assertSame(['ERROR Quote cache could not be read, asking the Frenet API: The Frenet API answered with invalid JSON'], $this->writer->lines);
 	}
 
 	public function testReturnsTheQuoteWhenTheCacheCannotBeWritten(): void {
@@ -273,8 +273,8 @@ class ApiTest extends TestCase {
 
 		$result = $this->createApi($client, 3)->quote($this->request());
 
-		static::assertCount(1, $result->getServices());
-		static::assertSame(['ERROR Quote cache could not be written: flock(): Argument #1 ($stream) must be of type resource, bool given'], $this->writer->lines);
+		self::assertCount(1, $result->getServices());
+		self::assertSame(['ERROR Quote cache could not be written: flock(): Argument #1 ($stream) must be of type resource, bool given'], $this->writer->lines);
 	}
 
 	public function testLogsACachedQuoteWithoutTheTokenWhenDebugIsOn(): void {
@@ -284,10 +284,10 @@ class ApiTest extends TestCase {
 		$api->quote($this->request());
 		$api->quote($this->request());
 
-		static::assertCount(3, $this->writer->lines);
-		static::assertStringStartsWith('DEBUG Quote served from the cache {"key":"frenet.quote.', $this->writer->lines[2]);
-		static::assertStringContainsString('"RecipientCEP":"20040020"', $this->writer->lines[2]);
-		static::assertStringNotContainsString('abc123', implode("\n", $this->writer->lines));
+		self::assertCount(3, $this->writer->lines);
+		self::assertStringStartsWith('DEBUG Quote served from the cache {"key":"frenet.quote.', $this->writer->lines[2]);
+		self::assertStringContainsString('"RecipientCEP":"20040020"', $this->writer->lines[2]);
+		self::assertStringNotContainsString('abc123', implode("\n", $this->writer->lines));
 	}
 
 	/**

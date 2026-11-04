@@ -6,7 +6,7 @@ namespace Frenet\Tests\Quote;
 use Frenet\Quote\Catalog;
 use PHPUnit\Framework\TestCase;
 
-class CatalogTest extends TestCase {
+final class CatalogTest extends TestCase {
 	public function testSendsTheSkuOrTheModelAndTheNamesOfTheEnabledCategoriesOfTheStore(): void {
 		$db = new \DB([
 			[
@@ -22,20 +22,20 @@ class CatalogTest extends TestCase {
 
 		$products = (new Catalog($db, 'oc_', 2, 3))->getProducts(['40', 41, 41]);
 
-		static::assertSame([
+		self::assertSame([
 			40 => ['sku' => 'product 11', 'category' => 'Desktops|Phones & PDAs'],
 			41 => ['sku' => 'CAM-AZ-M', 'category' => 'Moda / Verão']
 		], $products);
-		static::assertStringContainsString('FROM `oc_product` WHERE `product_id` IN (40,41)', $db->queries[0]);
-		static::assertStringContainsString("cd.`language_id` = '2'", $db->queries[1]);
-		static::assertStringContainsString("c.`status` = '1'", $db->queries[1]);
-		static::assertStringContainsString("c2s.`store_id` = '3'", $db->queries[1]);
+		self::assertStringContainsString('FROM `oc_product` WHERE `product_id` IN (40,41)', $db->queries[0]);
+		self::assertStringContainsString("cd.`language_id` = '2'", $db->queries[1]);
+		self::assertStringContainsString("c.`status` = '1'", $db->queries[1]);
+		self::assertStringContainsString("c2s.`store_id` = '3'", $db->queries[1]);
 	}
 
 	public function testDoesNotQueryWithoutProducts(): void {
 		$db = new \DB([]);
 
-		static::assertSame([], (new Catalog($db, 'oc_', 1, 0))->getProducts([]));
-		static::assertSame([], $db->queries);
+		self::assertSame([], (new Catalog($db, 'oc_', 1, 0))->getProducts([]));
+		self::assertSame([], $db->queries);
 	}
 }

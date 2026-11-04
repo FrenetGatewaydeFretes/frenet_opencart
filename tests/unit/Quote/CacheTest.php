@@ -7,7 +7,7 @@ use Frenet\Quote\Cache;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 
-class CacheTest extends TestCase {
+final class CacheTest extends TestCase {
 	private const BODY = '{"ShippingSevicesArray":[]}';
 
 	/**
@@ -28,29 +28,29 @@ class CacheTest extends TestCase {
 	public function testBuildsAKeyTheOpenCartFileCacheKeepsWhole(): void {
 		$key = $this->cache->getKey('abc123', self::BODY);
 
-		static::assertMatchesRegularExpression('/^frenet\.quote\.[0-9a-f]{64}$/', $key);
-		static::assertSame($key, $this->cache->getKey('abc123', self::BODY));
-		static::assertStringNotContainsString('abc123', $key);
+		self::assertMatchesRegularExpression('/^frenet\.quote\.[0-9a-f]{64}$/', $key);
+		self::assertSame($key, $this->cache->getKey('abc123', self::BODY));
+		self::assertStringNotContainsString('abc123', $key);
 	}
 
 	public function testBuildsAnotherKeyForAnotherTokenOrBody(): void {
 		$key = $this->cache->getKey('abc123', self::BODY);
 
-		static::assertNotSame($key, $this->cache->getKey('xyz789', self::BODY));
-		static::assertNotSame($key, $this->cache->getKey('abc123', '{"ShippingSevicesArray":[{}]}'));
+		self::assertNotSame($key, $this->cache->getKey('xyz789', self::BODY));
+		self::assertNotSame($key, $this->cache->getKey('abc123', '{"ShippingSevicesArray":[{}]}'));
 	}
 
 	public function testKeepsTheBodyForTenMinutes(): void {
 		$this->cache->set('frenet.quote.key', self::BODY);
 
-		static::assertSame(self::BODY, $this->cache->get('frenet.quote.key'));
-		static::assertEqualsWithDelta(time() + 600, $this->store->entries['frenet.quote.key']['expires'], 1);
+		self::assertSame(self::BODY, $this->cache->get('frenet.quote.key'));
+		self::assertEqualsWithDelta(time() + 600, $this->store->entries['frenet.quote.key']['expires'], 1);
 	}
 
 	public function testIgnoresAnExpiredEntry(): void {
 		$this->store->set('frenet.quote.key', ['expires' => time(), 'body' => self::BODY]);
 
-		static::assertNull($this->cache->get('frenet.quote.key'));
+		self::assertNull($this->cache->get('frenet.quote.key'));
 	}
 
 	#[TestWith([false], 'missing')]
@@ -60,6 +60,6 @@ class CacheTest extends TestCase {
 	public function testIgnoresAnEntryItDidNotWrite(mixed $entry): void {
 		$this->store->set('frenet.quote.key', $entry);
 
-		static::assertNull($this->cache->get('frenet.quote.key'));
+		self::assertNull($this->cache->get('frenet.quote.key'));
 	}
 }
