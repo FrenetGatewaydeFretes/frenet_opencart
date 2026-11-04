@@ -14,6 +14,7 @@ $_['text_panel']            = 'Open the Frenet panel';
 $_['text_adjusted']         = '%s adjusted to %d (accepts %d to %d).';
 $_['text_default_used']     = '%s must be greater than zero: %s used.';
 $_['text_adjusted_min']     = '%s only accepts whole numbers from 0: used %d.';
+$_['text_geo_zone_missing']  = 'The geo zone chosen for Frenet was deleted, so Frenet shipping is offered to no address. Choose another geo zone and save.';
 
 // Entry
 $_['entry_token']           = 'Token';

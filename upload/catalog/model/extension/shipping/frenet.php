@@ -11,8 +11,14 @@ class ModelExtensionShippingFrenet extends Model {
 		$config = new FrenetConfig($this->config);
 		$log = new FrenetLog(new \Log(FrenetLog::FILENAME), $config->isDebug());
 
-		if (!$this->inGeoZone($config->getGeoZoneId(), $address)) {
-			$log->debug('Quote skipped: the address is outside the Frenet geo zone', ['country_id' => $address['country_id'] ?? 0, 'zone_id' => $address['zone_id'] ?? 0]);
+		$geo_zone_id = $config->getGeoZoneId();
+
+		if ($geo_zone_id && !$this->inGeoZone($geo_zone_id, $address)) {
+			if ($this->geoZoneExists($geo_zone_id)) {
+				$log->debug('Quote skipped: the address is outside the Frenet geo zone', ['country_id' => $address['country_id'] ?? 0, 'zone_id' => $address['zone_id'] ?? 0]);
+			} else {
+				$log->error('Quote skipped: the geo zone ' . $geo_zone_id . ' chosen for Frenet no longer exists, choose another one in the settings');
+			}
 
 			return [];
 		}
@@ -79,13 +85,13 @@ class ModelExtensionShippingFrenet extends Model {
 	}
 
 	private function inGeoZone(int $geo_zone_id, array $address): bool {
-		if (!$geo_zone_id) {
-			return true;
-		}
-
 		$query = $this->db->query("SELECT 1 FROM `" . DB_PREFIX . "zone_to_geo_zone` WHERE `geo_zone_id` = '" . $geo_zone_id . "' AND `country_id` = '" . (int)($address['country_id'] ?? 0) . "' AND (`zone_id` = '" . (int)($address['zone_id'] ?? 0) . "' OR `zone_id` = '0') LIMIT 1");
 
 		return (bool)$query->num_rows;
+	}
+
+	private function geoZoneExists(int $geo_zone_id): bool {
+		return (bool)$this->db->query("SELECT 1 FROM `" . DB_PREFIX . "geo_zone` WHERE `geo_zone_id` = '" . $geo_zone_id . "' LIMIT 1")->num_rows;
 	}
 
 	private function method(FrenetConfig $config, array $quote_data, $error) {

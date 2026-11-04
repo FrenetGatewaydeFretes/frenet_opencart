@@ -186,6 +186,10 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 		$data['geo_zones'] = $this->model_localisation_geo_zone->getGeoZones();
 
+		$saved_geo_zone_id = (int)$this->config->get('shipping_frenet_geo_zone_id');
+
+		$data['geo_zone_missing'] = $saved_geo_zone_id && !in_array($saved_geo_zone_id, array_map('intval', array_column($data['geo_zones'], 'geo_zone_id')), true);
+
 		$data['header'] = $this->load->controller('common/header');
 		$data['column_left'] = $this->load->controller('common/column_left');
 		$data['footer'] = $this->load->controller('common/footer');

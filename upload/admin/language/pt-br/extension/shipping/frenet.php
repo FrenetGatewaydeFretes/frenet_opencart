@@ -14,6 +14,7 @@ $_['text_panel']            = 'Abrir o painel Frenet';
 $_['text_adjusted']         = '%s ajustado para %d (aceita de %d a %d).';
 $_['text_default_used']     = '%s precisa ser maior que zero: usado %s.';
 $_['text_adjusted_min']     = '%s aceita só números inteiros a partir de 0: usado %d.';
+$_['text_geo_zone_missing']  = 'A região geográfica escolhida para a Frenet foi excluída, e o frete Frenet não aparece para nenhum endereço. Escolha outra região e salve.';
 
 // Entry
 $_['entry_token']           = 'Token';
