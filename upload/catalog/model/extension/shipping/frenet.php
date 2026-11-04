@@ -11,6 +11,12 @@ class ModelExtensionShippingFrenet extends Model {
 		$config = new FrenetConfig($this->config);
 		$log = new FrenetLog(new \Log(FrenetLog::FILENAME), $config->isDebug());
 
+		if (!$this->inGeoZone($config->getGeoZoneId(), $address)) {
+			$log->debug('Quote skipped: the address is outside the Frenet geo zone', ['country_id' => $address['country_id'] ?? 0, 'zone_id' => $address['zone_id'] ?? 0]);
+
+			return [];
+		}
+
 		if ($config->getToken() === '') {
 			$log->error('Quote skipped: the token is not configured', ['postcode' => $address['postcode'] ?? '']);
 
@@ -70,6 +76,16 @@ class ModelExtensionShippingFrenet extends Model {
 		}
 
 		return $this->method($config, $quote_data, false);
+	}
+
+	private function inGeoZone(int $geo_zone_id, array $address): bool {
+		if (!$geo_zone_id) {
+			return true;
+		}
+
+		$query = $this->db->query("SELECT 1 FROM `" . DB_PREFIX . "zone_to_geo_zone` WHERE `geo_zone_id` = '" . $geo_zone_id . "' AND `country_id` = '" . (int)($address['country_id'] ?? 0) . "' AND (`zone_id` = '" . (int)($address['zone_id'] ?? 0) . "' OR `zone_id` = '0') LIMIT 1");
+
+		return (bool)$query->num_rows;
 	}
 
 	private function method(FrenetConfig $config, array $quote_data, $error) {
