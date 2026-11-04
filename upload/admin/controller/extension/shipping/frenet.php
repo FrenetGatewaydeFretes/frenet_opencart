@@ -58,7 +58,7 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 		$saved_token = (string)($settings['shipping_frenet_token'] ?? '');
 
-		if (($this->request->server['REQUEST_METHOD'] == 'POST') && $this->validate()) {
+		if (($this->request->server['REQUEST_METHOD'] == 'POST') && $this->validate($saved_token)) {
 			$token = trim((string)($this->request->post['shipping_frenet_token'] ?? ''));
 
 			$values = ['shipping_frenet_token' => $token !== '' ? $token : $saved_token];
@@ -66,6 +66,8 @@ class ControllerExtensionShippingFrenet extends Controller {
 			foreach (self::FIELDS as $field) {
 				$values[$field] = $this->request->post[$field] ?? '';
 			}
+
+			$values['shipping_frenet_postcode'] = trim((string)$values['shipping_frenet_postcode']);
 
 			$adjusted = [];
 
@@ -106,6 +108,8 @@ class ControllerExtensionShippingFrenet extends Controller {
 		}
 
 		$data['error_warning'] = $this->error['warning'] ?? '';
+		$data['error_token'] = $this->error['token'] ?? '';
+		$data['error_postcode'] = $this->error['postcode'] ?? '';
 
 		$data['breadcrumbs'] = [];
 
@@ -132,20 +136,27 @@ class ControllerExtensionShippingFrenet extends Controller {
 		$data['panel_url'] = self::PANEL_URL;
 		$data['text_version'] = sprintf($this->language->get('text_version'), Module::VERSION);
 
-		foreach (self::FIELDS as $field) {
-			$data[$field] = $this->request->post[$field] ?? $this->config->get($field);
+		if ($this->request->server['REQUEST_METHOD'] == 'POST') {
+			foreach (self::FIELDS as $field) {
+				$data[$field] = $this->request->post[$field] ?? '';
+			}
+		} else {
+			foreach (self::FIELDS as $field) {
+				$data[$field] = $this->config->get($field);
+			}
+
+			$frenet_config = new FrenetConfig($this->config);
+
+			$data['shipping_frenet_delivery_time'] = $frenet_config->isDeliveryTimeShown();
+			$data['shipping_frenet_additional_days'] = $frenet_config->getAdditionalDays();
+			$data['shipping_frenet_timeout'] = $frenet_config->getTimeout();
+			$data['shipping_frenet_attempts'] = $frenet_config->getAttempts();
+			$data['shipping_frenet_minimum_height'] = $this->formatNumber($frenet_config->getMinimumHeight());
+			$data['shipping_frenet_minimum_width'] = $this->formatNumber($frenet_config->getMinimumWidth());
+			$data['shipping_frenet_minimum_length'] = $this->formatNumber($frenet_config->getMinimumLength());
+			$data['shipping_frenet_default_weight'] = $this->formatNumber($frenet_config->getDefaultWeight());
 		}
 
-		$frenet_config = new FrenetConfig($this->config);
-
-		$data['shipping_frenet_delivery_time'] = $frenet_config->isDeliveryTimeShown();
-		$data['shipping_frenet_additional_days'] = $frenet_config->getAdditionalDays();
-		$data['shipping_frenet_timeout'] = $frenet_config->getTimeout();
-		$data['shipping_frenet_attempts'] = $frenet_config->getAttempts();
-		$data['shipping_frenet_minimum_height'] = $this->formatNumber($frenet_config->getMinimumHeight());
-		$data['shipping_frenet_minimum_width'] = $this->formatNumber($frenet_config->getMinimumWidth());
-		$data['shipping_frenet_minimum_length'] = $this->formatNumber($frenet_config->getMinimumLength());
-		$data['shipping_frenet_default_weight'] = $this->formatNumber($frenet_config->getDefaultWeight());
 		$data['timeout_min'] = FrenetConfig::TIMEOUT_MIN;
 		$data['timeout_max'] = FrenetConfig::TIMEOUT_MAX;
 		$data['attempts_min'] = FrenetConfig::ATTEMPTS_MIN;
@@ -184,9 +195,21 @@ class ControllerExtensionShippingFrenet extends Controller {
 		$this->response->setOutput($this->load->view('extension/shipping/frenet', $data));
 	}
 
-	protected function validate() {
+	private function validate(string $saved_token): bool {
 		if (!$this->user->hasPermission('modify', 'extension/shipping/frenet')) {
 			$this->error['warning'] = $this->language->get('error_permission');
+		}
+
+		if (!preg_match('/^\d{5}-?\d{3}$/', trim((string)($this->request->post['shipping_frenet_postcode'] ?? '')))) {
+			$this->error['postcode'] = $this->language->get('error_postcode');
+		}
+
+		if (!empty($this->request->post['shipping_frenet_status']) && $saved_token === '' && trim((string)($this->request->post['shipping_frenet_token'] ?? '')) === '') {
+			$this->error['token'] = $this->language->get('error_token');
+		}
+
+		if ($this->error && !isset($this->error['warning'])) {
+			$this->error['warning'] = $this->language->get('error_warning');
 		}
 
 		return !$this->error;

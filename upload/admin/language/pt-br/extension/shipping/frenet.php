@@ -54,3 +54,6 @@ $_['placeholder_msg_prazo'] = '%s - Em média %d dia(s)';
 
 // Error
 $_['error_permission']      = 'Atenção: você não tem permissão para modificar a extensão Frenet!';
+$_['error_warning']         = 'Atenção: a configuração não foi salva. Corrija os campos destacados.';
+$_['error_postcode']        = 'O CEP de origem precisa ter 8 dígitos, como 01310-100.';
+$_['error_token']           = 'Informe o token gerado no painel Frenet para habilitar o frete.';
