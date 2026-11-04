@@ -48,7 +48,7 @@ class Catalog {
 	/**
 	 * SKU, or the model when the SKU is empty, and the names of the enabled categories of this store joined by |.
 	 *
-	 * @param int[] $product_ids
+	 * @param array<int|string> $product_ids
 	 * @return array<int, array{sku: string, category: string}>
 	 */
 	public function getProducts(array $product_ids): array {

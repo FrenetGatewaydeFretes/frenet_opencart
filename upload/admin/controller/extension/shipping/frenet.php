@@ -43,9 +43,12 @@ class ControllerExtensionShippingFrenet extends Controller {
 		'shipping_frenet_default_weight' => ['entry_default_weight', FrenetConfig::DEFAULT_WEIGHT]
 	];
 
+	/**
+	 * @var array<string, string>
+	 */
 	private $error = [];
 
-	public function index() {
+	public function index(): void {
 		$this->load->language('extension/shipping/frenet');
 
 		$this->document->setTitle($this->language->get('heading_title'));
@@ -219,6 +222,10 @@ class ControllerExtensionShippingFrenet extends Controller {
 		return !$this->error;
 	}
 
+	/**
+	 * @param array<string, mixed> $settings
+	 * @return bool
+	 */
 	private function removeLegacySettings(array $settings): bool {
 		$legacy = array_intersect_key($settings, array_flip(self::LEGACY_KEYS));
 
@@ -235,6 +242,12 @@ class ControllerExtensionShippingFrenet extends Controller {
 		return rtrim(rtrim(number_format($value, 6, '.', ''), '0'), '.');
 	}
 
+	/**
+	 * @param array<int, array<string, mixed>> $classes
+	 * @param string $id_key
+	 * @param string $unit
+	 * @return int
+	 */
 	private function findClassId(array $classes, string $id_key, string $unit): int {
 		foreach ($classes as $class) {
 			if (strtolower(trim($class['unit'])) === $unit) {

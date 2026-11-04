@@ -7,7 +7,11 @@ use Frenet\Quote\Builder;
 use Frenet\Quote\Catalog;
 
 class ModelExtensionShippingFrenet extends Model {
-	public function getQuote($address) {
+	/**
+	 * @param array<string, mixed> $address
+	 * @return array<string, mixed>
+	 */
+	public function getQuote(array $address): array {
 		$config = new FrenetConfig($this->config);
 		$log = new FrenetLog(new \Log(FrenetLog::FILENAME), $config->isDebug());
 
@@ -84,6 +88,11 @@ class ModelExtensionShippingFrenet extends Model {
 		return $this->method($config, $quote_data, false);
 	}
 
+	/**
+	 * @param int $geo_zone_id
+	 * @param array<string, mixed> $address
+	 * @return bool
+	 */
 	private function inGeoZone(int $geo_zone_id, array $address): bool {
 		$query = $this->db->query("SELECT 1 FROM `" . DB_PREFIX . "zone_to_geo_zone` WHERE `geo_zone_id` = '" . $geo_zone_id . "' AND `country_id` = '" . (int)($address['country_id'] ?? 0) . "' AND (`zone_id` = '" . (int)($address['zone_id'] ?? 0) . "' OR `zone_id` = '0') LIMIT 1");
 
@@ -94,7 +103,13 @@ class ModelExtensionShippingFrenet extends Model {
 		return (bool)$this->db->query("SELECT 1 FROM `" . DB_PREFIX . "geo_zone` WHERE `geo_zone_id` = '" . $geo_zone_id . "' LIMIT 1")->num_rows;
 	}
 
-	private function method(FrenetConfig $config, array $quote_data, $error) {
+	/**
+	 * @param FrenetConfig $config
+	 * @param array<string, array<string, mixed>> $quote_data
+	 * @param false|string $error
+	 * @return array<string, mixed>
+	 */
+	private function method(FrenetConfig $config, array $quote_data, $error): array {
 		return [
 			'code'       => 'frenet',
 			'title'      => $this->language->get('text_title'),
