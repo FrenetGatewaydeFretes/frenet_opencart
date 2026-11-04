@@ -12,7 +12,7 @@ class ConfigTest extends TestCase {
 			'shipping_frenet_status'     => '1',
 			'shipping_frenet_token'      => 'abc123',
 			'shipping_frenet_postcode'   => '01310100',
-			'shipping_frenet_msg_prazo'  => '%s - em até %d dia(s)',
+			'shipping_frenet_msg_prazo'  => " %s - em até %d dia(s) ",
 			'shipping_frenet_weight_class_id' => '1',
 			'shipping_frenet_length_class_id' => '2',
 			'shipping_frenet_sort_order' => '3'

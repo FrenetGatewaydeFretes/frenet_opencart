@@ -102,12 +102,12 @@ class Config {
 	}
 
 	/**
-	 * Template for the rate title, where %s is the service name and %d the delivery days.
+	 * Template for the rate title, where %s is the service name and %d the delivery days, empty for the default one.
 	 *
 	 * @return string
 	 */
 	public function getDeliveryTimeMessage(): string {
-		return (string)$this->get('msg_prazo');
+		return trim((string)$this->get('msg_prazo'));
 	}
 
 	/**

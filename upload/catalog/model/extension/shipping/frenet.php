@@ -55,12 +55,14 @@ class ModelExtensionShippingFrenet extends Model {
 			return $this->method($config, [], $this->language->get('error_no_services'));
 		}
 
+		$template = $config->isDeliveryTimeShown() ? ($config->getDeliveryTimeMessage() ?: $this->language->get('text_delivery_time')) : '';
+
 		$quote_data = [];
 
 		foreach ($result->getServices() as $service) {
 			$quote_data[$service->getCode()] = [
 				'code'         => 'frenet.' . $service->getCode(),
-				'title'        => $service->getTitle($config->getDeliveryTimeMessage(), $config->getAdditionalDays()),
+				'title'        => $service->getTitle($template, $config->getAdditionalDays()),
 				'cost'         => $service->getPrice(),
 				'tax_class_id' => 0,
 				'text'         => $this->currency->format($this->tax->calculate($service->getPrice(), 0, $this->config->get('config_tax')), $this->session->data['currency'])
