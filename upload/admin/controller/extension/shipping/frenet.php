@@ -65,9 +65,13 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 		$settings = $this->model_setting_setting->getSetting('shipping_frenet');
 
-		$data['migrated'] = $this->removeLegacySettings($settings);
+		$can_modify = $this->user->hasPermission('modify', 'extension/shipping/frenet');
 
-		$this->addEvent();
+		$data['migrated'] = $can_modify && $this->removeLegacySettings($settings);
+
+		if ($can_modify) {
+			$this->addEvent();
+		}
 
 		$saved_token = (string)($settings['shipping_frenet_token'] ?? '');
 

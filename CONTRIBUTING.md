@@ -89,7 +89,7 @@ O controller `catalog/controller/extension/shipping/frenet.php` tem duas rotas:
 - `addSimulator`: responde ao evento `catalog/view/product/product/after` e coloca o simulador logo depois do bloco do botão `#button-cart`. Só aparece com o módulo e o simulador ligados, token salvo e produto que exige envio. Num tema sem `#button-cart`, o simulador não aparece.
 - `quote`: a rota AJAX. Recebe os mesmos campos que o botão de comprar envia (`product_id`, `quantity`, `option[...]`) e o `postcode`. Acha o país Brasil e o estado do CEP na tabela de zonas, ajusta os endereços de imposto como a estimativa de frete do carrinho do core (`extension/total/shipping`) e cota pelo mesmo model do checkout (`getProductQuote`), com o cupom da sessão. Acima do limite, responde 429 com `Retry-After`.
 
-O evento é registrado no `install()` do admin. Lojas que atualizam o módulo já estão com ele instalado, então o admin também registra o evento quando a configuração da Frenet é aberta, se ele ainda não existir. O `uninstall()` apaga o evento.
+O evento é registrado no `install()` do admin. Lojas que atualizam o módulo já estão com ele instalado, então o admin também registra o evento quando a configuração da Frenet é aberta por um usuário com permissão de alterar a extensão, se ele ainda não existir. O `uninstall()` apaga o evento.
 
 O IP é o `REMOTE_ADDR`. O módulo não lê `X-Forwarded-For`, porque qualquer cliente pode enviar esse header e escapar do limite. Um endereço IPv6 conta pela sua rede /64, porque cada cliente IPv6 costuma ter a /64 inteira e trocaria de endereço a cada simulação. Um IPv6 mapeado (`::ffff:203.0.113.7`) conta como o IPv4.
 
