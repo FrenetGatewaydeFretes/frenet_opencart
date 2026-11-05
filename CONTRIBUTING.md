@@ -40,6 +40,8 @@ Os templates do admin e do simulador precisam funcionar do Twig 1.24 ao 3.x. Use
 
 O OpenCart 3 roda o Twig com `autoescape` desligado, então todo valor impresso no template leva `|escape`.
 
+Em versões antigas do OpenCart 3, como a 3.0.3.3, o catálogo e o admin guardam o template compilado e não conferem se o arquivo mudou (o Twig roda sem `auto_reload`). Por isso o admin e o simulador renderizam os templates da Frenet com `template_cache` desligado. Sem isso, depois de uma atualização do módulo, a loja mostraria o template antigo até o lojista limpar o cache de tema.
+
 O JavaScript do simulador roda com o jQuery do tema padrão, do 2.1.1 (3.0.0.0) ao 3.7.1 (3.0.5.1), e o Bootstrap 3. Ele não usa recursos que só existem em versões mais novas, e textos vindos do servidor entram na página por `.text()`.
 
 ## Estrutura

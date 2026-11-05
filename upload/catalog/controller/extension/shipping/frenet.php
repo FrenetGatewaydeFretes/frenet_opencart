@@ -38,9 +38,15 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 		$this->load->language('extension/shipping/frenet');
 
+		$template_cache = $this->config->get('template_cache');
+
+		$this->config->set('template_cache', false);
+
 		$simulator = $this->load->view('extension/shipping/frenet_simulator', [
 			'postcode' => (string)($this->session->data['shipping_address']['postcode'] ?? '')
 		]);
+
+		$this->config->set('template_cache', $template_cache);
 
 		$output = substr_replace($output, $simulator, $position + strlen(self::BLOCK_END), 0);
 	}
