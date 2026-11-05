@@ -245,15 +245,9 @@ class Config {
 	 * @return string|null
 	 */
 	public static function parsePostcode($value): ?string {
-		$postcode = trim((string)$value);
+		$digits = Postcode::getDigits((string)$value);
 
-		if (!preg_match('/^[0-9.\s-]+$/', $postcode)) {
-			return null;
-		}
-
-		$digits = (string)preg_replace('/\D/', '', $postcode);
-
-		return strlen($digits) === 8 ? substr($digits, 0, 5) . '-' . substr($digits, 5) : null;
+		return $digits !== '' ? substr($digits, 0, 5) . '-' . substr($digits, 5) : null;
 	}
 
 	/**
