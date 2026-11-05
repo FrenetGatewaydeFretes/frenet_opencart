@@ -4,6 +4,7 @@ use Frenet\Config as FrenetConfig;
 use Frenet\Http\Client;
 use Frenet\Log as FrenetLog;
 use Frenet\Quote\Builder;
+use Frenet\Quote\Cache as QuoteCache;
 use Frenet\Quote\Catalog;
 
 class ModelExtensionShippingFrenet extends Model {
@@ -54,7 +55,7 @@ class ModelExtensionShippingFrenet extends Model {
 		$this->load->language('extension/shipping/frenet');
 
 		try {
-			$result = (new Api(new Client(), $log, $config->getToken(), VERSION, $config->getTimeout(), $config->getAttempts()))->quote($request);
+			$result = (new Api(new Client(), new QuoteCache($this->cache), $log, $config->getToken(), VERSION, $config->getTimeout(), $config->getAttempts()))->quote($request);
 		} catch (\Throwable $exception) {
 			$log->error('Quote failed: ' . $exception->getMessage(), ['request' => $request->toArray()]);
 

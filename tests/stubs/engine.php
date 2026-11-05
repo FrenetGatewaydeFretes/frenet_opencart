@@ -17,6 +17,7 @@ if (!class_exists('Controller', false)) {
 	 * @property \DB $db
 	 * @property \Cart\Weight $weight
 	 * @property \Cart\Length $length
+	 * @property \Cache $cache
 	 * @property mixed $cart
 	 * @property mixed $currency
 	 * @property mixed $document
@@ -74,6 +75,7 @@ if (!class_exists('Model', false)) {
 	 * @property \DB $db
 	 * @property \Cart\Weight $weight
 	 * @property \Cart\Length $length
+	 * @property \Cache $cache
 	 * @property mixed $cart
 	 * @property mixed $currency
 	 * @property mixed $document

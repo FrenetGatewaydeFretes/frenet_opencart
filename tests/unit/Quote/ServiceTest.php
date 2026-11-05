@@ -7,10 +7,10 @@ use Frenet\Quote\Service;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-class ServiceTest extends TestCase {
+final class ServiceTest extends TestCase {
 	#[DataProvider('provideBuildsTheRateTitleCases')]
 	public function testBuildsTheRateTitle(string $template, int $delivery_time, int $additional_days, string $expected): void {
-		static::assertSame($expected, (new Service('03298', 'PAC', 25.9, $delivery_time))->getTitle($template, $additional_days));
+		self::assertSame($expected, (new Service('03298', 'PAC', 25.9, $delivery_time))->getTitle($template, $additional_days));
 	}
 
 	/**

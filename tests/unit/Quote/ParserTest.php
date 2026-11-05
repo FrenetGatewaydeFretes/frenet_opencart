@@ -8,26 +8,26 @@ use Frenet\Quote\Parser;
 use Frenet\Quote\Service;
 use PHPUnit\Framework\TestCase;
 
-class ParserTest extends TestCase {
+final class ParserTest extends TestCase {
 	public function testReadsEveryServiceOfTheResponse(): void {
 		$services = (new Parser())->parse((string)file_get_contents(dirname(__DIR__, 2) . '/mock/fixtures/quote.json'))->getServices();
 
-		static::assertSame(['03298', '03220'], $this->codes($services));
-		static::assertSame('PAC', $services[0]->getDescription());
-		static::assertSame(25.9, $services[0]->getPrice());
-		static::assertSame(7, $services[0]->getDeliveryTime());
+		self::assertSame(['03298', '03220'], $this->codes($services));
+		self::assertSame('PAC', $services[0]->getDescription());
+		self::assertSame(25.9, $services[0]->getPrice());
+		self::assertSame(7, $services[0]->getDeliveryTime());
 	}
 
 	public function testReadsAResponseWithASingleService(): void {
 		$services = (new Parser())->parse((string)file_get_contents(dirname(__DIR__, 2) . '/mock/fixtures/quote-single.json'))->getServices();
 
-		static::assertSame(['03220'], $this->codes($services));
+		self::assertSame(['03220'], $this->codes($services));
 	}
 
 	public function testReadsASingleServiceSentAsAnObjectInsteadOfAList(): void {
 		$services = (new Parser())->parse('{"ShippingSevicesArray":{"ServiceCode":"03220","ServiceDescription":"SEDEX","ShippingPrice":"42.50","DeliveryTime":"3"}}')->getServices();
 
-		static::assertSame(['03220'], $this->codes($services));
+		self::assertSame(['03220'], $this->codes($services));
 	}
 
 	public function testSkipsServicesThatCannotBeOfferedAndKeepsTheErrorMessages(): void {
@@ -41,9 +41,9 @@ class ParserTest extends TestCase {
 			['ServiceCode' => '03220', 'ServiceDescription' => 'SEDEX', 'ShippingPrice' => '42,50', 'Error' => false]
 		]]));
 
-		static::assertSame(['03220'], $this->codes($result->getServices()));
-		static::assertSame(42.5, $result->getServices()[0]->getPrice());
-		static::assertSame([
+		self::assertSame(['03220'], $this->codes($result->getServices()));
+		self::assertSame(42.5, $result->getServices()[0]->getPrice());
+		self::assertSame([
 			['code' => '04227', 'description' => 'Mini Envios', 'message' => 'Erro: Peso excedido.'],
 			['code' => '03298', 'description' => 'PAC', 'message' => 'CEP fora da área']
 		], $result->getErrors());
@@ -55,21 +55,21 @@ class ParserTest extends TestCase {
 			['ServiceCode' => 'F_3', 'ServiceDescription' => 'Jadlog Package', 'ShippingPrice' => '18.06']
 		]]))->getServices();
 
-		static::assertSame(3, $services[0]->getDeliveryTime());
-		static::assertSame(0, $services[1]->getDeliveryTime());
-		static::assertSame('Jadlog Package', $services[1]->getTitle('%s - Em média %d dia(s)', 0));
+		self::assertSame(3, $services[0]->getDeliveryTime());
+		self::assertSame(0, $services[1]->getDeliveryTime());
+		self::assertSame('Jadlog Package', $services[1]->getTitle('%s - Em média %d dia(s)', 0));
 	}
 
 	public function testReturnsNoServiceWhenTheResponseHasNone(): void {
 		$empty = (new Parser())->parse('{"ShippingSevicesArray":[]}');
 		$message = (new Parser())->parse('{"Message":"Nenhuma transportadora"}');
 
-		static::assertSame([], $empty->getServices());
-		static::assertSame([], $empty->getErrors());
-		static::assertSame('', $empty->getMessage());
-		static::assertSame([], $message->getServices());
-		static::assertSame('Nenhuma transportadora', $message->getMessage());
-		static::assertSame([], (new Parser())->parse('{"ShippingSevicesArray":null}')->getServices());
+		self::assertSame([], $empty->getServices());
+		self::assertSame([], $empty->getErrors());
+		self::assertSame('', $empty->getMessage());
+		self::assertSame([], $message->getServices());
+		self::assertSame('Nenhuma transportadora', $message->getMessage());
+		self::assertSame([], (new Parser())->parse('{"ShippingSevicesArray":null}')->getServices());
 	}
 
 	public function testRefusesABodyThatIsNotJson(): void {

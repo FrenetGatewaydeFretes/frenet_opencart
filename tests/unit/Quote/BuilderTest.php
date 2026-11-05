@@ -10,7 +10,7 @@ use Frenet\Quote\Builder;
 use Frenet\Quote\Exception;
 use PHPUnit\Framework\TestCase;
 
-class BuilderTest extends TestCase {
+final class BuilderTest extends TestCase {
 	private const KG = 1;
 	private const G = 2;
 	private const LB = 5;
@@ -26,15 +26,15 @@ class BuilderTest extends TestCase {
 			'FRETE10'
 		)->toArray();
 
-		static::assertSame('01310100', $request['SellerCEP']);
-		static::assertSame('20040020', $request['RecipientCEP']);
-		static::assertSame('', $request['RecipientDocument']);
-		static::assertSame('BR', $request['RecipientCountry']);
-		static::assertSame(199.9, $request['ShipmentInvoiceValue']);
-		static::assertSame('FRETE10', $request['Coupom']);
-		static::assertSame('OpenCart3', $request['PlatformName']);
-		static::assertSame('3.0.5.1', $request['PlatformVersion']);
-		static::assertSame([[
+		self::assertSame('01310100', $request['SellerCEP']);
+		self::assertSame('20040020', $request['RecipientCEP']);
+		self::assertSame('', $request['RecipientDocument']);
+		self::assertSame('BR', $request['RecipientCountry']);
+		self::assertSame(199.9, $request['ShipmentInvoiceValue']);
+		self::assertSame('FRETE10', $request['Coupom']);
+		self::assertSame('OpenCart3', $request['PlatformName']);
+		self::assertSame('3.0.5.1', $request['PlatformVersion']);
+		self::assertSame([[
 			'Weight'    => 1.5,
 			'Length'    => 16.0,
 			'Height'    => 2.0,
@@ -54,16 +54,16 @@ class BuilderTest extends TestCase {
 			$this->product(['weight' => 2, 'weight_class_id' => self::KG, 'length' => 30, 'height' => 4, 'width' => 20, 'length_class_id' => self::CM])
 		]);
 
-		static::assertEqualsWithDelta(0.5, $items[0]['Weight'], 0.0001);
-		static::assertEqualsWithDelta(16.0, $items[0]['Length'], 0.0001);
-		static::assertEqualsWithDelta(2.0, $items[0]['Height'], 0.0001);
-		static::assertEqualsWithDelta(11.0, $items[0]['Width'], 0.0001);
-		static::assertEqualsWithDelta(1.0, $items[1]['Weight'], 0.0001);
-		static::assertEqualsWithDelta(25.4, $items[1]['Length'], 0.0001);
-		static::assertEqualsWithDelta(2.54, $items[1]['Height'], 0.0001);
-		static::assertEqualsWithDelta(12.7, $items[1]['Width'], 0.0001);
-		static::assertEqualsWithDelta(2.0, $items[2]['Weight'], 0.0001);
-		static::assertEqualsWithDelta(30.0, $items[2]['Length'], 0.0001);
+		self::assertEqualsWithDelta(0.5, $items[0]['Weight'], 0.0001);
+		self::assertEqualsWithDelta(16.0, $items[0]['Length'], 0.0001);
+		self::assertEqualsWithDelta(2.0, $items[0]['Height'], 0.0001);
+		self::assertEqualsWithDelta(11.0, $items[0]['Width'], 0.0001);
+		self::assertEqualsWithDelta(1.0, $items[1]['Weight'], 0.0001);
+		self::assertEqualsWithDelta(25.4, $items[1]['Length'], 0.0001);
+		self::assertEqualsWithDelta(2.54, $items[1]['Height'], 0.0001);
+		self::assertEqualsWithDelta(12.7, $items[1]['Width'], 0.0001);
+		self::assertEqualsWithDelta(2.0, $items[2]['Weight'], 0.0001);
+		self::assertEqualsWithDelta(30.0, $items[2]['Length'], 0.0001);
 	}
 
 	public function testKeepsLightWeightsAndRoundsOnlyTheConversionNoise(): void {
@@ -73,10 +73,10 @@ class BuilderTest extends TestCase {
 			$this->product(['weight' => 1500, 'quantity' => 1000, 'weight_class_id' => self::G])
 		]);
 
-		static::assertSame([1.0, 25.4, 2.54, 12.7], [$items[0]['Weight'], $items[0]['Length'], $items[0]['Height'], $items[0]['Width']]);
-		static::assertSame(0.0004, $items[1]['Weight']);
-		static::assertSame(0.0015, $items[2]['Weight']);
-		static::assertSame(1000, $items[2]['Quantity']);
+		self::assertSame([1.0, 25.4, 2.54, 12.7], [$items[0]['Weight'], $items[0]['Length'], $items[0]['Height'], $items[0]['Width']]);
+		self::assertSame(0.0004, $items[1]['Weight']);
+		self::assertSame(0.0015, $items[2]['Weight']);
+		self::assertSame(1000, $items[2]['Quantity']);
 	}
 
 	public function testRaisesMeasuresBelowTheMinimumToTheMinimum(): void {
@@ -85,8 +85,8 @@ class BuilderTest extends TestCase {
 			$this->product(['length' => 1, 'height' => 1, 'width' => 1, 'length_class_id' => self::MM])
 		]);
 
-		static::assertSame([16.0, 2.0, 11.0], [$items[0]['Length'], $items[0]['Height'], $items[0]['Width']]);
-		static::assertSame([16.0, 2.0, 11.0], [$items[1]['Length'], $items[1]['Height'], $items[1]['Width']]);
+		self::assertSame([16.0, 2.0, 11.0], [$items[0]['Length'], $items[0]['Height'], $items[0]['Width']]);
+		self::assertSame([16.0, 2.0, 11.0], [$items[1]['Length'], $items[1]['Height'], $items[1]['Width']]);
 	}
 
 	public function testUsesTheClassesTheStoreOwnerMappedEvenWhenGramsAreTheStoreDefault(): void {
@@ -96,7 +96,7 @@ class BuilderTest extends TestCase {
 			$this->product(['weight' => 1500, 'weight_class_id' => self::G])
 		], [], '')->toArray()['ShippingItemArray'];
 
-		static::assertEqualsWithDelta(1.5, $items[0]['Weight'], 0.0001);
+		self::assertEqualsWithDelta(1.5, $items[0]['Weight'], 0.0001);
 	}
 
 	public function testSendsTheConfiguredMinimumsForAProductWithoutWeightOrMeasures(): void {
@@ -110,14 +110,14 @@ class BuilderTest extends TestCase {
 			$this->product(['weight' => 1, 'length' => 0, 'height' => 5, 'width' => 0])
 		], [], '')->toArray()['ShippingItemArray'];
 
-		static::assertSame([0.4, 18.0, 3.0, 12.0], [$items[0]['Weight'], $items[0]['Length'], $items[0]['Height'], $items[0]['Width']]);
-		static::assertSame([1.0, 18.0, 5.0, 12.0], [$items[1]['Weight'], $items[1]['Length'], $items[1]['Height'], $items[1]['Width']]);
+		self::assertSame([0.4, 18.0, 3.0, 12.0], [$items[0]['Weight'], $items[0]['Length'], $items[0]['Height'], $items[0]['Width']]);
+		self::assertSame([1.0, 18.0, 5.0, 12.0], [$items[1]['Weight'], $items[1]['Length'], $items[1]['Height'], $items[1]['Width']]);
 	}
 
 	public function testUsesTheCorreiosMinimumsWhenNothingIsConfigured(): void {
 		$items = $this->items([$this->product(['weight' => 0, 'length' => 0, 'height' => 0, 'width' => 0])]);
 
-		static::assertSame([1.0, 16.0, 2.0, 11.0], [$items[0]['Weight'], $items[0]['Length'], $items[0]['Height'], $items[0]['Width']]);
+		self::assertSame([1.0, 16.0, 2.0, 11.0], [$items[0]['Weight'], $items[0]['Length'], $items[0]['Height'], $items[0]['Width']]);
 	}
 
 	public function testLeavesProductsWithoutShippingOutOfTheItemsAndTheDeclaredValue(): void {
@@ -126,18 +126,18 @@ class BuilderTest extends TestCase {
 			$this->product(['product_id' => 50, 'quantity' => 1, 'price' => 50, 'total' => 50, 'shipping' => '0', 'weight' => 0])
 		], [41 => ['sku' => 'CAM-AZ-M', 'category' => 'Camisetas'], 50 => ['sku' => 'EBOOK', 'category' => 'Livros']], 'DESCONTO10')->toArray();
 
-		static::assertCount(1, $request['ShippingItemArray']);
-		static::assertSame('CAM-AZ-M', $request['ShippingItemArray'][0]['SKU']);
-		static::assertEqualsWithDelta(0.3, $request['ShippingItemArray'][0]['Weight'], 0.0001);
-		static::assertSame(180.0, $request['ShipmentInvoiceValue']);
-		static::assertSame('DESCONTO10', $request['Coupom']);
+		self::assertCount(1, $request['ShippingItemArray']);
+		self::assertSame('CAM-AZ-M', $request['ShippingItemArray'][0]['SKU']);
+		self::assertEqualsWithDelta(0.3, $request['ShippingItemArray'][0]['Weight'], 0.0001);
+		self::assertSame(180.0, $request['ShipmentInvoiceValue']);
+		self::assertSame('DESCONTO10', $request['Coupom']);
 	}
 
 	public function testSendsTheDecodedModelWhenTheCatalogHasNoDetailsForTheProduct(): void {
 		$items = $this->items([$this->product(['product_id' => 99, 'model' => 'A&amp;B-01'])]);
 
-		static::assertSame('A&B-01', $items[0]['SKU']);
-		static::assertSame('', $items[0]['Category']);
+		self::assertSame('A&B-01', $items[0]['SKU']);
+		self::assertSame('', $items[0]['Category']);
 	}
 
 	public function testKeepsOnlyTheProductsThatRequireShipping(): void {
@@ -147,7 +147,7 @@ class BuilderTest extends TestCase {
 			'c' => $this->product(['product_id' => 51, 'quantity' => 0])
 		];
 
-		static::assertSame(['a'], array_keys($this->createBuilder()->filterShipped($products)));
+		self::assertSame(['a'], array_keys($this->createBuilder()->filterShipped($products)));
 	}
 
 	public function testRefusesACartWithoutProductsToShip(): void {
@@ -160,7 +160,7 @@ class BuilderTest extends TestCase {
 	public function testFallsBackToBrazilWhenTheAddressHasNoCountry(): void {
 		$request = $this->createBuilder()->build(['postcode' => '20040020', 'iso_code_2' => ''], [$this->product([])], [], '')->toArray();
 
-		static::assertSame('BR', $request['RecipientCountry']);
+		self::assertSame('BR', $request['RecipientCountry']);
 	}
 
 	public function testRefusesAWeightClassThatNoLongerExists(): void {
