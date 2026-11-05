@@ -5,6 +5,12 @@ use Frenet\Module;
 class ControllerExtensionShippingFrenet extends Controller {
 	private const PANEL_URL = 'https://painel.frenet.com.br/';
 
+	private const EVENT_CODE = 'frenet_simulator';
+
+	private const EVENT_TRIGGER = 'catalog/view/product/product/after';
+
+	private const EVENT_ACTION = 'extension/shipping/frenet/addSimulator';
+
 	private const LEGACY_KEYS = [
 		'shipping_frenet_contrato_codigo',
 		'shipping_frenet_contrato_senha',
@@ -60,6 +66,8 @@ class ControllerExtensionShippingFrenet extends Controller {
 		$settings = $this->model_setting_setting->getSetting('shipping_frenet');
 
 		$data['migrated'] = $this->removeLegacySettings($settings);
+
+		$this->addEvent();
 
 		$saved_token = (string)($settings['shipping_frenet_token'] ?? '');
 
@@ -214,6 +222,16 @@ class ControllerExtensionShippingFrenet extends Controller {
 		$this->response->setOutput($this->load->view('extension/shipping/frenet', $data));
 	}
 
+	public function install(): void {
+		$this->addEvent();
+	}
+
+	public function uninstall(): void {
+		$this->load->model('setting/event');
+
+		$this->model_setting_event->deleteEventByCode(self::EVENT_CODE);
+	}
+
 	private function validate(string $saved_token): bool {
 		if (!$this->user->hasPermission('modify', 'extension/shipping/frenet')) {
 			$this->error['warning'] = $this->language->get('error_permission');
@@ -248,6 +266,18 @@ class ControllerExtensionShippingFrenet extends Controller {
 		$this->model_setting_setting->editSetting('shipping_frenet', array_diff_key($settings, $legacy));
 
 		return true;
+	}
+
+	private function addEvent(): void {
+		$this->load->model('setting/event');
+
+		foreach ($this->model_setting_event->getEvents() as $event) {
+			if ($event['code'] === self::EVENT_CODE) {
+				return;
+			}
+		}
+
+		$this->model_setting_event->addEvent(self::EVENT_CODE, self::EVENT_TRIGGER, self::EVENT_ACTION);
 	}
 
 	private function formatNumber(float $value): string {
