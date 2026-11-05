@@ -59,7 +59,7 @@ class ControllerExtensionShippingFrenet extends Controller {
 			$retry_after = (new RateLimit($this->cache, $log, $config->getSimulatorLimit()))->hit((string)($this->request->server['REMOTE_ADDR'] ?? ''));
 
 			if ($retry_after) {
-				$this->response->addHeader('HTTP/1.1 429 Too Many Requests');
+				$this->response->addHeader($this->request->server['SERVER_PROTOCOL'] . ' 429 Too Many Requests');
 				$this->response->addHeader('Retry-After: ' . $retry_after);
 
 				$json = ['error' => ['warning' => $this->language->get('error_simulator_limit')]];
