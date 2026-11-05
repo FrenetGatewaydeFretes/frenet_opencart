@@ -29,10 +29,12 @@ if (!class_exists('Controller', false)) {
 	 * @property mixed $tax
 	 * @property mixed $url
 	 * @property mixed $user
+	 * @property mixed $model_localisation_country
 	 * @property mixed $model_localisation_geo_zone
 	 * @property mixed $model_localisation_length_class
 	 * @property mixed $model_localisation_tax_class
 	 * @property mixed $model_localisation_weight_class
+	 * @property mixed $model_localisation_zone
 	 * @property mixed $model_extension_shipping_frenet
 	 * @property mixed $model_setting_event
 	 * @property mixed $model_setting_setting
@@ -89,10 +91,12 @@ if (!class_exists('Model', false)) {
 	 * @property mixed $tax
 	 * @property mixed $url
 	 * @property mixed $user
+	 * @property mixed $model_localisation_country
 	 * @property mixed $model_localisation_geo_zone
 	 * @property mixed $model_localisation_length_class
 	 * @property mixed $model_localisation_tax_class
 	 * @property mixed $model_localisation_weight_class
+	 * @property mixed $model_localisation_zone
 	 * @property mixed $model_extension_shipping_frenet
 	 * @property mixed $model_setting_event
 	 * @property mixed $model_setting_setting

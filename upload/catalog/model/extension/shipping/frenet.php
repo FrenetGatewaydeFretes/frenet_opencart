@@ -35,7 +35,11 @@ class ModelExtensionShippingFrenet extends Model {
 	 * @return array<string, mixed>
 	 */
 	public function getPostcodeAddress(string $postcode, string $state): array {
-		$zone = $this->db->query("SELECT c.`country_id`, c.`name` AS country, c.`iso_code_2`, c.`iso_code_3`, c.`address_format`, z.`zone_id`, z.`name` AS zone, z.`code` AS zone_code FROM `" . DB_PREFIX . "country` c LEFT JOIN `" . DB_PREFIX . "zone` z ON (z.`country_id` = c.`country_id` AND z.`code` = '" . $this->db->escape($state) . "' AND z.`status` = '1') WHERE c.`iso_code_2` = 'BR' AND c.`status` = '1' LIMIT 1")->row;
+		$this->load->model('localisation/country');
+		$this->load->model('localisation/zone');
+
+		$country = $this->findRow($this->model_localisation_country->getCountries(), 'iso_code_2', 'BR');
+		$zone = $country ? $this->findRow($this->model_localisation_zone->getZonesByCountryId($country['country_id']), 'code', $state) : [];
 
 		return [
 			'firstname'      => '',
@@ -46,13 +50,13 @@ class ModelExtensionShippingFrenet extends Model {
 			'postcode'       => substr($postcode, 0, 5) . '-' . substr($postcode, 5),
 			'city'           => '',
 			'zone_id'        => (int)($zone['zone_id'] ?? 0),
-			'zone'           => (string)($zone['zone'] ?? ''),
-			'zone_code'      => (string)($zone['zone_code'] ?? $state),
-			'country_id'     => (int)($zone['country_id'] ?? 0),
-			'country'        => (string)($zone['country'] ?? ''),
+			'zone'           => (string)($zone['name'] ?? ''),
+			'zone_code'      => (string)($zone['code'] ?? $state),
+			'country_id'     => (int)($country['country_id'] ?? 0),
+			'country'        => (string)($country['name'] ?? ''),
 			'iso_code_2'     => 'BR',
-			'iso_code_3'     => (string)($zone['iso_code_3'] ?? 'BRA'),
-			'address_format' => (string)($zone['address_format'] ?? '')
+			'iso_code_3'     => (string)($country['iso_code_3'] ?? 'BRA'),
+			'address_format' => (string)($country['address_format'] ?? '')
 		];
 	}
 
@@ -146,6 +150,22 @@ class ModelExtensionShippingFrenet extends Model {
 		$query = $this->db->query("SELECT 1 FROM `" . DB_PREFIX . "zone_to_geo_zone` WHERE `geo_zone_id` = '" . $geo_zone_id . "' AND `country_id` = '" . (int)($address['country_id'] ?? 0) . "' AND (`zone_id` = '" . (int)($address['zone_id'] ?? 0) . "' OR `zone_id` = '0') LIMIT 1");
 
 		return (bool)$query->num_rows;
+	}
+
+	/**
+	 * @param array<int, array<string, mixed>> $rows
+	 * @param string $field
+	 * @param string $value
+	 * @return array<string, mixed>
+	 */
+	private function findRow(array $rows, string $field, string $value): array {
+		foreach ($rows as $row) {
+			if ((string)($row[$field] ?? '') === $value) {
+				return $row;
+			}
+		}
+
+		return [];
 	}
 
 	private function geoZoneExists(int $geo_zone_id): bool {
