@@ -13,6 +13,55 @@ class ModelExtensionShippingFrenet extends Model {
 	 * @return array<string, mixed>
 	 */
 	public function getQuote(array $address): array {
+		return $this->quote($address, $this->cart->getProducts());
+	}
+
+	/**
+	 * Quotes the product of the page alone, as Frenet\Simulator\Product builds it, the way the cart would quote it.
+	 *
+	 * @param array<string, mixed> $address
+	 * @param array<string, mixed> $product
+	 * @return array<string, mixed>
+	 */
+	public function getProductQuote(array $address, array $product): array {
+		return $this->quote($address, [$product]);
+	}
+
+	/**
+	 * Shipping address of a Brazilian postcode with the country and state of the store, as the cart shipping estimate builds it.
+	 *
+	 * @param string $postcode
+	 * @param string $state
+	 * @return array<string, mixed>
+	 */
+	public function getPostcodeAddress(string $postcode, string $state): array {
+		$zone = $this->db->query("SELECT c.`country_id`, c.`name` AS country, c.`iso_code_2`, c.`iso_code_3`, c.`address_format`, z.`zone_id`, z.`name` AS zone, z.`code` AS zone_code FROM `" . DB_PREFIX . "country` c LEFT JOIN `" . DB_PREFIX . "zone` z ON (z.`country_id` = c.`country_id` AND z.`code` = '" . $this->db->escape($state) . "' AND z.`status` = '1') WHERE c.`iso_code_2` = 'BR' AND c.`status` = '1' LIMIT 1")->row;
+
+		return [
+			'firstname'      => '',
+			'lastname'       => '',
+			'company'        => '',
+			'address_1'      => '',
+			'address_2'      => '',
+			'postcode'       => substr($postcode, 0, 5) . '-' . substr($postcode, 5),
+			'city'           => '',
+			'zone_id'        => (int)($zone['zone_id'] ?? 0),
+			'zone'           => (string)($zone['zone'] ?? ''),
+			'zone_code'      => (string)($zone['zone_code'] ?? $state),
+			'country_id'     => (int)($zone['country_id'] ?? 0),
+			'country'        => (string)($zone['country'] ?? ''),
+			'iso_code_2'     => 'BR',
+			'iso_code_3'     => (string)($zone['iso_code_3'] ?? 'BRA'),
+			'address_format' => (string)($zone['address_format'] ?? '')
+		];
+	}
+
+	/**
+	 * @param array<string, mixed> $address
+	 * @param array<int|string, array<string, mixed>> $products
+	 * @return array<string, mixed>
+	 */
+	private function quote(array $address, array $products): array {
 		$config = new FrenetConfig($this->config);
 		$log = new FrenetLog(new \Log(FrenetLog::FILENAME), $config->isDebug());
 
@@ -35,7 +84,6 @@ class ModelExtensionShippingFrenet extends Model {
 		}
 
 		$builder = new Builder($config, $this->weight, $this->length, VERSION);
-		$products = $this->cart->getProducts();
 
 		try {
 			$catalog = (new Catalog($this->db, DB_PREFIX, (int)$this->config->get('config_language_id'), (int)$this->config->get('config_store_id')))->getProducts(array_column($builder->filterShipped($products), 'product_id'));
