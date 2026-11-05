@@ -98,17 +98,19 @@ class ControllerExtensionShippingFrenet extends Controller {
 				$values[$field] = $value;
 			}
 
-			$additional_days = max(0, (int)$values['shipping_frenet_additional_days']);
+			$typed_days = trim((string)$values['shipping_frenet_additional_days']);
+			$additional_days = max(0, (int)$typed_days);
 
-			if (trim((string)$values['shipping_frenet_additional_days']) !== '' && (string)$additional_days !== trim((string)$values['shipping_frenet_additional_days'])) {
+			if ($typed_days !== '' && (string)$additional_days !== $typed_days) {
 				$adjusted[] = sprintf($this->language->get('text_adjusted_min'), $this->language->get('entry_additional_days'), $additional_days);
 			}
 
 			$values['shipping_frenet_additional_days'] = $additional_days;
 
-			$simulator_limit = trim((string)$values['shipping_frenet_simulator_limit']) !== '' ? max(0, (int)$values['shipping_frenet_simulator_limit']) : FrenetConfig::SIMULATOR_LIMIT_DEFAULT;
+			$typed_limit = trim((string)$values['shipping_frenet_simulator_limit']);
+			$simulator_limit = $typed_limit !== '' ? max(0, (int)$typed_limit) : FrenetConfig::SIMULATOR_LIMIT_DEFAULT;
 
-			if (trim((string)$values['shipping_frenet_simulator_limit']) !== '' && (string)$simulator_limit !== trim((string)$values['shipping_frenet_simulator_limit'])) {
+			if ($typed_limit !== '' && (string)$simulator_limit !== $typed_limit) {
 				$adjusted[] = sprintf($this->language->get('text_adjusted_min'), $this->language->get('entry_simulator_limit'), $simulator_limit);
 			}
 
