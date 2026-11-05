@@ -32,9 +32,7 @@ class ControllerExtensionShippingFrenet extends Controller {
 			return;
 		}
 
-		$product = $this->createProduct()->getProduct($product_id, 1, []);
-
-		if (!$product || !$product['shipping']) {
+		if (!$this->createProduct()->requiresShipping($product_id)) {
 			return;
 		}
 

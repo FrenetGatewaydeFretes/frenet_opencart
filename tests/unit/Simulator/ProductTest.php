@@ -113,6 +113,22 @@ final class ProductTest extends TestCase {
 		self::assertSame([], $db->queries);
 	}
 
+	public function testRequiresShippingWithOneQueryOfTheProductRules(): void {
+		$db = new \DB([[['shipping' => '1']]]);
+
+		self::assertTrue($this->createProduct($db)->requiresShipping(40));
+		self::assertCount(1, $db->queries);
+		self::assertStringContainsString("p2s.`store_id` = '3' AND p2s.`product_id` = '40' AND p.`date_available` <= NOW() AND p.`status` = '1'", $db->queries[0]);
+	}
+
+	public function testDoesNotRequireShippingForAProductWithoutShipping(): void {
+		self::assertFalse($this->createProduct(new \DB([[['shipping' => '0']]]))->requiresShipping(40));
+	}
+
+	public function testDoesNotRequireShippingWhenTheStoreDoesNotSellTheProduct(): void {
+		self::assertFalse($this->createProduct(new \DB([[]]))->requiresShipping(40));
+	}
+
 	public function testListsTheRequiredOptionsLeftEmpty(): void {
 		$db = new \DB([[
 			['product_option_id' => '226', 'name' => 'Select'],

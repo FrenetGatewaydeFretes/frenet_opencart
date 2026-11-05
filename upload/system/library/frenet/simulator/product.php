@@ -58,6 +58,18 @@ class Product {
 	}
 
 	/**
+	 * Whether the store sells the product and it needs shipping, with the product rules of the cart.
+	 *
+	 * @param int $product_id
+	 * @return bool
+	 */
+	public function requiresShipping(int $product_id): bool {
+		$product = $this->db->query("SELECT p.`shipping` FROM `" . $this->prefix . "product_to_store` p2s LEFT JOIN `" . $this->prefix . "product` p ON (p2s.`product_id` = p.`product_id`) WHERE p2s.`store_id` = '" . $this->store_id . "' AND p2s.`product_id` = '" . $product_id . "' AND p.`date_available` <= NOW() AND p.`status` = '1'")->row;
+
+		return !empty($product['shipping']);
+	}
+
+	/**
 	 * Names of the required options left empty, keyed by product_option_id, as the cart refuses the product without them.
 	 *
 	 * @param int $product_id
