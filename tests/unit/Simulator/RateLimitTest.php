@@ -58,6 +58,25 @@ final class RateLimitTest extends TestCase {
 		self::assertGreaterThan(0, $limit->hit('203.0.113.7'));
 	}
 
+	public function testCountsTheAddressesOfAnIpv6NetworkTogether(): void {
+		$limit = $this->createRateLimit(1);
+
+		$limit->hit('2001:db8:1:2::a');
+
+		self::assertGreaterThan(0, $limit->hit('2001:db8:1:2:ffff:ffff:ffff:1'));
+		self::assertSame(0, $limit->hit('2001:db8:1:3::a'));
+		self::assertStringContainsString('IP 2001:db8:1:2::/64 blocked for ', $this->writer->lines[0]);
+	}
+
+	public function testCountsAnIpv4MappedAddressAsTheIpv4(): void {
+		$limit = $this->createRateLimit(1);
+
+		$limit->hit('::ffff:203.0.113.7');
+
+		self::assertGreaterThan(0, $limit->hit('203.0.113.7'));
+		self::assertSame(0, $limit->hit('::ffff:198.51.100.4'));
+	}
+
 	public function testStartsANewMinuteAfterTheWindowEnds(): void {
 		$limit = $this->createRateLimit(1);
 

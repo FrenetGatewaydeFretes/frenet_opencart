@@ -56,7 +56,8 @@ class RateLimit {
 			return 0;
 		}
 
-		$key = self::PREFIX . hash('sha256', $ip);
+		$client = self::getClient($ip);
+		$key = self::PREFIX . hash('sha256', $client);
 		$now = time();
 
 		try {
@@ -85,9 +86,29 @@ class RateLimit {
 		$retry_after = max(1, $expires - $now);
 
 		if ($count === $this->limit + 1) {
-			$this->log->error('Simulator quote limit reached (' . $this->limit . ' quotes per ' . self::WINDOW . ' seconds): IP ' . $ip . ' blocked for ' . $retry_after . ' seconds');
+			$this->log->error('Simulator quote limit reached (' . $this->limit . ' quotes per ' . self::WINDOW . ' seconds): IP ' . $client . ' blocked for ' . $retry_after . ' seconds');
 		}
 
 		return $retry_after;
+	}
+
+	/**
+	 * The IPv4 address, or the /64 network of an IPv6 address, since one IPv6 client may use every address of its /64.
+	 *
+	 * @param string $ip
+	 * @return string
+	 */
+	private static function getClient(string $ip): string {
+		if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+			return $ip;
+		}
+
+		$packed = (string)inet_pton($ip);
+
+		if (substr($packed, 0, 12) === str_repeat("\0", 10) . "\xff\xff") {
+			return (string)inet_ntop(substr($packed, 12));
+		}
+
+		return inet_ntop(substr($packed, 0, 8) . str_repeat("\0", 8)) . '/64';
 	}
 }

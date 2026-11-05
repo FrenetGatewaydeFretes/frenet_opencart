@@ -82,7 +82,7 @@ O admin só salva com CEP de origem de 8 dígitos, aceitando ponto, hífen e esp
 | --- | --- |
 | `Frenet\Postcode` | tira a máscara do CEP (8 dígitos, aceitando ponto, hífen e espaço) e acha o estado pelas faixas dos Correios. Também é usada pelo CEP de origem do admin |
 | `Frenet\Simulator\Product` | monta o produto da página como o `Cart::getProducts()` do core o devolveria sozinho no carrinho: mesma consulta de produto (loja, idioma, data de disponibilidade e status), desconto por quantidade e preço especial do grupo do cliente, e preço e peso das opções `select`, `radio` e `checkbox`. Lista as opções obrigatórias vazias, como o carrinho faz ao adicionar |
-| `Frenet\Simulator\RateLimit` | conta as simulações de cada IP por minuto no `$this->cache` do OpenCart, com a chave pelo hash do IP. Acima do limite do admin, devolve os segundos até o fim do minuto e registra o bloqueio no `frenet.log` uma vez por minuto. Limite 0 desliga a contagem. Se o cache falhar, registra o erro e deixa simular |
+| `Frenet\Simulator\RateLimit` | conta as simulações de cada IP por minuto no `$this->cache` do OpenCart, com a chave pelo hash do IP (ou da rede /64 do IPv6). Acima do limite do admin, devolve os segundos até o fim do minuto e registra o bloqueio no `frenet.log` uma vez por minuto. Limite 0 desliga a contagem. Se o cache falhar, registra o erro e deixa simular |
 
 O controller `catalog/controller/extension/shipping/frenet.php` tem duas rotas:
 
@@ -91,7 +91,9 @@ O controller `catalog/controller/extension/shipping/frenet.php` tem duas rotas:
 
 O evento é registrado no `install()` do admin. Lojas que atualizam o módulo já estão com ele instalado, então o admin também registra o evento quando a configuração da Frenet é aberta, se ele ainda não existir. O `uninstall()` apaga o evento.
 
-O IP é o `REMOTE_ADDR`. O módulo não lê `X-Forwarded-For`, porque qualquer cliente pode enviar esse header e escapar do limite.
+O IP é o `REMOTE_ADDR`. O módulo não lê `X-Forwarded-For`, porque qualquer cliente pode enviar esse header e escapar do limite. Um endereço IPv6 conta pela sua rede /64, porque cada cliente IPv6 costuma ter a /64 inteira e trocaria de endereço a cada simulação. Um IPv6 mapeado (`::ffff:203.0.113.7`) conta como o IPv4.
+
+O limite é de melhor esforço: o cache do OpenCart não tem incremento atômico, então simulações paralelas do mesmo IP podem passar um pouco do limite antes de o contador chegar nelas.
 
 A versão do módulo fica em `Frenet\Module::VERSION`.
 
