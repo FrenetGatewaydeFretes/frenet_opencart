@@ -45,6 +45,8 @@ $('#button-frenet-simulator').on('click', function() {
 					element.after(message);
 				}
 			}
+
+			$('.frenet-simulator-error').parent().addClass('has-error');
 		}
 
 		if (json['quote']) {
@@ -65,6 +67,7 @@ $('#button-frenet-simulator').on('click', function() {
 		dataType: 'json',
 		beforeSend: function() {
 			result.empty();
+			$('.frenet-simulator-error').parent().removeClass('has-error');
 			$('.frenet-simulator-error').remove();
 			$('#button-frenet-simulator').button('loading');
 		},
