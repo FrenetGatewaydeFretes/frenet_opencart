@@ -25,6 +25,8 @@ class ControllerExtensionShippingFrenet extends Controller {
 		'shipping_frenet_default_weight',
 		'shipping_frenet_timeout',
 		'shipping_frenet_attempts',
+		'shipping_frenet_simulator',
+		'shipping_frenet_simulator_limit',
 		'shipping_frenet_debug',
 		'shipping_frenet_tax_class_id',
 		'shipping_frenet_geo_zone_id',
@@ -92,6 +94,14 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 			$values['shipping_frenet_additional_days'] = $additional_days;
 
+			$simulator_limit = trim((string)$values['shipping_frenet_simulator_limit']) !== '' ? max(0, (int)$values['shipping_frenet_simulator_limit']) : FrenetConfig::SIMULATOR_LIMIT_DEFAULT;
+
+			if (trim((string)$values['shipping_frenet_simulator_limit']) !== '' && (string)$simulator_limit !== trim((string)$values['shipping_frenet_simulator_limit'])) {
+				$adjusted[] = sprintf($this->language->get('text_adjusted_min'), $this->language->get('entry_simulator_limit'), $simulator_limit);
+			}
+
+			$values['shipping_frenet_simulator_limit'] = $simulator_limit;
+
 			foreach (self::MINIMUMS as $field => [$label, $default]) {
 				$value = FrenetConfig::parsePositive($values[$field]);
 
@@ -152,6 +162,8 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 			$data['shipping_frenet_delivery_time'] = $frenet_config->isDeliveryTimeShown();
 			$data['shipping_frenet_additional_days'] = $frenet_config->getAdditionalDays();
+			$data['shipping_frenet_simulator'] = $frenet_config->isSimulatorEnabled();
+			$data['shipping_frenet_simulator_limit'] = $frenet_config->getSimulatorLimit();
 			$data['shipping_frenet_timeout'] = $frenet_config->getTimeout();
 			$data['shipping_frenet_attempts'] = $frenet_config->getAttempts();
 			$data['shipping_frenet_minimum_height'] = $this->formatNumber($frenet_config->getMinimumHeight());

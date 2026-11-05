@@ -127,6 +127,24 @@ final class ConfigTest extends TestCase {
 		self::assertSame(1.0, $config->getDefaultWeight());
 	}
 
+	public function testShowsTheSimulatorWithSixtyQuotesPerMinuteWhenNothingIsSaved(): void {
+		$config = $this->createConfig(['shipping_frenet_simulator_limit' => '']);
+
+		self::assertTrue($config->isSimulatorEnabled());
+		self::assertSame(60, $config->getSimulatorLimit());
+	}
+
+	public function testReadsTheSimulatorSwitchAndLimit(): void {
+		$config = $this->createConfig(['shipping_frenet_simulator' => '0', 'shipping_frenet_simulator_limit' => '0']);
+
+		self::assertFalse($config->isSimulatorEnabled());
+		self::assertSame(0, $config->getSimulatorLimit());
+	}
+
+	public function testNeverReadsANegativeSimulatorLimit(): void {
+		self::assertSame(0, $this->createConfig(['shipping_frenet_simulator_limit' => '-5'])->getSimulatorLimit());
+	}
+
 	#[TestWith(['01310100'], 'digits only')]
 	#[TestWith([' 01310-100 '], 'hyphen and spaces around')]
 	#[TestWith(['01.310-100'], 'dot and hyphen')]

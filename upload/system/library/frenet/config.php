@@ -43,6 +43,11 @@ class Config {
 	public const ATTEMPTS_DEFAULT = 3;
 
 	/**
+	 * @var int
+	 */
+	public const SIMULATOR_LIMIT_DEFAULT = 60;
+
+	/**
 	 * @var float
 	 */
 	public const DEFAULT_HEIGHT = 2.0;
@@ -227,6 +232,32 @@ class Config {
 	 */
 	public function isDebug(): bool {
 		return (bool)$this->get('debug');
+	}
+
+	/**
+	 * Whether the product page shows the shipping simulator, on until the store owner turns it off.
+	 *
+	 * @return bool
+	 */
+	public function isSimulatorEnabled(): bool {
+		$value = $this->get('simulator');
+
+		return $value === null || $value === '' || (bool)$value;
+	}
+
+	/**
+	 * Simulator quotes each IP may ask per minute, 0 for no limit.
+	 *
+	 * @return int
+	 */
+	public function getSimulatorLimit(): int {
+		$value = $this->get('simulator_limit');
+
+		if ($value === null || $value === '') {
+			return self::SIMULATOR_LIMIT_DEFAULT;
+		}
+
+		return max(0, (int)$value);
 	}
 
 	/**
