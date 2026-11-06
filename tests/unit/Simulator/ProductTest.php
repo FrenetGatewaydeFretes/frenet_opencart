@@ -111,7 +111,7 @@ final class ProductTest extends TestCase {
 
 		self::assertTrue($this->createProduct($db)->requiresShipping(40));
 		self::assertCount(1, $db->queries);
-		self::assertStringContainsString("p2s.`store_id` = '3' AND p2s.`product_id` = '40' AND p.`date_available` <= NOW() AND p.`status` = '1'", $db->queries[0]);
+		self::assertStringContainsString("p2s.`store_id` = '3' AND p2s.`product_id` = '40' AND pd.`language_id` = '2' AND p.`date_available` <= NOW() AND p.`status` = '1'", $db->queries[0]);
 	}
 
 	public function testDoesNotRequireShippingForAProductWithoutShipping(): void {

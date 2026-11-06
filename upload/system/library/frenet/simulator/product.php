@@ -64,9 +64,7 @@ class Product {
 	 * @return bool
 	 */
 	public function requiresShipping(int $product_id): bool {
-		$product = $this->db->query("SELECT p.`shipping` FROM `" . $this->prefix . "product_to_store` p2s LEFT JOIN `" . $this->prefix . "product` p ON (p2s.`product_id` = p.`product_id`) WHERE p2s.`store_id` = '" . $this->store_id . "' AND p2s.`product_id` = '" . $product_id . "' AND p.`date_available` <= NOW() AND p.`status` = '1'")->row;
-
-		return !empty($product['shipping']);
+		return !empty($this->getSoldProduct($product_id, 'p.`shipping`')['shipping']);
 	}
 
 	/**
@@ -101,7 +99,7 @@ class Product {
 	 * @return array<string, mixed>|null
 	 */
 	public function getProduct(int $product_id, int $quantity, array $options): ?array {
-		$product = $this->db->query("SELECT p.`product_id`, p.`model`, p.`shipping`, p.`price`, p.`weight`, p.`weight_class_id`, p.`length`, p.`width`, p.`height`, p.`length_class_id` FROM `" . $this->prefix . "product_to_store` p2s LEFT JOIN `" . $this->prefix . "product` p ON (p2s.`product_id` = p.`product_id`) LEFT JOIN `" . $this->prefix . "product_description` pd ON (p.`product_id` = pd.`product_id`) WHERE p2s.`store_id` = '" . $this->store_id . "' AND p2s.`product_id` = '" . $product_id . "' AND pd.`language_id` = '" . $this->language_id . "' AND p.`date_available` <= NOW() AND p.`status` = '1'")->row;
+		$product = $this->getSoldProduct($product_id, 'p.`product_id`, p.`model`, p.`shipping`, p.`price`, p.`weight`, p.`weight_class_id`, p.`length`, p.`width`, p.`height`, p.`length_class_id`');
 
 		if (!$product) {
 			return null;
@@ -125,6 +123,17 @@ class Product {
 			'height'          => $product['height'],
 			'length_class_id' => $product['length_class_id']
 		];
+	}
+
+	/**
+	 * Columns of the product when the store sells it, with the product rules of Cart::getProducts(), or an empty array.
+	 *
+	 * @param int $product_id
+	 * @param string $columns
+	 * @return array<string, mixed>
+	 */
+	private function getSoldProduct(int $product_id, string $columns): array {
+		return $this->db->query("SELECT " . $columns . " FROM `" . $this->prefix . "product_to_store` p2s LEFT JOIN `" . $this->prefix . "product` p ON (p2s.`product_id` = p.`product_id`) LEFT JOIN `" . $this->prefix . "product_description` pd ON (p.`product_id` = pd.`product_id`) WHERE p2s.`store_id` = '" . $this->store_id . "' AND p2s.`product_id` = '" . $product_id . "' AND pd.`language_id` = '" . $this->language_id . "' AND p.`date_available` <= NOW() AND p.`status` = '1'")->row;
 	}
 
 	/**
