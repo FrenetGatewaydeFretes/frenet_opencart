@@ -40,7 +40,7 @@ Os templates do admin e do simulador precisam funcionar do Twig 1.24 ao 3.x. Use
 
 O OpenCart 3 roda o Twig com `autoescape` desligado, então todo valor impresso no template leva `|escape`.
 
-Em versões antigas do OpenCart 3, como a 3.0.3.3, o catálogo e o admin guardam o template compilado e não conferem se o arquivo mudou (o Twig roda sem `auto_reload`). Por isso o admin e o simulador renderizam os templates da Frenet com `template_cache` desligado. Sem isso, depois de uma atualização do módulo, a loja mostraria o template antigo até o lojista limpar o cache de tema.
+Em versões antigas do OpenCart 3, como a 3.0.3.3, o catálogo e o admin guardam o template compilado e não conferem se o arquivo mudou (o Twig roda sem `auto_reload`). Por isso o admin e o simulador renderizam os templates da Frenet com `template_cache` desligado. Sem isso, depois de uma atualização do módulo, a loja mostraria o template antigo até o lojista limpar o cache de tema. A chave só tem efeito nessas versões: a 3.0.0.0 não guarda o template compilado, e da 3.0.3.8 em diante o core guarda sempre, com `auto_reload`, sem ler `template_cache`. Onde ela vale, o simulador recompila o template a cada página de produto, um custo de poucos milissegundos.
 
 O JavaScript do simulador roda com o jQuery do tema padrão, do 2.1.1 (3.0.0.0) ao 3.7.1 (3.0.5.1), e o Bootstrap 3. Ele não usa recursos que só existem em versões mais novas, e textos vindos do servidor entram na página por `.text()`.
 
@@ -97,6 +97,8 @@ O evento é registrado no `install()` do admin. Lojas que atualizam o módulo j�
 O IP é o `REMOTE_ADDR`. O módulo não lê `X-Forwarded-For`, porque qualquer cliente pode enviar esse header e escapar do limite. Um endereço IPv6 conta pela sua rede /64, porque cada cliente IPv6 costuma ter a /64 inteira e trocaria de endereço a cada simulação. Um IPv6 mapeado (`::ffff:203.0.113.7`) conta como o IPv4.
 
 O limite é de melhor esforço: o cache do OpenCart não tem incremento atômico, então simulações paralelas do mesmo IP podem passar um pouco do limite antes de o contador chegar nelas.
+
+Com o cache em arquivo, o padrão do OpenCart 3, cada IP que simula vira um arquivo na pasta de cache (`DIR_CACHE`) e fica lá até o `cache_expire` do core (1 hora), porque o `Cache::set()` do OpenCart 3 não aceita validade por chave. O core percorre os arquivos dessa pasta a cada requisição, então um bot com muitos IPs aumenta esse trabalho. Em loja com muito tráfego, um `cache_engine` em memória, como Memcached, APCu ou Redis, conforme a versão do OpenCart, evita isso.
 
 A versão do módulo fica em `Frenet\Module::VERSION`.
 
