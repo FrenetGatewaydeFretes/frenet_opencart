@@ -57,39 +57,43 @@ class ControllerExtensionShippingFrenet extends Controller {
 		}
 
 		$this->response->addHeader('Cache-Control: no-store, private');
-		$this->response->addHeader('Content-Type: application/json');
-		$this->response->setOutput(json_encode(['postcode' => (string)$postcode]));
+
+		$this->respond(['postcode' => (string)$postcode]);
 	}
 
 	public function quote(): void {
 		$this->load->language('extension/shipping/frenet');
 
 		$config = new FrenetConfig($this->config);
-		$log = new FrenetLog(new \Log(FrenetLog::FILENAME), $config->isDebug());
 
 		if (!$this->isSimulatorAvailable($config)) {
-			$json = ['error' => ['warning' => $this->language->get('error_simulator_disabled')]];
-		} else {
-			$retry_after = (new RateLimit($this->cache, $log, $config->getSimulatorLimit()))->hit((string)($this->request->server['REMOTE_ADDR'] ?? ''));
+			$this->respond(['error' => ['warning' => $this->language->get('error_simulator_disabled')]]);
 
-			if ($retry_after) {
-				$this->response->addHeader($this->request->server['SERVER_PROTOCOL'] . ' 429 Too Many Requests');
-				$this->response->addHeader('Retry-After: ' . $retry_after);
-
-				$json = ['error' => ['warning' => $this->language->get('error_simulator_limit')]];
-			} else {
-				try {
-					$json = $this->simulate();
-				} catch (\Throwable $exception) {
-					$log->error('Simulator quote failed: ' . $exception->getMessage());
-
-					$json = ['error' => ['warning' => $this->language->get('error_unavailable')]];
-				}
-			}
+			return;
 		}
 
-		$this->response->addHeader('Content-Type: application/json');
-		$this->response->setOutput(json_encode($json));
+		$log = new FrenetLog(new \Log(FrenetLog::FILENAME), $config->isDebug());
+
+		$retry_after = (new RateLimit($this->cache, $log, $config->getSimulatorLimit()))->hit((string)($this->request->server['REMOTE_ADDR'] ?? ''));
+
+		if ($retry_after) {
+			$this->response->addHeader($this->request->server['SERVER_PROTOCOL'] . ' 429 Too Many Requests');
+			$this->response->addHeader('Retry-After: ' . $retry_after);
+
+			$this->respond(['error' => ['warning' => $this->language->get('error_simulator_limit')]]);
+
+			return;
+		}
+
+		try {
+			$json = $this->simulate();
+		} catch (\Throwable $exception) {
+			$log->error('Simulator quote failed: ' . $exception->getMessage());
+
+			$json = ['error' => ['warning' => $this->language->get('error_unavailable')]];
+		}
+
+		$this->respond($json);
 	}
 
 	/**
@@ -166,6 +170,15 @@ class ControllerExtensionShippingFrenet extends Controller {
 		}
 
 		return ['quote' => $rates];
+	}
+
+	/**
+	 * @param array<string, mixed> $json
+	 * @return void
+	 */
+	private function respond(array $json): void {
+		$this->response->addHeader('Content-Type: application/json');
+		$this->response->setOutput(json_encode($json));
 	}
 
 	private function getBuyerPostcode(): ?string {
