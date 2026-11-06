@@ -106,13 +106,6 @@ final class ProductTest extends TestCase {
 		self::assertNull($this->createProduct(new \DB([[]]))->getProduct(40, 1, []));
 	}
 
-	public function testReturnsNullWithoutQuantityBeforeQueryingTheProduct(): void {
-		$db = new \DB([]);
-
-		self::assertNull($this->createProduct($db)->getProduct(40, 0, []));
-		self::assertSame([], $db->queries);
-	}
-
 	public function testRequiresShippingWithOneQueryOfTheProductRules(): void {
 		$db = new \DB([[['shipping' => '1']]]);
 

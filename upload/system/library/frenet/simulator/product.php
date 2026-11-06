@@ -101,10 +101,6 @@ class Product {
 	 * @return array<string, mixed>|null
 	 */
 	public function getProduct(int $product_id, int $quantity, array $options): ?array {
-		if ($quantity < 1) {
-			return null;
-		}
-
 		$product = $this->db->query("SELECT p.`product_id`, p.`model`, p.`shipping`, p.`price`, p.`weight`, p.`weight_class_id`, p.`length`, p.`width`, p.`height`, p.`length_class_id` FROM `" . $this->prefix . "product_to_store` p2s LEFT JOIN `" . $this->prefix . "product` p ON (p2s.`product_id` = p.`product_id`) LEFT JOIN `" . $this->prefix . "product_description` pd ON (p.`product_id` = pd.`product_id`) WHERE p2s.`store_id` = '" . $this->store_id . "' AND p2s.`product_id` = '" . $product_id . "' AND pd.`language_id` = '" . $this->language_id . "' AND p.`date_available` <= NOW() AND p.`status` = '1'")->row;
 
 		if (!$product) {

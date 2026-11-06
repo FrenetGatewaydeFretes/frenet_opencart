@@ -109,7 +109,7 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 		$product_id = (int)($this->request->post['product_id'] ?? 0);
 		$quantity = (int)($this->request->post['quantity'] ?? 1);
-		$options = isset($this->request->post['option']) && is_array($this->request->post['option']) ? array_filter($this->request->post['option']) : [];
+		$options = isset($this->request->post['option']) && is_array($this->request->post['option']) ? $this->request->post['option'] : [];
 
 		if ($quantity < 1) {
 			return ['error' => ['quantity' => $this->language->get('error_simulator_quantity')]];
