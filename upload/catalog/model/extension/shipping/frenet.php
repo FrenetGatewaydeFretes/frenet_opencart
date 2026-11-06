@@ -3,6 +3,7 @@ use Frenet\Api;
 use Frenet\Config as FrenetConfig;
 use Frenet\Http\Client;
 use Frenet\Log as FrenetLog;
+use Frenet\Postcode;
 use Frenet\Quote\Builder;
 use Frenet\Quote\Cache as QuoteCache;
 use Frenet\Quote\Catalog;
@@ -47,7 +48,7 @@ class ModelExtensionShippingFrenet extends Model {
 			'company'        => '',
 			'address_1'      => '',
 			'address_2'      => '',
-			'postcode'       => substr($postcode, 0, 5) . '-' . substr($postcode, 5),
+			'postcode'       => (string)Postcode::format($postcode),
 			'city'           => '',
 			'zone_id'        => (int)($zone['zone_id'] ?? 0),
 			'zone'           => (string)($zone['name'] ?? ''),

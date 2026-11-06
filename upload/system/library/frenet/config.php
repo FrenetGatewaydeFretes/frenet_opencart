@@ -270,18 +270,6 @@ class Config {
 	}
 
 	/**
-	 * Postcode typed in the admin as 00000-000, accepting dots, hyphens and spaces, or null when it does not have 8 digits.
-	 *
-	 * @param mixed $value
-	 * @return string|null
-	 */
-	public static function parsePostcode($value): ?string {
-		$digits = Postcode::getDigits((string)$value);
-
-		return $digits !== '' ? substr($digits, 0, 5) . '-' . substr($digits, 5) : null;
-	}
-
-	/**
 	 * Number typed in the admin, with comma or dot decimals, or null when it is not greater than zero.
 	 *
 	 * @param mixed $value

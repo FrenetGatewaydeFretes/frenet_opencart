@@ -53,7 +53,7 @@ class ControllerExtensionShippingFrenet extends Controller {
 		$postcode = null;
 
 		if ($this->isSimulatorAvailable(new FrenetConfig($this->config))) {
-			$postcode = FrenetConfig::parsePostcode($this->session->data['shipping_address']['postcode'] ?? '');
+			$postcode = Postcode::format((string)($this->session->data['shipping_address']['postcode'] ?? ''));
 		}
 
 		$this->response->addHeader('Cache-Control: no-store, private');

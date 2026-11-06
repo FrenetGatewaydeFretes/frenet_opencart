@@ -1,6 +1,7 @@
 <?php
 use Frenet\Config as FrenetConfig;
 use Frenet\Module;
+use Frenet\Postcode;
 
 class ControllerExtensionShippingFrenet extends Controller {
 	private const PANEL_URL = 'https://painel.frenet.com.br/';
@@ -84,7 +85,7 @@ class ControllerExtensionShippingFrenet extends Controller {
 				$values[$field] = $this->request->post[$field] ?? '';
 			}
 
-			$values['shipping_frenet_postcode'] = FrenetConfig::parsePostcode($values['shipping_frenet_postcode']);
+			$values['shipping_frenet_postcode'] = Postcode::format((string)$values['shipping_frenet_postcode']);
 
 			$adjusted = [];
 
@@ -243,7 +244,7 @@ class ControllerExtensionShippingFrenet extends Controller {
 			$this->error['warning'] = $this->language->get('error_permission');
 		}
 
-		if (FrenetConfig::parsePostcode($this->request->post['shipping_frenet_postcode'] ?? '') === null) {
+		if (Postcode::format((string)($this->request->post['shipping_frenet_postcode'] ?? '')) === null) {
 			$this->error['postcode'] = $this->language->get('error_postcode');
 		}
 

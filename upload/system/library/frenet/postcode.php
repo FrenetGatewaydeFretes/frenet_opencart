@@ -62,6 +62,18 @@ final class Postcode {
 	}
 
 	/**
+	 * Postcode as 00000-000, accepting dots, hyphens and spaces, or null when it does not have 8 digits.
+	 *
+	 * @param string $postcode
+	 * @return string|null
+	 */
+	public static function format(string $postcode): ?string {
+		$digits = self::getDigits($postcode);
+
+		return $digits !== '' ? substr($digits, 0, 5) . '-' . substr($digits, 5) : null;
+	}
+
+	/**
 	 * Code of the state the postcode belongs to, as in the zone table of OpenCart, or an empty string when none.
 	 *
 	 * @param string $postcode

@@ -76,13 +76,13 @@ A cotação passa por estas classes:
 
 O model `catalog/model/extension/shipping/frenet.php` só cota quando o endereço está na região geográfica escolhida no admin (Todas as regiões = qualquer endereço), com a mesma consulta a `zone_to_geo_zone` dos métodos Peso e Item do core. Se a região escolhida for excluída, o frete Frenet continua escondido, como no core, mas o erro vai para o `frenet.log` e o admin mostra um alerta. O grupo de impostos do admin vai no `tax_class_id` de cada serviço. Com o prazo ligado e a mensagem em branco, o nome usa `text_delivery_time` do idioma da loja.
 
-O admin só salva com CEP de origem de 8 dígitos, aceitando ponto, hífen e espaço, e grava no formato `00000-000` (`Frenet\Config::parsePostcode()`). Também recusa habilitar o módulo sem token salvo ou digitado, com a mensagem embaixo do campo. Em caso de erro, o formulário volta com os valores enviados, menos o token, que nunca é exibido. O limite de simulações por IP aceita inteiros a partir de 0 (outro valor é ajustado com aviso) e, em branco, fica em 60.
+O admin só salva com CEP de origem de 8 dígitos, aceitando ponto, hífen e espaço, e grava no formato `00000-000` (`Frenet\Postcode::format()`). Também recusa habilitar o módulo sem token salvo ou digitado, com a mensagem embaixo do campo. Em caso de erro, o formulário volta com os valores enviados, menos o token, que nunca é exibido. O limite de simulações por IP aceita inteiros a partir de 0 (outro valor é ajustado com aviso) e, em branco, fica em 60.
 
 ### Simulador na página do produto
 
 | Classe | Papel |
 | --- | --- |
-| `Frenet\Postcode` | tira a máscara do CEP (8 dígitos, aceitando ponto, hífen e espaço) e acha o estado pelas faixas dos Correios. Também é usada pelo CEP de origem do admin |
+| `Frenet\Postcode` | tira a máscara do CEP (8 dígitos, aceitando ponto, hífen e espaço), formata como `00000-000` e acha o estado pelas faixas dos Correios. Também é usada pelo CEP de origem do admin |
 | `Frenet\Simulator\Product` | monta o produto da página como o `Cart::getProducts()` do core o devolveria sozinho no carrinho: mesma consulta de produto (loja, idioma, data de disponibilidade e status), desconto por quantidade e preço especial do grupo do cliente, e preço e peso das opções `select`, `radio` e `checkbox`. Lista as opções obrigatórias vazias, como o carrinho faz ao adicionar. Na página do produto, `requiresShipping()` só confere com uma consulta se a loja vende o produto e se ele exige envio |
 | `Frenet\Simulator\RateLimit` | conta as simulações de cada IP por minuto no `$this->cache` do OpenCart, com a chave pelo hash do IP (ou da rede /64 do IPv6). Acima do limite do admin, devolve os segundos até o fim do minuto e registra o bloqueio no `frenet.log` uma vez por minuto. Limite 0 desliga a contagem. Se o cache falhar, registra o erro e deixa simular |
 
