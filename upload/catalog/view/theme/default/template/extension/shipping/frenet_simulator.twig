@@ -36,8 +36,10 @@ $('#input-frenet-postcode').on('keydown', function(e) {
 });
 
 $('#button-frenet-simulator').on('click', function() {
+	var button = $(this);
 	var simulator = $('#frenet-simulator');
 	var result = $('#frenet-simulator-result');
+	var unavailable = {error: {warning: simulator.data('error')}};
 
 	var show = function(json) {
 		if (json['error']) {
@@ -68,13 +70,13 @@ $('#button-frenet-simulator').on('click', function() {
 		}
 
 		if (json['quote']) {
-			var table = $('<table class="table table-striped table-condensed"><tbody></tbody></table>');
+			var tbody = $('<tbody></tbody>');
 
 			for (var j = 0; j < json['quote'].length; j++) {
-				table.find('tbody').append($('<tr></tr>').append($('<td></td>').text(json['quote'][j]['title']), $('<td class="text-right"></td>').text(json['quote'][j]['text'])));
+				tbody.append($('<tr></tr>').append($('<td></td>').text(json['quote'][j]['title']), $('<td class="text-right"></td>').text(json['quote'][j]['text'])));
 			}
 
-			result.append(table);
+			result.append($('<table class="table table-striped table-condensed"></table>').append(tbody));
 		}
 	};
 
@@ -84,13 +86,15 @@ $('#button-frenet-simulator').on('click', function() {
 		data: $('#product input[type=\'text\'], #product input[type=\'hidden\'], #product input[type=\'radio\']:checked, #product input[type=\'checkbox\']:checked, #product select, #product textarea').serialize() + '&postcode=' + encodeURIComponent($('#input-frenet-postcode').val()),
 		dataType: 'json',
 		beforeSend: function() {
+			var errors = $('.frenet-simulator-error');
+
 			result.empty();
-			$('.frenet-simulator-error').parent().removeClass('has-error');
-			$('.frenet-simulator-error').remove();
-			$('#button-frenet-simulator').button('loading');
+			errors.parent().removeClass('has-error');
+			errors.remove();
+			button.button('loading');
 		},
 		complete: function() {
-			$('#button-frenet-simulator').button('reset');
+			button.button('reset');
 		},
 		success: show,
 		error: function(xhr) {
@@ -99,10 +103,10 @@ $('#button-frenet-simulator').on('click', function() {
 			try {
 				json = JSON.parse(xhr.responseText);
 			} catch (e) {
-				json = {error: {warning: simulator.attr('data-error')}};
+				json = unavailable;
 			}
 
-			show(json['error'] ? json : {error: {warning: simulator.attr('data-error')}});
+			show(json && json['error'] ? json : unavailable);
 		}
 	});
 });
