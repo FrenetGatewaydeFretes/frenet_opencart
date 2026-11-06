@@ -139,16 +139,7 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 		$address = $this->model_extension_shipping_frenet->getPostcodeAddress($postcode, $state);
 
-		$this->tax->unsetRates();
-		$this->tax->setShippingAddress($address['country_id'], $address['zone_id']);
-
-		if (isset($this->session->data['payment_address']['country_id']) && isset($this->session->data['payment_address']['zone_id'])) {
-			$this->tax->setPaymentAddress($this->session->data['payment_address']['country_id'], $this->session->data['payment_address']['zone_id']);
-		} elseif ($this->config->get('config_tax_default') == 'payment') {
-			$this->tax->setPaymentAddress($this->config->get('config_country_id'), $this->config->get('config_zone_id'));
-		}
-
-		$this->tax->setStoreAddress($this->config->get('config_country_id'), $this->config->get('config_zone_id'));
+		$this->setTaxAddresses($address);
 
 		$method = $this->model_extension_shipping_frenet->getProductQuote($address, $product);
 
@@ -170,6 +161,25 @@ class ControllerExtensionShippingFrenet extends Controller {
 		}
 
 		return ['quote' => $rates];
+	}
+
+	/**
+	 * Sets the tax addresses as the cart shipping estimate of the core does, with the postcode as the shipping address.
+	 *
+	 * @param array<string, mixed> $address
+	 * @return void
+	 */
+	private function setTaxAddresses(array $address): void {
+		$this->tax->unsetRates();
+		$this->tax->setShippingAddress($address['country_id'], $address['zone_id']);
+
+		if (isset($this->session->data['payment_address']['country_id']) && isset($this->session->data['payment_address']['zone_id'])) {
+			$this->tax->setPaymentAddress($this->session->data['payment_address']['country_id'], $this->session->data['payment_address']['zone_id']);
+		} elseif ($this->config->get('config_tax_default') == 'payment') {
+			$this->tax->setPaymentAddress($this->config->get('config_country_id'), $this->config->get('config_zone_id'));
+		}
+
+		$this->tax->setStoreAddress($this->config->get('config_country_id'), $this->config->get('config_zone_id'));
 	}
 
 	/**
