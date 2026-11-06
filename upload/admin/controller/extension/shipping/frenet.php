@@ -45,6 +45,11 @@ class ControllerExtensionShippingFrenet extends Controller {
 		'shipping_frenet_attempts' => ['entry_attempts', FrenetConfig::ATTEMPTS_MIN, FrenetConfig::ATTEMPTS_MAX]
 	];
 
+	private const NON_NEGATIVE = [
+		'shipping_frenet_additional_days' => ['entry_additional_days', 0],
+		'shipping_frenet_simulator_limit' => ['entry_simulator_limit', FrenetConfig::SIMULATOR_LIMIT_DEFAULT]
+	];
+
 	private const MINIMUMS = [
 		'shipping_frenet_minimum_height' => ['entry_minimum_height', FrenetConfig::DEFAULT_HEIGHT],
 		'shipping_frenet_minimum_width'  => ['entry_minimum_width', FrenetConfig::DEFAULT_WIDTH],
@@ -99,23 +104,16 @@ class ControllerExtensionShippingFrenet extends Controller {
 				$values[$field] = $value;
 			}
 
-			$typed_days = trim((string)$values['shipping_frenet_additional_days']);
-			$additional_days = max(0, (int)$typed_days);
+			foreach (self::NON_NEGATIVE as $field => [$label, $default]) {
+				$typed = trim((string)$values[$field]);
+				$value = $typed !== '' ? max(0, (int)$typed) : $default;
 
-			if ($typed_days !== '' && (string)$additional_days !== $typed_days) {
-				$adjusted[] = sprintf($this->language->get('text_adjusted_min'), $this->language->get('entry_additional_days'), $additional_days);
+				if ($typed !== '' && (string)$value !== $typed) {
+					$adjusted[] = sprintf($this->language->get('text_adjusted_min'), $this->language->get($label), $value);
+				}
+
+				$values[$field] = $value;
 			}
-
-			$values['shipping_frenet_additional_days'] = $additional_days;
-
-			$typed_limit = trim((string)$values['shipping_frenet_simulator_limit']);
-			$simulator_limit = $typed_limit !== '' ? max(0, (int)$typed_limit) : FrenetConfig::SIMULATOR_LIMIT_DEFAULT;
-
-			if ($typed_limit !== '' && (string)$simulator_limit !== $typed_limit) {
-				$adjusted[] = sprintf($this->language->get('text_adjusted_min'), $this->language->get('entry_simulator_limit'), $simulator_limit);
-			}
-
-			$values['shipping_frenet_simulator_limit'] = $simulator_limit;
 
 			foreach (self::MINIMUMS as $field => [$label, $default]) {
 				$value = FrenetConfig::parsePositive($values[$field]);
