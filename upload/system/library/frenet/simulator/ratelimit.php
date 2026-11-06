@@ -8,7 +8,7 @@ use Frenet\Log;
 /**
  * Counts the simulator quotes of each IP in the OpenCart cache and blocks the ones above the limit of the admin per minute.
  */
-class RateLimit {
+final class RateLimit {
 	/**
 	 * @var int
 	 */
@@ -109,6 +109,6 @@ class RateLimit {
 			return (string)inet_ntop(substr($packed, 12));
 		}
 
-		return inet_ntop(substr($packed, 0, 8) . str_repeat("\0", 8)) . '/64';
+		return (string)inet_ntop(substr($packed, 0, 8) . str_repeat("\0", 8)) . '/64';
 	}
 }

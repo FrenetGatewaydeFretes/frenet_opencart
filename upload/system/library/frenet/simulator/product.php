@@ -6,7 +6,7 @@ namespace Frenet\Simulator;
 /**
  * Reads the product of the page as Cart::getProducts() would return it alone in the cart, with the same price and option rules.
  */
-class Product {
+final class Product {
 	/**
 	 * @var string[]
 	 */
