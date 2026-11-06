@@ -1,4 +1,4 @@
-<div class="form-group" id="frenet-simulator" data-error="{{ error_unavailable|escape }}">
+<div class="form-group" id="frenet-simulator" data-error="{{ error_unavailable|escape }}" data-autofill="{{ autofill ? 1 : 0 }}">
   <label class="control-label" for="input-frenet-postcode">{{ entry_simulator_postcode }}</label>
   <div class="input-group">
     <input type="text" value="" placeholder="{{ placeholder_simulator_postcode|escape }}" id="input-frenet-postcode" class="form-control" inputmode="numeric" maxlength="10" autocomplete="postal-code" />
@@ -9,17 +9,23 @@
   <div id="frenet-simulator-result"></div>
 </div>
 <script type="text/javascript"><!--
-$.ajax({
-	url: 'index.php?route=extension/shipping/frenet/postcode',
-	dataType: 'json',
-	success: function(json) {
-		var input = $('#input-frenet-postcode');
+$('#input-frenet-postcode').one('focus', function() {
+	var input = $(this);
 
-		if (json['postcode'] && !input.val()) {
-			input.val(json['postcode']);
+	$.ajax({
+		url: 'index.php?route=extension/shipping/frenet/postcode',
+		dataType: 'json',
+		success: function(json) {
+			if (json['postcode'] && !input.val()) {
+				input.val(json['postcode']);
+			}
 		}
-	}
+	});
 });
+
+if ($('#frenet-simulator').data('autofill')) {
+	$('#input-frenet-postcode').triggerHandler('focus');
+}
 
 $('#input-frenet-postcode').on('keydown', function(e) {
 	if (e.keyCode == 13) {

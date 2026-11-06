@@ -42,7 +42,7 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 		$this->config->set('template_cache', false);
 
-		$simulator = $this->load->view('extension/shipping/frenet_simulator');
+		$simulator = $this->load->view('extension/shipping/frenet_simulator', ['autofill' => $this->customer->isLogged()]);
 
 		$this->config->set('template_cache', $template_cache);
 
