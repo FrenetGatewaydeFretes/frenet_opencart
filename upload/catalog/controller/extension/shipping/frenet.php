@@ -53,7 +53,7 @@ class ControllerExtensionShippingFrenet extends Controller {
 		$postcode = null;
 
 		if ($this->isSimulatorAvailable(new FrenetConfig($this->config))) {
-			$postcode = Postcode::format((string)($this->session->data['shipping_address']['postcode'] ?? ''));
+			$postcode = $this->getBuyerPostcode();
 		}
 
 		$this->response->addHeader('Cache-Control: no-store, private');
@@ -166,6 +166,20 @@ class ControllerExtensionShippingFrenet extends Controller {
 		}
 
 		return ['quote' => $rates];
+	}
+
+	private function getBuyerPostcode(): ?string {
+		$postcode = Postcode::format((string)($this->session->data['shipping_address']['postcode'] ?? ''));
+
+		if ($postcode !== null || !$this->customer->isLogged()) {
+			return $postcode;
+		}
+
+		$this->load->model('account/address');
+
+		$address = $this->model_account_address->getAddress($this->customer->getAddressId());
+
+		return Postcode::format((string)($address['postcode'] ?? ''));
 	}
 
 	private function isSimulatorAvailable(FrenetConfig $config): bool {
