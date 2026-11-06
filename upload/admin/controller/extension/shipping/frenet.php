@@ -1,9 +1,16 @@
 <?php
 use Frenet\Config as FrenetConfig;
 use Frenet\Module;
+use Frenet\Postcode;
 
 class ControllerExtensionShippingFrenet extends Controller {
 	private const PANEL_URL = 'https://painel.frenet.com.br/';
+
+	private const EVENT_CODE = 'frenet_simulator';
+
+	private const EVENT_TRIGGER = 'catalog/view/product/product/after';
+
+	private const EVENT_ACTION = 'extension/shipping/frenet/addSimulator';
 
 	private const LEGACY_KEYS = [
 		'shipping_frenet_contrato_codigo',
@@ -25,6 +32,8 @@ class ControllerExtensionShippingFrenet extends Controller {
 		'shipping_frenet_default_weight',
 		'shipping_frenet_timeout',
 		'shipping_frenet_attempts',
+		'shipping_frenet_simulator',
+		'shipping_frenet_simulator_limit',
 		'shipping_frenet_debug',
 		'shipping_frenet_tax_class_id',
 		'shipping_frenet_geo_zone_id',
@@ -34,6 +43,11 @@ class ControllerExtensionShippingFrenet extends Controller {
 	private const RANGES = [
 		'shipping_frenet_timeout'  => ['entry_timeout', FrenetConfig::TIMEOUT_MIN, FrenetConfig::TIMEOUT_MAX],
 		'shipping_frenet_attempts' => ['entry_attempts', FrenetConfig::ATTEMPTS_MIN, FrenetConfig::ATTEMPTS_MAX]
+	];
+
+	private const NON_NEGATIVE = [
+		'shipping_frenet_additional_days' => ['entry_additional_days', 0],
+		'shipping_frenet_simulator_limit' => ['entry_simulator_limit', FrenetConfig::SIMULATOR_LIMIT_DEFAULT]
 	];
 
 	private const MINIMUMS = [
@@ -57,7 +71,13 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 		$settings = $this->model_setting_setting->getSetting('shipping_frenet');
 
-		$data['migrated'] = $this->removeLegacySettings($settings);
+		$can_modify = $this->user->hasPermission('modify', 'extension/shipping/frenet');
+
+		$data['migrated'] = $can_modify && $this->removeLegacySettings($settings);
+
+		if ($can_modify) {
+			$this->addEvent();
+		}
 
 		$saved_token = (string)($settings['shipping_frenet_token'] ?? '');
 
@@ -70,7 +90,7 @@ class ControllerExtensionShippingFrenet extends Controller {
 				$values[$field] = $this->request->post[$field] ?? '';
 			}
 
-			$values['shipping_frenet_postcode'] = FrenetConfig::parsePostcode($values['shipping_frenet_postcode']);
+			$values['shipping_frenet_postcode'] = Postcode::format((string)$values['shipping_frenet_postcode']);
 
 			$adjusted = [];
 
@@ -84,13 +104,16 @@ class ControllerExtensionShippingFrenet extends Controller {
 				$values[$field] = $value;
 			}
 
-			$additional_days = max(0, (int)$values['shipping_frenet_additional_days']);
+			foreach (self::NON_NEGATIVE as $field => [$label, $default]) {
+				$typed = trim((string)$values[$field]);
+				$value = $typed !== '' ? max(0, (int)$typed) : $default;
 
-			if (trim((string)$values['shipping_frenet_additional_days']) !== '' && (string)$additional_days !== trim((string)$values['shipping_frenet_additional_days'])) {
-				$adjusted[] = sprintf($this->language->get('text_adjusted_min'), $this->language->get('entry_additional_days'), $additional_days);
+				if ($typed !== '' && (string)$value !== $typed) {
+					$adjusted[] = sprintf($this->language->get('text_adjusted_min'), $this->language->get($label), $value);
+				}
+
+				$values[$field] = $value;
 			}
-
-			$values['shipping_frenet_additional_days'] = $additional_days;
 
 			foreach (self::MINIMUMS as $field => [$label, $default]) {
 				$value = FrenetConfig::parsePositive($values[$field]);
@@ -152,6 +175,8 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 			$data['shipping_frenet_delivery_time'] = $frenet_config->isDeliveryTimeShown();
 			$data['shipping_frenet_additional_days'] = $frenet_config->getAdditionalDays();
+			$data['shipping_frenet_simulator'] = $frenet_config->isSimulatorEnabled();
+			$data['shipping_frenet_simulator_limit'] = $frenet_config->getSimulatorLimit();
 			$data['shipping_frenet_timeout'] = $frenet_config->getTimeout();
 			$data['shipping_frenet_attempts'] = $frenet_config->getAttempts();
 			$data['shipping_frenet_minimum_height'] = $this->formatNumber($frenet_config->getMinimumHeight());
@@ -202,12 +227,22 @@ class ControllerExtensionShippingFrenet extends Controller {
 		$this->response->setOutput($this->load->view('extension/shipping/frenet', $data));
 	}
 
+	public function install(): void {
+		$this->addEvent();
+	}
+
+	public function uninstall(): void {
+		$this->load->model('setting/event');
+
+		$this->model_setting_event->deleteEventByCode(self::EVENT_CODE);
+	}
+
 	private function validate(string $saved_token): bool {
 		if (!$this->user->hasPermission('modify', 'extension/shipping/frenet')) {
 			$this->error['warning'] = $this->language->get('error_permission');
 		}
 
-		if (FrenetConfig::parsePostcode($this->request->post['shipping_frenet_postcode'] ?? '') === null) {
+		if (Postcode::format((string)($this->request->post['shipping_frenet_postcode'] ?? '')) === null) {
 			$this->error['postcode'] = $this->language->get('error_postcode');
 		}
 
@@ -236,6 +271,18 @@ class ControllerExtensionShippingFrenet extends Controller {
 		$this->model_setting_setting->editSetting('shipping_frenet', array_diff_key($settings, $legacy));
 
 		return true;
+	}
+
+	private function addEvent(): void {
+		$this->load->model('setting/event');
+
+		foreach ($this->model_setting_event->getEvents() as $event) {
+			if ($event['code'] === self::EVENT_CODE) {
+				return;
+			}
+		}
+
+		$this->model_setting_event->addEvent(self::EVENT_CODE, self::EVENT_TRIGGER, self::EVENT_ACTION);
 	}
 
 	private function formatNumber(float $value): string {

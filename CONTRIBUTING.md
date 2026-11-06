@@ -36,18 +36,23 @@ O `composer compat` (PHPCompatibility com `testVersion 7.1-`) e o `php -l` do CI
 
 ### Regras de Twig
 
-O template do admin precisa funcionar do Twig 1.24 ao 3.x. Use só `{{ }}`, `{% if %}`, `{% for %}` e o filtro `escape`. Não use a tag `spaceless`, a tag `filter`, `for ... if`, nem os filtros `filter` e `map`.
+Os templates do admin e do simulador precisam funcionar do Twig 1.24 ao 3.x. Use só `{{ }}`, `{% if %}`, `{% for %}` e o filtro `escape`. Não use a tag `spaceless`, a tag `filter`, `for ... if`, nem os filtros `filter` e `map`.
 
 O OpenCart 3 roda o Twig com `autoescape` desligado, então todo valor impresso no template leva `|escape`.
+
+Em versões antigas do OpenCart 3, como a 3.0.3.3, o catálogo e o admin guardam o template compilado e não conferem se o arquivo mudou (o Twig roda sem `auto_reload`). Por isso o admin e o simulador renderizam os templates da Frenet com `template_cache` desligado. Sem isso, depois de uma atualização do módulo, a loja mostraria o template antigo até o lojista limpar o cache de tema. A chave só tem efeito nessas versões: a 3.0.0.0 não guarda o template compilado, e da 3.0.3.8 em diante o core guarda sempre, com `auto_reload`, sem ler `template_cache`. Onde ela vale, o simulador recompila o template a cada página de produto, um custo de poucos milissegundos.
+
+O JavaScript do simulador roda com o jQuery do tema padrão, do 2.1.1 (3.0.0.0) ao 3.7.1 (3.0.5.1), e o Bootstrap 3. Ele não usa recursos que só existem em versões mais novas, e textos vindos do servidor entram na página por `.text()`.
 
 ## Estrutura
 
 ```
 upload/                         vai para o .ocmod.zip; espelha a raiz da loja
   admin/...                     controller, idiomas e template do admin
-  catalog/...                   model de frete e idiomas da loja
+  catalog/...                   model de frete, controller e template do simulador, idiomas da loja
   system/library/frenet/        classes do módulo (namespace Frenet)
     quote/                      montagem da requisição e leitura da resposta da cotação
+    simulator/                  produto da página e limite por IP do simulador
 tests/
   unit/                         PHPUnit das classes de system/library/frenet
   mock/                         mock da API da Frenet (servidor embutido do PHP)
@@ -71,7 +76,29 @@ A cotação passa por estas classes:
 
 O model `catalog/model/extension/shipping/frenet.php` só cota quando o endereço está na região geográfica escolhida no admin (Todas as regiões = qualquer endereço), com a mesma consulta a `zone_to_geo_zone` dos métodos Peso e Item do core. Se a região escolhida for excluída, o frete Frenet continua escondido, como no core, mas o erro vai para o `frenet.log` e o admin mostra um alerta. O grupo de impostos do admin vai no `tax_class_id` de cada serviço. Com o prazo ligado e a mensagem em branco, o nome usa `text_delivery_time` do idioma da loja.
 
-O admin só salva com CEP de origem de 8 dígitos, aceitando ponto, hífen e espaço, e grava no formato `00000-000` (`Frenet\Config::parsePostcode()`). Também recusa habilitar o módulo sem token salvo ou digitado, com a mensagem embaixo do campo. Em caso de erro, o formulário volta com os valores enviados, menos o token, que nunca é exibido.
+O admin só salva com CEP de origem de 8 dígitos, aceitando ponto, hífen e espaço, e grava no formato `00000-000` (`Frenet\Postcode::format()`). Também recusa habilitar o módulo sem token salvo ou digitado, com a mensagem embaixo do campo. Em caso de erro, o formulário volta com os valores enviados, menos o token, que nunca é exibido. O limite de simulações por IP aceita inteiros a partir de 0 (outro valor é ajustado com aviso) e, em branco, fica em 60.
+
+### Simulador na página do produto
+
+| Classe | Papel |
+| --- | --- |
+| `Frenet\Postcode` | tira a máscara do CEP (8 dígitos, aceitando ponto, hífen e espaço), formata como `00000-000` e acha o estado pelas faixas dos Correios. Também é usada pelo CEP de origem do admin |
+| `Frenet\Simulator\Product` | monta o produto da página como o `Cart::getProducts()` do core o devolveria sozinho no carrinho: mesma consulta de produto (loja, idioma, data de disponibilidade e status), desconto por quantidade e preço especial do grupo do cliente, e preço e peso das opções `select`, `radio` e `checkbox`. Lista as opções obrigatórias vazias, como o carrinho faz ao adicionar. Na página do produto, `requiresShipping()` só confere com uma consulta se a loja vende o produto e se ele exige envio |
+| `Frenet\Simulator\RateLimit` | conta as simulações de cada IP por minuto no `$this->cache` do OpenCart, com a chave pelo hash do IP (ou da rede /64 do IPv6). Acima do limite do admin, devolve os segundos até o fim do minuto e registra o bloqueio no `frenet.log` uma vez por minuto. Limite 0 desliga a contagem. Se o cache falhar, registra o erro e deixa simular |
+
+O controller `catalog/controller/extension/shipping/frenet.php` tem três rotas:
+
+- `addSimulator`: responde ao evento `catalog/view/product/product/after` e coloca o simulador logo depois do bloco do botão `#button-cart`. Só aparece com o módulo e o simulador ligados, token salvo e produto que exige envio. Num tema sem `#button-cart`, o simulador não aparece.
+- `postcode`: devolve em JSON, no formato `00000-000`, o CEP de entrega da sessão ou, para o cliente logado sem CEP na sessão, o do endereço padrão da conta. O simulador chama a rota quando a página carrega só para o cliente logado. Para o visitante, chama quando ele entra no campo, para a página do produto não fazer uma segunda requisição a cada visita. O CEP não vai no HTML, porque uma extensão de cache de página inteira mostraria o CEP de um comprador para outros; o HTML leva só a marca `data-autofill` de cliente logado, que não identifica ninguém. A resposta sai com `Cache-Control: no-store, private`.
+- `quote`: a rota AJAX da simulação. Recebe os mesmos campos que o botão de comprar envia (`product_id`, `quantity`, `option[...]`) e o `postcode`. Acha o país Brasil e o estado do CEP pelos models `localisation/country` e `localisation/zone` do core, que guardam as listas no cache, ajusta os endereços de imposto como a estimativa de frete do carrinho do core (`extension/total/shipping`) e cota pelo mesmo model do checkout (`getProductQuote`), com o cupom da sessão. Acima do limite, responde 429 com `Retry-After`.
+
+O evento é registrado no `install()` do admin. Lojas que atualizam o módulo já estão com ele instalado, então o admin também registra o evento quando a configuração da Frenet é aberta por um usuário com permissão de alterar a extensão, se ele ainda não existir. O `uninstall()` apaga o evento.
+
+O IP é o `REMOTE_ADDR`. O módulo não lê `X-Forwarded-For`, porque qualquer cliente pode enviar esse header e escapar do limite. Um endereço IPv6 conta pela sua rede /64, porque cada cliente IPv6 costuma ter a /64 inteira e trocaria de endereço a cada simulação. Um IPv6 mapeado (`::ffff:203.0.113.7`) conta como o IPv4.
+
+O limite é de melhor esforço: o cache do OpenCart não tem incremento atômico, então simulações paralelas do mesmo IP podem passar um pouco do limite antes de o contador chegar nelas.
+
+Com o cache em arquivo, o padrão do OpenCart 3, cada IP que simula vira um arquivo na pasta de cache (`DIR_CACHE`) e fica lá até o `cache_expire` do core (1 hora), porque o `Cache::set()` do OpenCart 3 não aceita validade por chave. O core percorre os arquivos dessa pasta a cada requisição, então um bot com muitos IPs aumenta esse trabalho. Em loja com muito tráfego, um `cache_engine` em memória, como Memcached, APCu ou Redis, conforme a versão do OpenCart, evita isso.
 
 A versão do módulo fica em `Frenet\Module::VERSION`.
 
@@ -101,7 +128,7 @@ docker run --rm -u "$(id -u):$(id -g)" -e COMPOSER_HOME=/tmp/composer -v "$PWD":
 | `composer check` | roda `cs`, `compat`, `phpstan` e `test`, como o CI |
 | `composer cs` / `composer cs-fix` | confere / aplica o padrão de código |
 | `composer compat` | PHPCompatibility do PHP 7.1 em diante em `upload/` |
-| `composer phpstan` | PHPStan nível 6: `system/library/frenet`, o controller do admin e o model de frete analisados como PHP 7.1 (`phpstan.neon.dist`), e `tests/` como PHP 8.2, o mínimo do PHPUnit 11 (`phpstan.tests.neon.dist`) |
+| `composer phpstan` | PHPStan nível 6: `system/library/frenet`, os controllers do admin e da loja e o model de frete analisados como PHP 7.1 (`phpstan.neon.dist`), e `tests/` como PHP 8.2, o mínimo do PHPUnit 11 (`phpstan.tests.neon.dist`) |
 | `composer test` | PHPUnit; sobe o mock da Frenet sozinho na porta 8765 |
 | `composer lint` | `php -l` em `upload/` com o PHP atual |
 

@@ -3,6 +3,7 @@ use Frenet\Api;
 use Frenet\Config as FrenetConfig;
 use Frenet\Http\Client;
 use Frenet\Log as FrenetLog;
+use Frenet\Postcode;
 use Frenet\Quote\Builder;
 use Frenet\Quote\Cache as QuoteCache;
 use Frenet\Quote\Catalog;
@@ -13,6 +14,59 @@ class ModelExtensionShippingFrenet extends Model {
 	 * @return array<string, mixed>
 	 */
 	public function getQuote(array $address): array {
+		return $this->quote($address, $this->cart->getProducts());
+	}
+
+	/**
+	 * Quotes the product of the page alone, as Frenet\Simulator\Product builds it, the way the cart would quote it.
+	 *
+	 * @param array<string, mixed> $address
+	 * @param array<string, mixed> $product
+	 * @return array<string, mixed>
+	 */
+	public function getProductQuote(array $address, array $product): array {
+		return $this->quote($address, [$product]);
+	}
+
+	/**
+	 * Shipping address of a Brazilian postcode with the country and state of the store, as the cart shipping estimate builds it.
+	 *
+	 * @param string $postcode
+	 * @param string $state
+	 * @return array<string, mixed>
+	 */
+	public function getPostcodeAddress(string $postcode, string $state): array {
+		$this->load->model('localisation/country');
+		$this->load->model('localisation/zone');
+
+		$country = $this->findRow($this->model_localisation_country->getCountries(), 'iso_code_2', 'BR');
+		$zone = $country ? $this->findRow($this->model_localisation_zone->getZonesByCountryId($country['country_id']), 'code', $state) : [];
+
+		return [
+			'firstname'      => '',
+			'lastname'       => '',
+			'company'        => '',
+			'address_1'      => '',
+			'address_2'      => '',
+			'postcode'       => (string)Postcode::format($postcode),
+			'city'           => '',
+			'zone_id'        => (int)($zone['zone_id'] ?? 0),
+			'zone'           => (string)($zone['name'] ?? ''),
+			'zone_code'      => (string)($zone['code'] ?? $state),
+			'country_id'     => (int)($country['country_id'] ?? 0),
+			'country'        => (string)($country['name'] ?? ''),
+			'iso_code_2'     => 'BR',
+			'iso_code_3'     => (string)($country['iso_code_3'] ?? 'BRA'),
+			'address_format' => (string)($country['address_format'] ?? '')
+		];
+	}
+
+	/**
+	 * @param array<string, mixed> $address
+	 * @param array<int|string, array<string, mixed>> $products
+	 * @return array<string, mixed>
+	 */
+	private function quote(array $address, array $products): array {
 		$config = new FrenetConfig($this->config);
 		$log = new FrenetLog(new \Log(FrenetLog::FILENAME), $config->isDebug());
 
@@ -35,7 +89,6 @@ class ModelExtensionShippingFrenet extends Model {
 		}
 
 		$builder = new Builder($config, $this->weight, $this->length, VERSION);
-		$products = $this->cart->getProducts();
 
 		try {
 			$catalog = (new Catalog($this->db, DB_PREFIX, (int)$this->config->get('config_language_id'), (int)$this->config->get('config_store_id')))->getProducts(array_column($builder->filterShipped($products), 'product_id'));
@@ -98,6 +151,22 @@ class ModelExtensionShippingFrenet extends Model {
 		$query = $this->db->query("SELECT 1 FROM `" . DB_PREFIX . "zone_to_geo_zone` WHERE `geo_zone_id` = '" . $geo_zone_id . "' AND `country_id` = '" . (int)($address['country_id'] ?? 0) . "' AND (`zone_id` = '" . (int)($address['zone_id'] ?? 0) . "' OR `zone_id` = '0') LIMIT 1");
 
 		return (bool)$query->num_rows;
+	}
+
+	/**
+	 * @param array<int, array<string, mixed>> $rows
+	 * @param string $field
+	 * @param string $value
+	 * @return array<string, mixed>
+	 */
+	private function findRow(array $rows, string $field, string $value): array {
+		foreach ($rows as $row) {
+			if ((string)($row[$field] ?? '') === $value) {
+				return $row;
+			}
+		}
+
+		return [];
 	}
 
 	private function geoZoneExists(int $geo_zone_id): bool {

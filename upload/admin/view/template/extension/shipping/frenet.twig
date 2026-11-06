@@ -138,6 +138,26 @@
             </div>
           </div>
           <div class="form-group">
+            <label class="col-sm-2 control-label" for="input-simulator"><span data-toggle="tooltip" title="{{ help_simulator }}">{{ entry_simulator }}</span></label>
+            <div class="col-sm-10">
+              <select name="shipping_frenet_simulator" id="input-simulator" class="form-control">
+                {% if shipping_frenet_simulator %}
+                <option value="1" selected="selected">{{ text_enabled }}</option>
+                <option value="0">{{ text_disabled }}</option>
+                {% else %}
+                <option value="1">{{ text_enabled }}</option>
+                <option value="0" selected="selected">{{ text_disabled }}</option>
+                {% endif %}
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="col-sm-2 control-label" for="input-simulator-limit"><span data-toggle="tooltip" title="{{ help_simulator_limit }}">{{ entry_simulator_limit }}</span></label>
+            <div class="col-sm-10">
+              <input type="number" name="shipping_frenet_simulator_limit" value="{{ shipping_frenet_simulator_limit|escape }}" min="0" step="1" id="input-simulator-limit" class="form-control" />
+            </div>
+          </div>
+          <div class="form-group">
             <label class="col-sm-2 control-label" for="input-debug"><span data-toggle="tooltip" title="{{ help_debug }}">{{ entry_debug }}</span></label>
             <div class="col-sm-10">
               <select name="shipping_frenet_debug" id="input-debug" class="form-control">

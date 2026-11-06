@@ -43,6 +43,11 @@ class Config {
 	public const ATTEMPTS_DEFAULT = 3;
 
 	/**
+	 * @var int
+	 */
+	public const SIMULATOR_LIMIT_DEFAULT = 60;
+
+	/**
 	 * @var float
 	 */
 	public const DEFAULT_HEIGHT = 2.0;
@@ -230,30 +235,38 @@ class Config {
 	}
 
 	/**
+	 * Whether the product page shows the shipping simulator, on until the store owner turns it off.
+	 *
+	 * @return bool
+	 */
+	public function isSimulatorEnabled(): bool {
+		$value = $this->get('simulator');
+
+		return $value === null || $value === '' || (bool)$value;
+	}
+
+	/**
+	 * Simulator quotes each IP may ask per minute, 0 for no limit.
+	 *
+	 * @return int
+	 */
+	public function getSimulatorLimit(): int {
+		$value = $this->get('simulator_limit');
+
+		if ($value === null || $value === '') {
+			return self::SIMULATOR_LIMIT_DEFAULT;
+		}
+
+		return max(0, (int)$value);
+	}
+
+	/**
 	 * Position of Frenet among the shipping methods at checkout.
 	 *
 	 * @return int
 	 */
 	public function getSortOrder(): int {
 		return (int)$this->get('sort_order');
-	}
-
-	/**
-	 * Postcode typed in the admin as 00000-000, accepting dots, hyphens and spaces, or null when it does not have 8 digits.
-	 *
-	 * @param mixed $value
-	 * @return string|null
-	 */
-	public static function parsePostcode($value): ?string {
-		$postcode = trim((string)$value);
-
-		if (!preg_match('/^[0-9.\s-]+$/', $postcode)) {
-			return null;
-		}
-
-		$digits = (string)preg_replace('/\D/', '', $postcode);
-
-		return strlen($digits) === 8 ? substr($digits, 0, 5) . '-' . substr($digits, 5) : null;
 	}
 
 	/**

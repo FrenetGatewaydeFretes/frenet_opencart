@@ -142,6 +142,7 @@ return $config
             __DIR__ . '/upload/admin/controller/extension/shipping/frenet.php',
             __DIR__ . '/upload/admin/language/en-gb/extension/shipping/frenet.php',
             __DIR__ . '/upload/admin/language/pt-br/extension/shipping/frenet.php',
+            __DIR__ . '/upload/catalog/controller/extension/shipping/frenet.php',
             __DIR__ . '/upload/catalog/model/extension/shipping/frenet.php',
         ])
     )
