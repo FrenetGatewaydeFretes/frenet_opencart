@@ -59,6 +59,7 @@ final class RateLimit {
 		$client = self::getClient($ip);
 		$key = self::PREFIX . hash('sha256', $client);
 		$now = time();
+		$blocked_at = $this->limit + 1;
 
 		try {
 			$entry = $this->cache->get($key);
@@ -70,7 +71,7 @@ final class RateLimit {
 			$count = (int)($entry['count'] ?? 0) + 1;
 			$expires = (int)$entry['expires'];
 
-			if ($count <= $this->limit + 1) {
+			if ($count <= $blocked_at) {
 				$this->cache->set($key, ['count' => $count, 'expires' => $expires]);
 			}
 		} catch (\Throwable $exception) {
@@ -85,7 +86,7 @@ final class RateLimit {
 
 		$retry_after = max(1, $expires - $now);
 
-		if ($count === $this->limit + 1) {
+		if ($count === $blocked_at) {
 			$this->log->error('Simulator quote limit reached (' . $this->limit . ' quotes per ' . self::WINDOW . ' seconds): IP ' . $client . ' blocked for ' . $retry_after . ' seconds');
 		}
 
