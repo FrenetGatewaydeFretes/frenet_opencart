@@ -40,6 +40,38 @@ final class CacheTest extends TestCase {
 		self::assertNotSame($key, $this->cache->getKey('abc123', '{"ShippingSevicesArray":[{}]}'));
 	}
 
+	public function testKeepsTheWarningsOfTheCoreCacheOutOfThePage(): void {
+		$store = new class () extends \Cache {
+			public function get($key) {
+				return fopen(sys_get_temp_dir() . '/frenet-missing/cache.' . $key, 'r');
+			}
+
+			public function set($key, $value) {
+				fopen(sys_get_temp_dir() . '/frenet-missing/cache.' . $key, 'r');
+			}
+		};
+
+		$warnings = [];
+
+		set_error_handler(static function (int $code, string $message) use (&$warnings): bool {
+			$warnings[] = $message;
+
+			return true;
+		});
+
+		try {
+			$cache = new Cache($store);
+
+			self::assertNull($cache->get('frenet.quote.key'));
+
+			$cache->set('frenet.quote.key', self::BODY);
+		} finally {
+			restore_error_handler();
+		}
+
+		self::assertSame([], $warnings);
+	}
+
 	public function testKeepsTheBodyForTenMinutes(): void {
 		$this->cache->set('frenet.quote.key', self::BODY);
 
