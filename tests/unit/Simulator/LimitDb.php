@@ -52,13 +52,17 @@ final class LimitDb extends \DB {
 			$rows = [['count' => (string)$this->last_insert_id]];
 		} elseif (preg_match("/^SELECT `expires` FROM `oc_frenet_simulator_limit` WHERE `client` = '([0-9a-f]{64})'$/", $sql, $match)) {
 			$rows = isset($this->rows[$match[1]]) ? [['expires' => (string)$this->rows[$match[1]]['expires']]] : [];
-		} elseif (preg_match('/^SELECT `client` FROM `oc_frenet_simulator_limit` WHERE `expires` <= (\d+) LIMIT (\d+)$/', $sql, $match)) {
+		} elseif (preg_match("/^SELECT `client` FROM `oc_frenet_simulator_limit` FORCE INDEX \\(PRIMARY\\) WHERE `client` >= '([0-9a-f]{4})' AND `expires` <= (\\d+) LIMIT (\\d+)$/", $sql, $match)) {
 			if ($this->cleanup_failure) {
 				throw $this->cleanup_failure;
 			}
 
-			foreach ($this->rows as $key => $row) {
-				if ($row['expires'] <= (int)$match[1] && count($rows) < (int)$match[2]) {
+			$keys = array_keys($this->rows);
+
+			sort($keys);
+
+			foreach ($keys as $key) {
+				if ($key >= $match[1] && $this->rows[$key]['expires'] <= (int)$match[2] && count($rows) < (int)$match[3]) {
 					$rows[] = ['client' => $key];
 				}
 			}

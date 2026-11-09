@@ -117,7 +117,8 @@ final class RateLimit {
 	}
 
 	/**
-	 * Now and then, when an IP starts a minute, removes a few IPs whose minute ended by their key, without locking a range.
+	 * Now and then, when an IP starts a minute, removes a few IPs whose minute ended, read from a random point of the key, so
+	 * cleanups at the same time remove different IPs, and removed by their key, without locking a range.
 	 *
 	 * @param int $now
 	 * @return void
@@ -128,7 +129,7 @@ final class RateLimit {
 		}
 
 		try {
-			$keys = array_column($this->db->query("SELECT `client` FROM " . $this->table . " WHERE `expires` <= " . $now . " LIMIT " . self::CLEANUP_ROWS)->rows, 'client');
+			$keys = array_column($this->db->query("SELECT `client` FROM " . $this->table . " FORCE INDEX (PRIMARY) WHERE `client` >= '" . bin2hex(random_bytes(2)) . "' AND `expires` <= " . $now . " LIMIT " . self::CLEANUP_ROWS)->rows, 'client');
 
 			if ($keys) {
 				$this->db->query("DELETE FROM " . $this->table . " WHERE `client` IN ('" . implode("', '", array_map([$this->db, 'escape'], $keys)) . "') AND `expires` <= " . $now);

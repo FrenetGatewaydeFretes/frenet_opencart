@@ -120,8 +120,11 @@ final class RateLimitTest extends TestCase {
 		self::assertSame(["ERROR Simulator quote limit could not be checked, quoting anyway: Error: Table 'opencart.oc_frenet_simulator_limit' doesn't exist"], $this->writer->lines);
 	}
 
-	public function testRemovesSomeIpsOfPastMinutesWhenAnIpStartsAMinute(): void {
-		for ($i = 0; $i < RateLimit::CLEANUP_ROWS + 5; $i++) {
+	public function testRemovesSomeIpsOfPastMinutesFromARandomPointOfTheKeyWhenAnIpStartsAMinute(): void {
+		$old = [];
+
+		for ($i = 0; $i < RateLimit::CLEANUP_ROWS * 3; $i++) {
+			$old[] = hash('sha256', 'old' . $i);
 			$this->db->rows[hash('sha256', 'old' . $i)] = ['count' => 1, 'expires' => time() - 1];
 		}
 
@@ -131,10 +134,15 @@ final class RateLimitTest extends TestCase {
 
 		$limit->hit('203.0.113.7');
 
-		self::assertStringEndsWith(' LIMIT ' . RateLimit::CLEANUP_ROWS, $this->db->queries[2]);
-		self::assertStringStartsWith('DELETE FROM `oc_frenet_simulator_limit` WHERE `client` IN (', $this->db->queries[3]);
-		self::assertCount(7, $this->db->rows);
+		self::assertSame(1, preg_match("/ FORCE INDEX \\(PRIMARY\\) WHERE `client` >= '([0-9a-f]{4})' AND `expires` <= \\d+ LIMIT " . RateLimit::CLEANUP_ROWS . '$/', $this->db->queries[2], $start));
+
+		$after_start = count(array_filter($old, static function (string $key) use ($start): bool {
+			return $key >= $start[1];
+		}));
+
+		self::assertCount(count($old) + 2 - min(RateLimit::CLEANUP_ROWS, $after_start), $this->db->rows);
 		self::assertArrayHasKey(hash('sha256', 'current'), $this->db->rows);
+		self::assertArrayHasKey(hash('sha256', '203.0.113.7'), $this->db->rows);
 
 		$queries = count($this->db->queries);
 
