@@ -11,6 +11,8 @@ use Frenet\Quote\Catalog;
 class ModelExtensionShippingFrenet extends Model {
 	private const FILE_CACHE = 'file';
 
+	private const SIMULATION_ATTEMPTS = 1;
+
 	/**
 	 * @param array<string, mixed> $address
 	 * @return array<string, mixed>
@@ -111,7 +113,7 @@ class ModelExtensionShippingFrenet extends Model {
 		$this->load->language('extension/shipping/frenet');
 
 		try {
-			$result = (new Api(new Client(), new QuoteCache($this->cache, !$simulation || $this->config->get('cache_engine') !== self::FILE_CACHE), $log, $config->getToken(), VERSION, $config->getTimeout(), $config->getAttempts()))->quote($request);
+			$result = (new Api(new Client(), new QuoteCache($this->cache, !$simulation || $this->config->get('cache_engine') !== self::FILE_CACHE), $log, $config->getToken(), VERSION, $config->getTimeout(), $simulation ? self::SIMULATION_ATTEMPTS : $config->getAttempts()))->quote($request);
 		} catch (\Throwable $exception) {
 			$log->error('Quote failed: ' . $exception->getMessage(), ['request' => $request->toArray()]);
 
