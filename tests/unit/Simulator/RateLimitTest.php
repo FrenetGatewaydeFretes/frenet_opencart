@@ -120,6 +120,27 @@ final class RateLimitTest extends TestCase {
 		self::assertSame(["ERROR Simulator quote limit could not be checked, quoting anyway: Error: Table 'opencart.oc_frenet_simulator_limit' doesn't exist"], $this->writer->lines);
 	}
 
+	public function testCreatesTheTableMissingAfterAnUpdateAndCounts(): void {
+		$this->db->table_exists = false;
+
+		$limit = $this->createRateLimit(1);
+
+		self::assertSame(0, $limit->hit('203.0.113.7'));
+		self::assertGreaterThan(0, $limit->hit('203.0.113.7'));
+		self::assertStringStartsWith('CREATE TABLE IF NOT EXISTS `oc_frenet_simulator_limit` ', $this->db->queries[1]);
+		self::assertStringStartsWith('INSERT INTO `oc_frenet_simulator_limit` ', $this->db->queries[2]);
+		self::assertCount(1, $this->writer->lines);
+		self::assertStringContainsString('IP 203.0.113.7 blocked for ', $this->writer->lines[0]);
+	}
+
+	public function testQuotesAndLogsTheFirstErrorWhenTheTableCannotBeCreated(): void {
+		$this->db->table_exists = false;
+		$this->db->create_failure = new \Exception('Error: CREATE command denied to user');
+
+		self::assertSame(0, $this->createRateLimit(1)->hit('203.0.113.7'));
+		self::assertSame(["ERROR Simulator quote limit could not be checked, quoting anyway: Error: Table 'opencart.oc_frenet_simulator_limit' doesn't exist<br />Error No: 1146"], $this->writer->lines);
+	}
+
 	public function testRemovesSomeIpsOfPastMinutesFromARandomPointOfTheKeyWhenAnIpStartsAMinute(): void {
 		$old = [];
 

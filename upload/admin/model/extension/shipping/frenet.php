@@ -8,7 +8,7 @@ class ModelExtensionShippingFrenet extends Model {
 	 * @return void
 	 */
 	public function createSimulatorTable(): void {
-		$this->db->query("CREATE TABLE IF NOT EXISTS `" . DB_PREFIX . RateLimit::TABLE . "` (`client` CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL, `count` INT UNSIGNED NOT NULL, `expires` INT UNSIGNED NOT NULL, PRIMARY KEY (`client`), KEY `expires` (`expires`)) ENGINE=InnoDB");
+		RateLimit::createTable($this->db, DB_PREFIX);
 	}
 
 	/**

@@ -23,6 +23,16 @@ final class LimitDb extends \DB {
 	public $cleanup_failure;
 
 	/**
+	 * @var bool
+	 */
+	public $table_exists = true;
+
+	/**
+	 * @var \Throwable|null
+	 */
+	public $create_failure;
+
+	/**
 	 * @var int
 	 */
 	private $last_insert_id = 0;
@@ -44,7 +54,15 @@ final class LimitDb extends \DB {
 
 		$rows = [];
 
-		if (preg_match("/^INSERT INTO `oc_frenet_simulator_limit` .* VALUES \\('([0-9a-f]{64})', LAST_INSERT_ID\\(1\\), (\\d+)\\) ON DUPLICATE KEY UPDATE `count` = LAST_INSERT_ID\\(IF\\(`expires` <= (\\d+), 1, `count` \\+ 1\\)\\), `expires` = IF\\(`expires` <= \\3, \\2, `expires`\\)$/", $sql, $match)) {
+		if (strpos($sql, 'CREATE TABLE IF NOT EXISTS `oc_frenet_simulator_limit` (`client` CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL, ') === 0) {
+			if ($this->create_failure) {
+				throw $this->create_failure;
+			}
+
+			$this->table_exists = true;
+		} elseif (!$this->table_exists) {
+			throw new \Exception("Error: Table 'opencart.oc_frenet_simulator_limit' doesn't exist<br />Error No: 1146");
+		} elseif (preg_match("/^INSERT INTO `oc_frenet_simulator_limit` .* VALUES \\('([0-9a-f]{64})', LAST_INSERT_ID\\(1\\), (\\d+)\\) ON DUPLICATE KEY UPDATE `count` = LAST_INSERT_ID\\(IF\\(`expires` <= (\\d+), 1, `count` \\+ 1\\)\\), `expires` = IF\\(`expires` <= \\3, \\2, `expires`\\)$/", $sql, $match)) {
 			$row = $this->rows[$match[1]] ?? null;
 			$this->rows[$match[1]] = !$row || $row['expires'] <= (int)$match[3] ? ['count' => 1, 'expires' => (int)$match[2]] : ['count' => $row['count'] + 1, 'expires' => $row['expires']];
 			$this->last_insert_id = $this->rows[$match[1]]['count'];

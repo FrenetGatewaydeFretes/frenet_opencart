@@ -37,6 +37,11 @@ final class RateLimit {
 	/**
 	 * @var string
 	 */
+	private $prefix;
+
+	/**
+	 * @var string
+	 */
 	private $table;
 
 	/**
@@ -63,6 +68,7 @@ final class RateLimit {
 	 */
 	public function __construct(\DB $db, string $prefix, Log $log, int $limit, int $cleanup_chance = self::CLEANUP_CHANCE) {
 		$this->db = $db;
+		$this->prefix = $prefix;
 		$this->table = '`' . $prefix . self::TABLE . '`';
 		$this->log = $log;
 		$this->limit = $limit;
@@ -86,9 +92,7 @@ final class RateLimit {
 		$expires = $now + self::WINDOW;
 
 		try {
-			$this->db->query("INSERT INTO " . $this->table . " (`client`, `count`, `expires`) VALUES ('" . $key . "', LAST_INSERT_ID(1), " . $expires . ") ON DUPLICATE KEY UPDATE `count` = LAST_INSERT_ID(IF(`expires` <= " . $now . ", 1, `count` + 1)), `expires` = IF(`expires` <= " . $now . ", " . $expires . ", `expires`)");
-
-			$count = (int)($this->db->query("SELECT LAST_INSERT_ID() AS `count`")->row['count'] ?? 0);
+			$count = $this->countInTable($key, $now, $expires);
 
 			if ($count > $this->limit) {
 				$expires = (int)($this->db->query("SELECT `expires` FROM " . $this->table . " WHERE `client` = '" . $key . "'")->row['expires'] ?? $expires);
@@ -114,6 +118,52 @@ final class RateLimit {
 		}
 
 		return $retry_after;
+	}
+
+	/**
+	 * Creates the table where the simulator counts the quotes of each IP, keyed by the hash of the IP.
+	 *
+	 * @param \DB $db
+	 * @param string $prefix
+	 * @return void
+	 */
+	public static function createTable(\DB $db, string $prefix): void {
+		$db->query("CREATE TABLE IF NOT EXISTS `" . $prefix . self::TABLE . "` (`client` CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL, `count` INT UNSIGNED NOT NULL, `expires` INT UNSIGNED NOT NULL, PRIMARY KEY (`client`), KEY `expires` (`expires`)) ENGINE=InnoDB");
+	}
+
+	/**
+	 * Counts the quote of the client, creating the table first when the module was updated and the admin did not create it yet.
+	 *
+	 * @param string $key
+	 * @param int $now
+	 * @param int $expires
+	 * @return int
+	 * @throws \Throwable
+	 */
+	private function countInTable(string $key, int $now, int $expires): int {
+		try {
+			return $this->upsert($key, $now, $expires);
+		} catch (\Throwable $exception) {
+			try {
+				self::createTable($this->db, $this->prefix);
+			} catch (\Throwable $ignored) {
+				throw $exception;
+			}
+
+			return $this->upsert($key, $now, $expires);
+		}
+	}
+
+	/**
+	 * @param string $key
+	 * @param int $now
+	 * @param int $expires
+	 * @return int
+	 */
+	private function upsert(string $key, int $now, int $expires): int {
+		$this->db->query("INSERT INTO " . $this->table . " (`client`, `count`, `expires`) VALUES ('" . $key . "', LAST_INSERT_ID(1), " . $expires . ") ON DUPLICATE KEY UPDATE `count` = LAST_INSERT_ID(IF(`expires` <= " . $now . ", 1, `count` + 1)), `expires` = IF(`expires` <= " . $now . ", " . $expires . ", `expires`)");
+
+		return (int)($this->db->query("SELECT LAST_INSERT_ID() AS `count`")->row['count'] ?? 0);
 	}
 
 	/**
