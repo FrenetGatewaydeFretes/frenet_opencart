@@ -100,7 +100,8 @@ class ControllerExtensionShippingFrenet extends Controller {
 	 * @return array<string, mixed>
 	 */
 	private function simulate(): array {
-		$postcode = Postcode::getDigits((string)($this->request->post['postcode'] ?? ''));
+		$typed = $this->request->post['postcode'] ?? '';
+		$postcode = Postcode::getDigits(is_string($typed) ? $typed : '');
 		$state = Postcode::getState($postcode);
 
 		if ($state === '') {
