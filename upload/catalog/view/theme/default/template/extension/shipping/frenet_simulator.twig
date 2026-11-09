@@ -38,8 +38,11 @@ $('#input-frenet-postcode').on('keydown', function(e) {
 $('#button-frenet-simulator').on('click', function() {
 	var button = $(this);
 	var simulator = $('#frenet-simulator');
+	var data = $('#product input[type=\'text\'], #product input[type=\'hidden\'], #product input[type=\'radio\']:checked, #product input[type=\'checkbox\']:checked, #product select, #product textarea').serialize() + '&postcode=' + encodeURIComponent($('#input-frenet-postcode').val());
 
 	if (simulator.data('loading')) {
+		simulator.data('next', data);
+
 		return;
 	}
 
@@ -88,18 +91,26 @@ $('#button-frenet-simulator').on('click', function() {
 	$.ajax({
 		url: 'index.php?route=extension/shipping/frenet/quote',
 		type: 'post',
-		data: $('#product input[type=\'text\'], #product input[type=\'hidden\'], #product input[type=\'radio\']:checked, #product input[type=\'checkbox\']:checked, #product select, #product textarea').serialize() + '&postcode=' + encodeURIComponent($('#input-frenet-postcode').val()),
+		data: data,
 		dataType: 'json',
 		beforeSend: function() {
 			result.empty();
 			$('#product .text-danger').remove();
 			$('#product .has-error').removeClass('has-error');
 			simulator.data('loading', true);
+			simulator.data('next', null);
 			button.button('loading');
 		},
 		complete: function() {
+			var next = simulator.data('next');
+
 			simulator.data('loading', false);
+			simulator.data('next', null);
 			button.button('reset');
+
+			if (next && next !== data) {
+				button.trigger('click');
+			}
 		},
 		success: show,
 		error: function(xhr) {
