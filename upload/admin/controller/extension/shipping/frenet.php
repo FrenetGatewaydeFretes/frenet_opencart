@@ -76,7 +76,7 @@ class ControllerExtensionShippingFrenet extends Controller {
 		$data['migrated'] = $can_modify && $this->removeLegacySettings($settings);
 
 		if ($can_modify) {
-			$this->addEvent();
+			$this->installSimulator();
 		}
 
 		$saved_token = (string)($settings['shipping_frenet_token'] ?? '');
@@ -228,13 +228,17 @@ class ControllerExtensionShippingFrenet extends Controller {
 	}
 
 	public function install(): void {
-		$this->addEvent();
+		$this->installSimulator();
 	}
 
 	public function uninstall(): void {
 		$this->load->model('setting/event');
 
 		$this->model_setting_event->deleteEventByCode(self::EVENT_CODE);
+
+		$this->load->model('extension/shipping/frenet');
+
+		$this->model_extension_shipping_frenet->dropSimulatorTable();
 	}
 
 	private function validate(string $saved_token): bool {
@@ -271,6 +275,14 @@ class ControllerExtensionShippingFrenet extends Controller {
 		$this->model_setting_setting->editSetting('shipping_frenet', array_diff_key($settings, $legacy));
 
 		return true;
+	}
+
+	private function installSimulator(): void {
+		$this->addEvent();
+
+		$this->load->model('extension/shipping/frenet');
+
+		$this->model_extension_shipping_frenet->createSimulatorTable();
 	}
 
 	private function addEvent(): void {

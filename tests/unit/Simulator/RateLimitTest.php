@@ -8,12 +8,12 @@ use Frenet\Simulator\RateLimit;
 use PHPUnit\Framework\TestCase;
 
 final class RateLimitTest extends TestCase {
-	private \Cache $cache;
+	private LimitDb $db;
 
 	private \Log $writer;
 
 	protected function setUp(): void {
-		$this->cache = new \Cache();
+		$this->db = new LimitDb();
 		$this->writer = new \Log(Log::FILENAME);
 	}
 
@@ -22,6 +22,15 @@ final class RateLimitTest extends TestCase {
 
 		self::assertSame([0, 0, 0], [$limit->hit('203.0.113.7'), $limit->hit('203.0.113.7'), $limit->hit('203.0.113.7')]);
 		self::assertSame([], $this->writer->lines);
+	}
+
+	public function testCountsEachQuoteWithOneUpsertAndReadsTheCountOfThisConnection(): void {
+		$this->createRateLimit(3)->hit('203.0.113.7');
+
+		self::assertCount(2, $this->db->queries);
+		self::assertStringStartsWith('INSERT INTO `oc_frenet_simulator_limit` (`client`, `count`, `expires`) VALUES (', $this->db->queries[0]);
+		self::assertStringContainsString(' ON DUPLICATE KEY UPDATE `count` = LAST_INSERT_ID(', $this->db->queries[0]);
+		self::assertSame('SELECT LAST_INSERT_ID() AS `count`', $this->db->queries[1]);
 	}
 
 	public function testBlocksTheQuoteAboveTheLimitUntilTheMinuteEnds(): void {
@@ -82,16 +91,16 @@ final class RateLimitTest extends TestCase {
 
 		$limit->hit('203.0.113.7');
 
-		$key = array_key_first($this->cache->entries);
-		$this->cache->entries[$key]['expires'] = time() - 1;
+		$this->db->rows[hash('sha256', '203.0.113.7')]['expires'] = time() - 1;
 
 		self::assertSame(0, $limit->hit('203.0.113.7'));
 	}
 
-	public function testKeepsTheIpOutOfTheCacheKey(): void {
+	public function testKeepsTheIpOutOfTheTable(): void {
 		$this->createRateLimit(1)->hit('203.0.113.7');
 
-		self::assertSame(['frenet.simulator.' . hash('sha256', '203.0.113.7')], array_keys($this->cache->entries));
+		self::assertSame([hash('sha256', '203.0.113.7')], array_keys($this->db->rows));
+		self::assertStringNotContainsString('203.0.113.7', implode("\n", $this->db->queries));
 	}
 
 	public function testNeverBlocksWithoutLimit(): void {
@@ -101,21 +110,46 @@ final class RateLimitTest extends TestCase {
 			self::assertSame(0, $limit->hit('203.0.113.7'));
 		}
 
-		self::assertSame([], $this->cache->entries);
+		self::assertSame([], $this->db->queries);
 	}
 
-	public function testQuotesWhenTheCacheCannotBeRead(): void {
-		$cache = new class () extends \Cache {
-			public function get($key) {
-				throw new \ValueError('fread(): Argument #2 ($length) must be greater than 0');
-			}
-		};
+	public function testQuotesWhenTheTableCannotBeWritten(): void {
+		$this->db->failure = new \Exception("Error: Table 'opencart.oc_frenet_simulator_limit' doesn't exist");
 
-		self::assertSame(0, (new RateLimit($cache, new Log($this->writer, false), 1))->hit('203.0.113.7'));
-		self::assertSame(['ERROR Simulator quote limit could not be checked, quoting anyway: fread(): Argument #2 ($length) must be greater than 0'], $this->writer->lines);
+		self::assertSame(0, $this->createRateLimit(1)->hit('203.0.113.7'));
+		self::assertSame(["ERROR Simulator quote limit could not be checked, quoting anyway: Error: Table 'opencart.oc_frenet_simulator_limit' doesn't exist"], $this->writer->lines);
+	}
+
+	public function testRemovesSomeIpsOfPastMinutesWhenAnIpStartsAMinute(): void {
+		for ($i = 0; $i < RateLimit::CLEANUP_ROWS + 5; $i++) {
+			$this->db->rows[hash('sha256', 'old' . $i)] = ['count' => 1, 'expires' => time() - 1];
+		}
+
+		$this->db->rows[hash('sha256', 'current')] = ['count' => 1, 'expires' => time() + 30];
+
+		$limit = new RateLimit($this->db, 'oc_', new Log($this->writer, false), 3, 1);
+
+		$limit->hit('203.0.113.7');
+
+		self::assertStringEndsWith(' LIMIT ' . RateLimit::CLEANUP_ROWS, (string)end($this->db->queries));
+		self::assertCount(7, $this->db->rows);
+		self::assertArrayHasKey(hash('sha256', 'current'), $this->db->rows);
+
+		$queries = count($this->db->queries);
+
+		$limit->hit('203.0.113.7');
+
+		self::assertCount($queries + 2, $this->db->queries);
+	}
+
+	public function testKeepsTheRemovalOfPastMinutesFromBlockingTheQuote(): void {
+		$this->db->cleanup_failure = new \Exception('Error: Deadlock found when trying to get lock');
+
+		self::assertSame(0, (new RateLimit($this->db, 'oc_', new Log($this->writer, false), 1, 1))->hit('203.0.113.7'));
+		self::assertSame(['ERROR Simulator quote limits of past minutes could not be removed: Error: Deadlock found when trying to get lock'], $this->writer->lines);
 	}
 
 	private function createRateLimit(int $limit): RateLimit {
-		return new RateLimit($this->cache, new Log($this->writer, false), $limit);
+		return new RateLimit($this->db, 'oc_', new Log($this->writer, false), $limit, 0);
 	}
 }

@@ -1,0 +1,79 @@
+<?php
+declare(strict_types=1);
+
+namespace Frenet\Tests\Simulator;
+
+/**
+ * Answers the SQL of Frenet\Simulator\RateLimit as MySQL would, keeping the rows of the limit table in memory.
+ */
+final class LimitDb extends \DB {
+	/**
+	 * @var array<string, array{count: int, expires: int}>
+	 */
+	public $rows = [];
+
+	/**
+	 * @var \Throwable|null
+	 */
+	public $failure;
+
+	/**
+	 * @var \Throwable|null
+	 */
+	public $cleanup_failure;
+
+	/**
+	 * @var int
+	 */
+	private $last_insert_id = 0;
+
+	public function __construct() {
+		parent::__construct([]);
+	}
+
+	/**
+	 * @param string $sql
+	 * @return \stdClass
+	 */
+	public function query($sql) {
+		$this->queries[] = $sql;
+
+		if ($this->failure) {
+			throw $this->failure;
+		}
+
+		$rows = [];
+
+		if (preg_match("/^INSERT INTO `oc_frenet_simulator_limit` .* VALUES \\('([0-9a-f]{64})', LAST_INSERT_ID\\(1\\), (\\d+)\\) ON DUPLICATE KEY UPDATE `count` = LAST_INSERT_ID\\(IF\\(`expires` <= (\\d+), 1, `count` \\+ 1\\)\\), `expires` = IF\\(`expires` <= \\3, \\2, `expires`\\)$/", $sql, $match)) {
+			$row = $this->rows[$match[1]] ?? null;
+			$this->rows[$match[1]] = !$row || $row['expires'] <= (int)$match[3] ? ['count' => 1, 'expires' => (int)$match[2]] : ['count' => $row['count'] + 1, 'expires' => $row['expires']];
+			$this->last_insert_id = $this->rows[$match[1]]['count'];
+		} elseif ($sql === 'SELECT LAST_INSERT_ID() AS `count`') {
+			$rows = [['count' => (string)$this->last_insert_id]];
+		} elseif (preg_match("/^SELECT `expires` FROM `oc_frenet_simulator_limit` WHERE `client` = '([0-9a-f]{64})'$/", $sql, $match)) {
+			$rows = isset($this->rows[$match[1]]) ? [['expires' => (string)$this->rows[$match[1]]['expires']]] : [];
+		} elseif (preg_match('/^DELETE FROM `oc_frenet_simulator_limit` WHERE `expires` <= (\d+) LIMIT (\d+)$/', $sql, $match)) {
+			if ($this->cleanup_failure) {
+				throw $this->cleanup_failure;
+			}
+
+			$removed = 0;
+
+			foreach ($this->rows as $key => $row) {
+				if ($row['expires'] <= (int)$match[1] && $removed < (int)$match[2]) {
+					unset($this->rows[$key]);
+					$removed++;
+				}
+			}
+		} else {
+			throw new \LogicException('Unexpected SQL: ' . $sql);
+		}
+
+		$result = new \stdClass();
+		$result->rows = $rows;
+		$result->row = $rows[0] ?? [];
+		$result->num_rows = count($rows);
+
+		return $result;
+	}
+}

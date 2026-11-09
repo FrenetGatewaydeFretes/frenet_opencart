@@ -74,7 +74,7 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 		$log = new FrenetLog(new \Log(FrenetLog::FILENAME), $config->isDebug());
 
-		$retry_after = (new RateLimit($this->cache, $log, $config->getSimulatorLimit()))->hit((string)($this->request->server['REMOTE_ADDR'] ?? ''));
+		$retry_after = (new RateLimit($this->db, DB_PREFIX, $log, $config->getSimulatorLimit()))->hit((string)($this->request->server['REMOTE_ADDR'] ?? ''));
 
 		if ($retry_after) {
 			$this->response->addHeader(($this->request->server['SERVER_PROTOCOL'] ?? 'HTTP/1.1') . ' 429 Too Many Requests');

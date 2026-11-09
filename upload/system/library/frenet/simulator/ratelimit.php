@@ -6,7 +6,7 @@ namespace Frenet\Simulator;
 use Frenet\Log;
 
 /**
- * Counts the simulator quotes of each IP in the OpenCart cache and blocks the ones above the limit of the admin per minute.
+ * Counts the simulator quotes of each IP in a table of its own and blocks the ones above the limit of the admin per minute.
  */
 final class RateLimit {
 	/**
@@ -17,12 +17,27 @@ final class RateLimit {
 	/**
 	 * @var string
 	 */
-	private const PREFIX = 'frenet.simulator.';
+	public const TABLE = 'frenet_simulator_limit';
 
 	/**
-	 * @var \Cache
+	 * @var int
 	 */
-	private $cache;
+	public const CLEANUP_CHANCE = 20;
+
+	/**
+	 * @var int
+	 */
+	public const CLEANUP_ROWS = 100;
+
+	/**
+	 * @var \DB
+	 */
+	private $db;
+
+	/**
+	 * @var string
+	 */
+	private $table;
 
 	/**
 	 * @var Log
@@ -35,14 +50,23 @@ final class RateLimit {
 	private $limit;
 
 	/**
-	 * @param \Cache $cache
+	 * @var int
+	 */
+	private $cleanup_chance;
+
+	/**
+	 * @param \DB $db
+	 * @param string $prefix
 	 * @param Log $log
 	 * @param int $limit
+	 * @param int $cleanup_chance
 	 */
-	public function __construct(\Cache $cache, Log $log, int $limit) {
-		$this->cache = $cache;
+	public function __construct(\DB $db, string $prefix, Log $log, int $limit, int $cleanup_chance = self::CLEANUP_CHANCE) {
+		$this->db = $db;
+		$this->table = '`' . $prefix . self::TABLE . '`';
 		$this->log = $log;
 		$this->limit = $limit;
+		$this->cleanup_chance = $cleanup_chance;
 	}
 
 	/**
@@ -57,27 +81,26 @@ final class RateLimit {
 		}
 
 		$client = self::getClient($ip);
-		$key = self::PREFIX . hash('sha256', $client);
+		$key = hash('sha256', $client);
 		$now = time();
-		$blocked_at = $this->limit + 1;
+		$expires = $now + self::WINDOW;
 
 		try {
-			$entry = $this->cache->get($key);
+			$this->db->query("INSERT INTO " . $this->table . " (`client`, `count`, `expires`) VALUES ('" . $key . "', LAST_INSERT_ID(1), " . $expires . ") ON DUPLICATE KEY UPDATE `count` = LAST_INSERT_ID(IF(`expires` <= " . $now . ", 1, `count` + 1)), `expires` = IF(`expires` <= " . $now . ", " . $expires . ", `expires`)");
 
-			if (!is_array($entry) || (int)($entry['expires'] ?? 0) <= $now) {
-				$entry = ['count' => 0, 'expires' => $now + self::WINDOW];
-			}
+			$count = (int)($this->db->query("SELECT LAST_INSERT_ID() AS `count`")->row['count'] ?? 0);
 
-			$count = (int)($entry['count'] ?? 0) + 1;
-			$expires = (int)$entry['expires'];
-
-			if ($count <= $blocked_at) {
-				$this->cache->set($key, ['count' => $count, 'expires' => $expires]);
+			if ($count > $this->limit) {
+				$expires = (int)($this->db->query("SELECT `expires` FROM " . $this->table . " WHERE `client` = '" . $key . "'")->row['expires'] ?? $expires);
 			}
 		} catch (\Throwable $exception) {
 			$this->log->error('Simulator quote limit could not be checked, quoting anyway: ' . $exception->getMessage());
 
 			return 0;
+		}
+
+		if ($count === 1) {
+			$this->removeExpired($now);
 		}
 
 		if ($count <= $this->limit) {
@@ -86,11 +109,29 @@ final class RateLimit {
 
 		$retry_after = max(1, $expires - $now);
 
-		if ($count === $blocked_at) {
+		if ($count === $this->limit + 1) {
 			$this->log->error('Simulator quote limit reached (' . $this->limit . ' quotes per ' . self::WINDOW . ' seconds): IP ' . $client . ' blocked for ' . $retry_after . ' seconds');
 		}
 
 		return $retry_after;
+	}
+
+	/**
+	 * Now and then, when an IP starts a minute, removes a few IPs whose minute ended, so the table keeps only recent ones.
+	 *
+	 * @param int $now
+	 * @return void
+	 */
+	private function removeExpired(int $now): void {
+		if ($this->cleanup_chance < 1 || random_int(1, $this->cleanup_chance) !== 1) {
+			return;
+		}
+
+		try {
+			$this->db->query("DELETE FROM " . $this->table . " WHERE `expires` <= " . $now . " LIMIT " . self::CLEANUP_ROWS);
+		} catch (\Throwable $exception) {
+			$this->log->error('Simulator quote limits of past minutes could not be removed: ' . $exception->getMessage());
+		}
 	}
 
 	/**
