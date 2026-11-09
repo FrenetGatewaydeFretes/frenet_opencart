@@ -91,11 +91,9 @@ $('#button-frenet-simulator').on('click', function() {
 		data: $('#product input[type=\'text\'], #product input[type=\'hidden\'], #product input[type=\'radio\']:checked, #product input[type=\'checkbox\']:checked, #product select, #product textarea').serialize() + '&postcode=' + encodeURIComponent($('#input-frenet-postcode').val()),
 		dataType: 'json',
 		beforeSend: function() {
-			var errors = $('.frenet-simulator-error');
-
 			result.empty();
-			errors.parent().removeClass('has-error');
-			errors.remove();
+			$('#product .text-danger').remove();
+			$('#product .has-error').removeClass('has-error');
 			simulator.data('loading', true);
 			button.button('loading');
 		},
