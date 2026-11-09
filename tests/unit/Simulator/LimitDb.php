@@ -52,17 +52,20 @@ final class LimitDb extends \DB {
 			$rows = [['count' => (string)$this->last_insert_id]];
 		} elseif (preg_match("/^SELECT `expires` FROM `oc_frenet_simulator_limit` WHERE `client` = '([0-9a-f]{64})'$/", $sql, $match)) {
 			$rows = isset($this->rows[$match[1]]) ? [['expires' => (string)$this->rows[$match[1]]['expires']]] : [];
-		} elseif (preg_match('/^DELETE FROM `oc_frenet_simulator_limit` WHERE `expires` <= (\d+) LIMIT (\d+)$/', $sql, $match)) {
+		} elseif (preg_match('/^SELECT `client` FROM `oc_frenet_simulator_limit` WHERE `expires` <= (\d+) LIMIT (\d+)$/', $sql, $match)) {
 			if ($this->cleanup_failure) {
 				throw $this->cleanup_failure;
 			}
 
-			$removed = 0;
-
 			foreach ($this->rows as $key => $row) {
-				if ($row['expires'] <= (int)$match[1] && $removed < (int)$match[2]) {
+				if ($row['expires'] <= (int)$match[1] && count($rows) < (int)$match[2]) {
+					$rows[] = ['client' => $key];
+				}
+			}
+		} elseif (preg_match("/^DELETE FROM `oc_frenet_simulator_limit` WHERE `client` IN \\('([0-9a-f', ]+)'\\) AND `expires` <= (\\d+)$/", $sql, $match)) {
+			foreach (explode("', '", $match[1]) as $key) {
+				if (isset($this->rows[$key]) && $this->rows[$key]['expires'] <= (int)$match[2]) {
 					unset($this->rows[$key]);
-					$removed++;
 				}
 			}
 		} else {

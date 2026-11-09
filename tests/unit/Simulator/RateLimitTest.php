@@ -131,7 +131,8 @@ final class RateLimitTest extends TestCase {
 
 		$limit->hit('203.0.113.7');
 
-		self::assertStringEndsWith(' LIMIT ' . RateLimit::CLEANUP_ROWS, (string)end($this->db->queries));
+		self::assertStringEndsWith(' LIMIT ' . RateLimit::CLEANUP_ROWS, $this->db->queries[2]);
+		self::assertStringStartsWith('DELETE FROM `oc_frenet_simulator_limit` WHERE `client` IN (', $this->db->queries[3]);
 		self::assertCount(7, $this->db->rows);
 		self::assertArrayHasKey(hash('sha256', 'current'), $this->db->rows);
 

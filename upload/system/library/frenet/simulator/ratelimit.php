@@ -117,7 +117,7 @@ final class RateLimit {
 	}
 
 	/**
-	 * Now and then, when an IP starts a minute, removes a few IPs whose minute ended, so the table keeps only recent ones.
+	 * Now and then, when an IP starts a minute, removes a few IPs whose minute ended by their key, without locking a range.
 	 *
 	 * @param int $now
 	 * @return void
@@ -128,7 +128,11 @@ final class RateLimit {
 		}
 
 		try {
-			$this->db->query("DELETE FROM " . $this->table . " WHERE `expires` <= " . $now . " LIMIT " . self::CLEANUP_ROWS);
+			$keys = array_column($this->db->query("SELECT `client` FROM " . $this->table . " WHERE `expires` <= " . $now . " LIMIT " . self::CLEANUP_ROWS)->rows, 'client');
+
+			if ($keys) {
+				$this->db->query("DELETE FROM " . $this->table . " WHERE `client` IN ('" . implode("', '", array_map([$this->db, 'escape'], $keys)) . "') AND `expires` <= " . $now);
+			}
 		} catch (\Throwable $exception) {
 			$this->log->error('Simulator quote limits of past minutes could not be removed: ' . $exception->getMessage());
 		}
