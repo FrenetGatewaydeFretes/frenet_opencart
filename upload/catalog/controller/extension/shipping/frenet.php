@@ -119,6 +119,12 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 		$simulator = $this->createProduct();
 
+		$product = $simulator->getProduct($product_id, $quantity, $options);
+
+		if (!$product || !$product['shipping']) {
+			return ['error' => ['warning' => $this->language->get('error_simulator_product')]];
+		}
+
 		$missing = $simulator->getMissingOptions($product_id, $options);
 
 		if ($missing) {
@@ -129,12 +135,6 @@ class ControllerExtensionShippingFrenet extends Controller {
 			}
 
 			return ['error' => ['option' => $errors]];
-		}
-
-		$product = $simulator->getProduct($product_id, $quantity, $options);
-
-		if (!$product || !$product['shipping']) {
-			return ['error' => ['warning' => $this->language->get('error_simulator_product')]];
 		}
 
 		$this->load->model('extension/shipping/frenet');
