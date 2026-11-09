@@ -38,6 +38,11 @@ $('#input-frenet-postcode').on('keydown', function(e) {
 $('#button-frenet-simulator').on('click', function() {
 	var button = $(this);
 	var simulator = $('#frenet-simulator');
+
+	if (simulator.data('loading')) {
+		return;
+	}
+
 	var result = $('#frenet-simulator-result');
 	var unavailable = {error: {warning: simulator.data('error')}};
 
@@ -91,9 +96,11 @@ $('#button-frenet-simulator').on('click', function() {
 			result.empty();
 			errors.parent().removeClass('has-error');
 			errors.remove();
+			simulator.data('loading', true);
 			button.button('loading');
 		},
 		complete: function() {
+			simulator.data('loading', false);
 			button.button('reset');
 		},
 		success: show,
