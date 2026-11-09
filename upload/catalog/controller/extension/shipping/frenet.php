@@ -3,6 +3,7 @@ use Frenet\Config as FrenetConfig;
 use Frenet\Log as FrenetLog;
 use Frenet\Postcode;
 use Frenet\Simulator\ClientIp;
+use Frenet\Simulator\Origin;
 use Frenet\Simulator\Product;
 use Frenet\Simulator\RateLimit;
 
@@ -73,12 +74,20 @@ class ControllerExtensionShippingFrenet extends Controller {
 			return;
 		}
 
+		if (Origin::isForeign($this->request->server, [$this->config->get('config_url'), $this->config->get('config_ssl')])) {
+			$this->response->addHeader($this->getProtocol() . ' 403 Forbidden');
+
+			$this->respond(['error' => ['warning' => $this->language->get('error_unavailable')]]);
+
+			return;
+		}
+
 		$log = new FrenetLog(new \Log(FrenetLog::FILENAME), $config->isDebug());
 
 		$retry_after = (new RateLimit($this->db, DB_PREFIX, $log, $config->getSimulatorLimit()))->hit(ClientIp::fromServer($this->request->server));
 
 		if ($retry_after) {
-			$this->response->addHeader(($this->request->server['SERVER_PROTOCOL'] ?? 'HTTP/1.1') . ' 429 Too Many Requests');
+			$this->response->addHeader($this->getProtocol() . ' 429 Too Many Requests');
 			$this->response->addHeader('Retry-After: ' . $retry_after);
 
 			$this->respond(['error' => ['warning' => $this->language->get('error_simulator_limit')]]);
@@ -195,6 +204,10 @@ class ControllerExtensionShippingFrenet extends Controller {
 	private function respond(array $json): void {
 		$this->response->addHeader('Content-Type: application/json');
 		$this->response->setOutput(json_encode($json));
+	}
+
+	private function getProtocol(): string {
+		return (string)($this->request->server['SERVER_PROTOCOL'] ?? 'HTTP/1.1');
 	}
 
 	private function getBuyerPostcode(): ?string {
