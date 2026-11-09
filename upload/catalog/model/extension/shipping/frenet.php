@@ -121,11 +121,11 @@ class ModelExtensionShippingFrenet extends Model {
 		}
 
 		if ($result->getErrors()) {
-			$log->error('Services with an error were left out of the quote', ['services' => $result->getErrors(), 'request' => $request->toArray()]);
+			$this->logAnswer($log, $simulation, 'Services with an error were left out of the quote', ['services' => $result->getErrors(), 'request' => $request->toArray()]);
 		}
 
 		if (!$result->getServices()) {
-			$log->error('Quote returned no service' . ($result->getMessage() !== '' ? ': ' . $result->getMessage() : ''), ['request' => $request->toArray()]);
+			$this->logAnswer($log, $simulation, 'Quote returned no service' . ($result->getMessage() !== '' ? ': ' . $result->getMessage() : ''), ['request' => $request->toArray()]);
 
 			return $this->method($config, [], $this->language->get('error_no_services'));
 		}
@@ -145,6 +145,23 @@ class ModelExtensionShippingFrenet extends Model {
 		}
 
 		return $this->method($config, $quote_data, false);
+	}
+
+	/**
+	 * Logs a problem of the API answer as an error at checkout and only in debug for the simulator, which buyers call far more.
+	 *
+	 * @param FrenetLog $log
+	 * @param bool $simulation
+	 * @param string $message
+	 * @param array<string, mixed> $context
+	 * @return void
+	 */
+	private function logAnswer(FrenetLog $log, bool $simulation, string $message, array $context): void {
+		if ($simulation) {
+			$log->debug($message, $context);
+		} else {
+			$log->error($message, $context);
+		}
 	}
 
 	/**
