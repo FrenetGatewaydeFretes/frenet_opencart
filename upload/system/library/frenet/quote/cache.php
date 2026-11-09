@@ -23,10 +23,17 @@ class Cache {
 	private $cache;
 
 	/**
-	 * @param \Cache $cache
+	 * @var bool
 	 */
-	public function __construct(\Cache $cache) {
+	private $writable;
+
+	/**
+	 * @param \Cache $cache
+	 * @param bool $writable
+	 */
+	public function __construct(\Cache $cache, bool $writable = true) {
 		$this->cache = $cache;
+		$this->writable = $writable;
 	}
 
 	/**
@@ -64,6 +71,10 @@ class Cache {
 	 * @return void
 	 */
 	public function set(string $key, string $body): void {
+		if (!$this->writable) {
+			return;
+		}
+
 		$this->quietly(function () use ($key, $body) {
 			$this->cache->set($key, ['expires' => time() + self::TTL, 'body' => $body]);
 		});

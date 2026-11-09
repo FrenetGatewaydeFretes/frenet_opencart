@@ -79,6 +79,17 @@ final class CacheTest extends TestCase {
 		self::assertEqualsWithDelta(time() + 600, $this->store->entries['frenet.quote.key']['expires'], 1);
 	}
 
+	public function testOnlyReadsWhenItCannotWrite(): void {
+		$this->store->set('frenet.quote.checkout', ['expires' => time() + 60, 'body' => self::BODY]);
+
+		$cache = new Cache($this->store, false);
+
+		$cache->set('frenet.quote.key', self::BODY);
+
+		self::assertArrayNotHasKey('frenet.quote.key', $this->store->entries);
+		self::assertSame(self::BODY, $cache->get('frenet.quote.checkout'));
+	}
+
 	public function testIgnoresAnExpiredEntry(): void {
 		$this->store->set('frenet.quote.key', ['expires' => time(), 'body' => self::BODY]);
 

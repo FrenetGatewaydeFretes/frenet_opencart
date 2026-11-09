@@ -9,6 +9,8 @@ use Frenet\Quote\Cache as QuoteCache;
 use Frenet\Quote\Catalog;
 
 class ModelExtensionShippingFrenet extends Model {
+	private const FILE_CACHE = 'file';
+
 	/**
 	 * @param array<string, mixed> $address
 	 * @return array<string, mixed>
@@ -25,7 +27,7 @@ class ModelExtensionShippingFrenet extends Model {
 	 * @return array<string, mixed>
 	 */
 	public function getProductQuote(array $address, array $product): array {
-		return $this->quote($address, [$product]);
+		return $this->quote($address, [$product], true);
 	}
 
 	/**
@@ -64,9 +66,10 @@ class ModelExtensionShippingFrenet extends Model {
 	/**
 	 * @param array<string, mixed> $address
 	 * @param array<int|string, array<string, mixed>> $products
+	 * @param bool $simulation
 	 * @return array<string, mixed>
 	 */
-	private function quote(array $address, array $products): array {
+	private function quote(array $address, array $products, bool $simulation = false): array {
 		$config = new FrenetConfig($this->config);
 		$log = new FrenetLog(new \Log(FrenetLog::FILENAME), $config->isDebug());
 
@@ -108,7 +111,7 @@ class ModelExtensionShippingFrenet extends Model {
 		$this->load->language('extension/shipping/frenet');
 
 		try {
-			$result = (new Api(new Client(), new QuoteCache($this->cache), $log, $config->getToken(), VERSION, $config->getTimeout(), $config->getAttempts()))->quote($request);
+			$result = (new Api(new Client(), new QuoteCache($this->cache, !$simulation || $this->config->get('cache_engine') !== self::FILE_CACHE), $log, $config->getToken(), VERSION, $config->getTimeout(), $config->getAttempts()))->quote($request);
 		} catch (\Throwable $exception) {
 			$log->error('Quote failed: ' . $exception->getMessage(), ['request' => $request->toArray()]);
 
