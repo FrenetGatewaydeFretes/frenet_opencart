@@ -4,13 +4,34 @@ declare(strict_types=1);
 namespace Frenet\Simulator;
 
 /**
- * Finds the IP of the visitor, also when the store is behind Cloudflare and every request comes from a Cloudflare address.
+ * Finds the IP of the visitor, also when the store is behind Cloudflare or behind a proxy of its own network, such as a load
+ * balancer, where every request comes from the same address.
  */
 final class ClientIp {
 	/**
 	 * @var string
 	 */
 	private const CLOUDFLARE_HEADER = 'HTTP_CF_CONNECTING_IP';
+
+	/**
+	 * @var string
+	 */
+	private const FORWARDED_HEADER = 'HTTP_X_FORWARDED_FOR';
+
+	/**
+	 * @var string[]
+	 */
+	private const INTERNAL_RANGES = [
+		'10.0.0.0/8',
+		'172.16.0.0/12',
+		'192.168.0.0/16',
+		'127.0.0.0/8',
+		'100.64.0.0/10',
+		'169.254.0.0/16',
+		'::1/128',
+		'fc00::/7',
+		'fe80::/10'
+	];
 
 	/**
 	 * @var string[]
@@ -41,27 +62,60 @@ final class ClientIp {
 	];
 
 	/**
-	 * The IP Cloudflare sends in CF-Connecting-IP when the request comes from a Cloudflare address, otherwise REMOTE_ADDR.
+	 * The IP of the visitor: behind a proxy of the store network, the last address of X-Forwarded-For outside that network,
+	 * which the proxy itself added, and from a Cloudflare address, the IP Cloudflare sends in CF-Connecting-IP.
 	 *
 	 * @param array<string, mixed> $server
 	 * @return string
 	 */
 	public static function fromServer(array $server): string {
-		$remote = (string)($server['REMOTE_ADDR'] ?? '');
+		$peer = (string)($server['REMOTE_ADDR'] ?? '');
+
+		if (self::inRanges($peer, self::INTERNAL_RANGES)) {
+			$peer = self::getForwarded($server[self::FORWARDED_HEADER] ?? '') ?: $peer;
+		}
+
 		$visitor = $server[self::CLOUDFLARE_HEADER] ?? '';
 
-		if (is_string($visitor) && filter_var($visitor, FILTER_VALIDATE_IP) && self::isCloudflare($remote)) {
+		if (is_string($visitor) && filter_var($visitor, FILTER_VALIDATE_IP) && self::inRanges($peer, self::CLOUDFLARE_RANGES)) {
 			return $visitor;
 		}
 
-		return $remote;
+		return $peer;
+	}
+
+	/**
+	 * The last address of X-Forwarded-For outside the store network, or an empty string when the header has none.
+	 *
+	 * @param mixed $header
+	 * @return string
+	 */
+	private static function getForwarded($header): string {
+		if (!is_string($header)) {
+			return '';
+		}
+
+		foreach (array_reverse(explode(',', $header)) as $address) {
+			$ip = trim($address);
+
+			if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+				return '';
+			}
+
+			if (!self::inRanges($ip, self::INTERNAL_RANGES)) {
+				return $ip;
+			}
+		}
+
+		return '';
 	}
 
 	/**
 	 * @param string $ip
+	 * @param string[] $ranges
 	 * @return bool
 	 */
-	private static function isCloudflare(string $ip): bool {
+	private static function inRanges(string $ip, array $ranges): bool {
 		if (!filter_var($ip, FILTER_VALIDATE_IP)) {
 			return false;
 		}
@@ -72,7 +126,7 @@ final class ClientIp {
 			$packed = substr($packed, 12);
 		}
 
-		foreach (self::CLOUDFLARE_RANGES as $range) {
+		foreach ($ranges as $range) {
 			[$network, $bits] = explode('/', $range);
 
 			if (self::inRange($packed, (string)inet_pton($network), (int)$bits)) {
