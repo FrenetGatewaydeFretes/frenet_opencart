@@ -45,11 +45,6 @@ class ControllerExtensionShippingFrenet extends Controller {
 		'shipping_frenet_attempts' => ['entry_attempts', FrenetConfig::ATTEMPTS_MIN, FrenetConfig::ATTEMPTS_MAX]
 	];
 
-	private const NON_NEGATIVE = [
-		'shipping_frenet_additional_days' => ['entry_additional_days', 0],
-		'shipping_frenet_simulator_limit' => ['entry_simulator_limit', FrenetConfig::SIMULATOR_LIMIT_DEFAULT]
-	];
-
 	private const MINIMUMS = [
 		'shipping_frenet_minimum_height' => ['entry_minimum_height', FrenetConfig::DEFAULT_HEIGHT],
 		'shipping_frenet_minimum_width'  => ['entry_minimum_width', FrenetConfig::DEFAULT_WIDTH],
@@ -104,16 +99,17 @@ class ControllerExtensionShippingFrenet extends Controller {
 				$values[$field] = $value;
 			}
 
-			foreach (self::NON_NEGATIVE as $field => [$label, $default]) {
-				$typed = trim((string)$values[$field]);
-				$value = $typed !== '' ? max(0, (int)$typed) : $default;
+			$additional_days = max(0, (int)$values['shipping_frenet_additional_days']);
 
-				if ($typed !== '' && (string)$value !== $typed) {
-					$adjusted[] = sprintf($this->language->get('text_adjusted_min'), $this->language->get($label), $value);
-				}
-
-				$values[$field] = $value;
+			if (trim((string)$values['shipping_frenet_additional_days']) !== '' && (string)$additional_days !== trim((string)$values['shipping_frenet_additional_days'])) {
+				$adjusted[] = sprintf($this->language->get('text_adjusted_min'), $this->language->get('entry_additional_days'), $additional_days);
 			}
+
+			$values['shipping_frenet_additional_days'] = $additional_days;
+
+			$simulator_limit = trim((string)$values['shipping_frenet_simulator_limit']);
+
+			$values['shipping_frenet_simulator_limit'] = $simulator_limit !== '' ? (int)$simulator_limit : FrenetConfig::SIMULATOR_LIMIT_DEFAULT;
 
 			foreach (self::MINIMUMS as $field => [$label, $default]) {
 				$value = FrenetConfig::parsePositive($values[$field]);
@@ -136,6 +132,7 @@ class ControllerExtensionShippingFrenet extends Controller {
 		$data['error_warning'] = $this->error['warning'] ?? '';
 		$data['error_token'] = $this->error['token'] ?? '';
 		$data['error_postcode'] = $this->error['postcode'] ?? '';
+		$data['error_simulator_limit'] = $this->error['simulator_limit'] ?? '';
 
 		$data['breadcrumbs'] = [];
 
@@ -248,6 +245,12 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 		if (Postcode::format((string)($this->request->post['shipping_frenet_postcode'] ?? '')) === null) {
 			$this->error['postcode'] = $this->language->get('error_postcode');
+		}
+
+		$simulator_limit = trim((string)($this->request->post['shipping_frenet_simulator_limit'] ?? ''));
+
+		if ($simulator_limit !== '' && !ctype_digit($simulator_limit)) {
+			$this->error['simulator_limit'] = $this->language->get('error_simulator_limit_value');
 		}
 
 		if (!empty($this->request->post['shipping_frenet_status']) && $saved_token === '' && trim((string)($this->request->post['shipping_frenet_token'] ?? '')) === '') {

@@ -154,7 +154,10 @@
           <div class="form-group">
             <label class="col-sm-2 control-label" for="input-simulator-limit"><span data-toggle="tooltip" title="{{ help_simulator_limit }}">{{ entry_simulator_limit }}</span></label>
             <div class="col-sm-10">
-              <input type="number" name="shipping_frenet_simulator_limit" value="{{ shipping_frenet_simulator_limit|escape }}" min="0" step="1" id="input-simulator-limit" class="form-control" />
+              <input type="number" name="shipping_frenet_simulator_limit" value="{{ shipping_frenet_simulator_limit|escape }}" min="0" step="1" data-error="{{ error_simulator_limit_value|escape }}" id="input-simulator-limit" class="form-control" />
+              {% if error_simulator_limit %}
+              <div class="text-danger">{{ error_simulator_limit }}</div>
+              {% endif %}
             </div>
           </div>
           <div class="form-group">
@@ -219,4 +222,19 @@
     </div>
   </div>
 </div>
+<script type="text/javascript"><!--
+$('#input-simulator-limit').on('input', function() {
+	var input = $(this);
+	var invalid = this.validity.rangeUnderflow || this.validity.stepMismatch || this.validity.badInput;
+
+	this.setCustomValidity(invalid ? input.data('error') : '');
+
+	input.nextAll('.text-danger').remove();
+	input.closest('.form-group').toggleClass('has-error', invalid);
+
+	if (invalid) {
+		input.after($('<div class="text-danger"></div>').text(input.data('error')));
+	}
+});
+//--></script>
 {{ footer }}

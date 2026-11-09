@@ -61,4 +61,5 @@ $_['placeholder_msg_prazo'] = '%s - Average %d day(s)';
 $_['error_permission']      = 'Warning: You do not have permission to modify Frenet shipping!';
 $_['error_warning']         = 'Warning: the settings were not saved. Fix the highlighted fields.';
 $_['error_postcode']        = 'The origin postcode must have 8 digits, such as 01310-100.';
+$_['error_simulator_limit_value'] = 'Negative values are not allowed. Use 0 or a positive whole number.';
 $_['error_token']           = 'Enter the token generated in the Frenet panel to enable the shipping.';
