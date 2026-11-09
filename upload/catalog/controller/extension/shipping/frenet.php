@@ -137,6 +137,10 @@ class ControllerExtensionShippingFrenet extends Controller {
 			return ['error' => ['option' => $errors]];
 		}
 
+		if ($quantity < $product['minimum']) {
+			return ['error' => ['quantity' => sprintf($this->language->get('error_simulator_minimum'), $product['minimum'])]];
+		}
+
 		$this->load->model('extension/shipping/frenet');
 
 		$address = $this->model_extension_shipping_frenet->getPostcodeAddress($postcode, $state);

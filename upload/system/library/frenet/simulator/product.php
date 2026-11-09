@@ -99,7 +99,7 @@ final class Product {
 	 * @return array<string, mixed>|null
 	 */
 	public function getProduct(int $product_id, int $quantity, array $options): ?array {
-		$product = $this->getSoldProduct($product_id, 'p.`product_id`, p.`model`, p.`shipping`, p.`price`, p.`weight`, p.`weight_class_id`, p.`length`, p.`width`, p.`height`, p.`length_class_id`');
+		$product = $this->getSoldProduct($product_id, 'p.`product_id`, p.`model`, p.`shipping`, p.`price`, p.`weight`, p.`weight_class_id`, p.`length`, p.`width`, p.`height`, p.`length_class_id`, p.`minimum`');
 
 		if (!$product) {
 			return null;
@@ -121,7 +121,8 @@ final class Product {
 			'length'          => $product['length'],
 			'width'           => $product['width'],
 			'height'          => $product['height'],
-			'length_class_id' => $product['length_class_id']
+			'length_class_id' => $product['length_class_id'],
+			'minimum'         => max(1, (int)$product['minimum'])
 		];
 	}
 

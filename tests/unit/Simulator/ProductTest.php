@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Frenet\Tests\Simulator;
 
 use Frenet\Simulator\Product;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 
 final class ProductTest extends TestCase {
@@ -17,7 +18,8 @@ final class ProductTest extends TestCase {
 		'length'          => '20.00000000',
 		'width'           => '15.00000000',
 		'height'          => '10.00000000',
-		'length_class_id' => '1'
+		'length_class_id' => '1',
+		'minimum'         => '1'
 	];
 
 	public function testReturnsTheProductAsALineOfTheCart(): void {
@@ -37,9 +39,19 @@ final class ProductTest extends TestCase {
 			'length'          => '20.00000000',
 			'width'           => '15.00000000',
 			'height'          => '10.00000000',
-			'length_class_id' => '1'
+			'length_class_id' => '1',
+			'minimum'         => 1
 		], $product);
 		self::assertStringContainsString("p2s.`store_id` = '3' AND p2s.`product_id` = '40' AND pd.`language_id` = '2' AND p.`date_available` <= NOW() AND p.`status` = '1'", $db->queries[0]);
+	}
+
+	#[TestWith(['5', 5], 'minimum of the product')]
+	#[TestWith(['0', 1], 'no minimum')]
+	public function testReturnsTheMinimumQuantityOfTheProduct(string $minimum, int $expected): void {
+		$product = $this->createProduct(new \DB([[['minimum' => $minimum] + self::PRODUCT], [], []]))->getProduct(40, 1, []);
+
+		self::assertNotNull($product);
+		self::assertSame($expected, $product['minimum']);
 	}
 
 	public function testUsesTheSpecialOverTheQuantityDiscountOfTheCustomerGroup(): void {
