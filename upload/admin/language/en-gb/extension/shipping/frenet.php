@@ -14,6 +14,7 @@ $_['text_panel']            = 'Open the Frenet panel';
 $_['text_adjusted']         = '%s adjusted to %d (accepts %d to %d).';
 $_['text_default_used']     = '%s must be greater than zero: %s used.';
 $_['text_adjusted_min']     = '%s only accepts whole numbers from 0: used %d.';
+$_['text_total_installed']  = 'The fee of carts without shipping was installed in Extensions > Order Totals as Frenet - virtual products fee.';
 $_['text_geo_zone_missing']  = 'The geo zone chosen for Frenet was deleted, so Frenet shipping is offered to no address. Choose another geo zone and save.';
 
 // Entry
@@ -37,6 +38,9 @@ $_['entry_tax_class']       = 'Tax Class';
 $_['entry_geo_zone']        = 'Geo Zone';
 $_['entry_simulator']       = 'Product page simulator';
 $_['entry_simulator_limit'] = 'Simulator limit per IP';
+$_['entry_virtual_fee']     = 'Virtual products fee';
+$_['entry_virtual_fee_amount'] = 'Fee amount';
+$_['entry_virtual_fee_name'] = 'Fee name';
 
 // Help
 $_['help_token']            = 'Token generated in the Frenet panel. For security, the saved token is never displayed.';
@@ -55,6 +59,10 @@ $_['help_additional_days']  = 'Days added to the delivery time of every Frenet s
 $_['help_geo_zone']         = 'Frenet shipping is only offered to addresses in this geo zone. With All Zones, it is offered to any address.';
 $_['help_simulator']        = 'Shows on the product page a postcode field that estimates the Frenet rates of the product, with the cart prices and delivery times.';
 $_['help_simulator_limit']  = 'How many estimates each IP may ask per minute. Above it, the simulator asks to wait and the block goes to frenet.log. Use 0 for no limit.';
+$_['help_virtual_fee']      = 'Charges a fixed fee, once per order, when the cart has a product without shipping (Requires Shipping: No), such as a processing fee. With shipped products, the fee is added to every Frenet rate; with only products without shipping, it shows as a line of the order totals.';
+$_['help_virtual_fee_amount'] = 'Amount charged once per order, in the store default currency, with the Tax Class of the Frenet shipping.';
+$_['help_virtual_fee_name'] = 'Name shown to the customer in the cart, checkout and order. Leave blank to use the example name.';
+$_['placeholder_virtual_fee_name'] = 'Order processing fee';
 $_['placeholder_msg_prazo'] = '%s - Average %d day(s)';
 
 // Error
@@ -62,4 +70,5 @@ $_['error_permission']      = 'Warning: You do not have permission to modify Fre
 $_['error_warning']         = 'Warning: the settings were not saved. Fix the highlighted fields.';
 $_['error_postcode']        = 'The origin postcode must have 8 digits, such as 01310-100.';
 $_['error_simulator_limit_value'] = 'Negative values are not allowed. Use 0 or a positive whole number.';
+$_['error_virtual_fee_amount'] = 'Enter an amount greater than zero, such as 4.90, to turn the fee on.';
 $_['error_token']           = 'Enter the token generated in the Frenet panel to enable the shipping.';

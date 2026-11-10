@@ -39,7 +39,9 @@ if (!class_exists('Controller', false)) {
 	 * @property mixed $model_localisation_zone
 	 * @property mixed $model_extension_shipping_frenet
 	 * @property mixed $model_setting_event
+	 * @property mixed $model_setting_extension
 	 * @property mixed $model_setting_setting
+	 * @property mixed $model_user_user_group
 	 */
 	abstract class Controller {
 		/**

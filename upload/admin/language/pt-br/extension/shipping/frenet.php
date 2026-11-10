@@ -14,6 +14,7 @@ $_['text_panel']            = 'Abrir o painel Frenet';
 $_['text_adjusted']         = '%s ajustado para %d (aceita de %d a %d).';
 $_['text_default_used']     = '%s precisa ser maior que zero: usado %s.';
 $_['text_adjusted_min']     = '%s aceita só números inteiros a partir de 0: usado %d.';
+$_['text_total_installed']  = 'A taxa dos carrinhos sem envio foi instalada em Extensões → Totais, como Frenet - taxa de produtos virtuais.';
 $_['text_geo_zone_missing']  = 'A região geográfica escolhida para a Frenet foi excluída, e o frete Frenet não aparece para nenhum endereço. Escolha outra região e salve.';
 
 // Entry
@@ -37,6 +38,9 @@ $_['entry_tax_class']       = 'Grupo de impostos';
 $_['entry_geo_zone']        = 'Região geográfica';
 $_['entry_simulator']       = 'Simulador na página do produto';
 $_['entry_simulator_limit'] = 'Limite de simulações por IP';
+$_['entry_virtual_fee']     = 'Taxa de produtos virtuais';
+$_['entry_virtual_fee_amount'] = 'Valor da taxa';
+$_['entry_virtual_fee_name'] = 'Nome da taxa';
 
 // Help
 $_['help_token']            = 'Token gerado no painel Frenet. Por segurança, o token salvo nunca é exibido.';
@@ -55,6 +59,10 @@ $_['help_additional_days']  = 'Dias somados ao prazo de todos os serviços Frene
 $_['help_geo_zone']         = 'O frete Frenet só aparece para endereços desta região. Em Todas as regiões, aparece para qualquer endereço.';
 $_['help_simulator']        = 'Mostra na página do produto um campo de CEP que calcula os fretes Frenet do produto, com os preços e prazos do carrinho.';
 $_['help_simulator_limit']  = 'Quantas simulações cada IP pode fazer por minuto. Acima disso, o simulador pede para aguardar e o bloqueio vai para o frenet.log. Use 0 para não limitar.';
+$_['help_virtual_fee']      = 'Cobra uma taxa fixa, uma vez por pedido, quando o carrinho tem um produto sem envio (Precisa de frete? Não), como uma taxa de processamento. Com produtos com envio, a taxa é somada a cada frete Frenet; só com produtos sem envio, ela aparece numa linha dos totais do pedido.';
+$_['help_virtual_fee_amount'] = 'Valor cobrado uma vez por pedido, na moeda padrão da loja, com o Grupo de impostos do frete Frenet.';
+$_['help_virtual_fee_name'] = 'Nome mostrado ao comprador no carrinho, no checkout e no pedido. Em branco, usa o do exemplo.';
+$_['placeholder_virtual_fee_name'] = 'Taxa de processamento do pedido';
 $_['placeholder_msg_prazo'] = '%s - Em média %d dia(s)';
 
 // Error
@@ -62,4 +70,5 @@ $_['error_permission']      = 'Atenção: você não tem permissão para modific
 $_['error_warning']         = 'Atenção: a configuração não foi salva. Corrija os campos destacados.';
 $_['error_postcode']        = 'O CEP de origem precisa ter 8 dígitos, como 01310-100.';
 $_['error_simulator_limit_value'] = 'Valores negativos não são permitidos. Use 0 ou um número inteiro positivo.';
+$_['error_virtual_fee_amount'] = 'Informe um valor maior que zero, como 4,90, para ligar a taxa.';
 $_['error_token']           = 'Informe o token gerado no painel Frenet para habilitar o frete.';
