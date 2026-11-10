@@ -32,6 +32,20 @@ não aparece no checkout até o token ser salvo.
     Frenet no campo Token e salve.
 4 - Confira os campos Simulador na página do produto e Limite de simulações por IP e salve.
 
+Taxa de produtos virtuais
+------------------------------------
+
+Cobra uma taxa fixa, uma vez por pedido, quando o carrinho tem um produto com "Precisa de frete?" em Não.
+Com produtos com e sem envio, a taxa é somada a cada frete Frenet. Só com produtos sem envio, ela aparece
+numa linha dos totais do pedido.
+
+1 - Na configuração da Frenet, mude Taxa de produtos virtuais para Habilitado, preencha o Valor da taxa e salve.
+2 - O total "Frenet - taxa de produtos virtuais" é instalado sozinho em Extensões -> Totais. Não o desinstale:
+    se for desinstalado, salve de novo a configuração da Frenet com a taxa ligada.
+
+Por que abrir a configuração depois de atualizar
+------------------------------------
+
 O instalador do OpenCart 3 só copia os arquivos: ele não executa nenhum código do módulo.
 Numa atualização, é a tela de configuração que registra o simulador na página do produto
 e cria a tabela do limite de simulações. Isso acontece uma vez só.
