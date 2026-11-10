@@ -5,6 +5,7 @@ parameters:
         - upload/system/library/frenet
         - upload/admin/controller/extension/shipping/frenet.php
         - upload/admin/model/extension/shipping/frenet.php
+        - upload/admin/controller/extension/total/frenet.php
         - upload/catalog/controller/extension/shipping/frenet.php
         - upload/catalog/model/extension/shipping/frenet.php
     bootstrapFiles:
