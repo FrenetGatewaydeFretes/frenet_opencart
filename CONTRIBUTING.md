@@ -48,8 +48,10 @@ O JavaScript do simulador roda com o jQuery do tema padrão, do 2.1.1 (3.0.0.0) 
 
 ```
 upload/                         vai para o .ocmod.zip; espelha a raiz da loja
-  admin/...                     controller, model da tabela do limite do simulador, idiomas e template do admin
-  catalog/...                   model de frete, controller e template do simulador, idiomas da loja
+  admin/...                     frete: controller, model da tabela do limite do simulador, idiomas e template;
+                                total: tela do total da taxa de produtos virtuais
+  catalog/...                   frete: model, controller e template do simulador, idiomas da loja;
+                                total: model da taxa de produtos virtuais
   system/library/frenet/        classes do módulo (namespace Frenet)
     quote/                      montagem da requisição e leitura da resposta da cotação
     simulator/                  produto da página e limite por IP do simulador
@@ -74,7 +76,7 @@ A cotação passa por estas classes:
 | `Frenet\Quote\Cache` | guarda no `$this->cache` do OpenCart o corpo da resposta com pelo menos um serviço, mesmo que outros tenham vindo com `Error`. A chave é o hash do token e do corpo da requisição, então outra conta, outro CEP ou qualquer mudança no carrinho ou nas configurações enviadas consulta a Frenet de novo. Falha, 4xx, JSON inválido e resposta sem serviço nunca entram no cache. O cache do core expira tudo pelo `cache_expire` da loja (1 hora por padrão), por isso a entrada leva a própria validade de 10 minutos (`Cache::TTL`). O cache é só um atalho: se ler ou gravar falhar (no PHP 8, o adaptador de arquivos do core lança `TypeError` com a pasta sem escrita e `ValueError` ao ler um arquivo vazio durante uma gravação), ou se a resposta guardada não puder ser lida, a `Api` registra o erro e consulta a Frenet. Os avisos de PHP do adaptador de arquivos durante a leitura e a gravação não chegam à página: da 3.0.0.0 à 3.0.3.x, duas cotações iguais ao mesmo tempo disputam o mesmo arquivo, e com a exibição de erros ligada o aviso sairia antes do JSON do simulador. Com o adaptador de arquivos, cada cotação diferente vira um arquivo `cache.frenet.quote.*` em `DIR_CACHE`, apagado pelo core depois do `cache_expire`. Com `Cache($cache, false)` só lê: o simulador usa assim quando o `cache_engine` da loja é `file` |
 | `Frenet\Quote\Parser`, `Result` e `Service` | leem os serviços da resposta, mesmo quando vem um só. Separam os que podem ser oferecidos dos que vieram com `Error`, guardando o `Msg`, e leem o `Message` da resposta. `Service::getTitle()` monta o nome do frete com a mensagem do prazo, somando os dias adicionais do admin ao `DeliveryTime`, mesmo quando a transportadora não informa o prazo (como o WooCommerce) |
 
-O model `catalog/model/extension/shipping/frenet.php` só cota quando o endereço está na região geográfica escolhida no admin (Todas as regiões = qualquer endereço), com a mesma consulta a `zone_to_geo_zone` dos métodos Peso e Item do core. Se a região escolhida for excluída, o frete Frenet continua escondido, como no core, mas o erro vai para o `frenet.log` e o admin mostra um alerta. O grupo de impostos do admin vai no `tax_class_id` de cada serviço. Com o prazo ligado e a mensagem em branco, o nome usa `text_delivery_time` do idioma da loja.
+O model `catalog/model/extension/shipping/frenet.php` só cota quando o endereço está na região geográfica escolhida no admin (Todas as regiões = qualquer endereço), com a mesma consulta a `zone_to_geo_zone` dos métodos Peso e Item do core (`Frenet\GeoZone`). Se a região escolhida for excluída, o frete Frenet continua escondido, como no core, mas o erro vai para o `frenet.log` e o admin mostra um alerta. O grupo de impostos do admin vai no `tax_class_id` de cada serviço. Com o prazo ligado e a mensagem em branco, o nome usa `text_delivery_time` do idioma da loja.
 
 O admin só salva com CEP de origem de 8 dígitos, aceitando ponto, hífen e espaço, e grava no formato `00000-000` (`Frenet\Postcode::format()`). Também recusa habilitar o módulo sem token salvo ou digitado, com a mensagem embaixo do campo. Em caso de erro, o formulário volta com os valores enviados, menos o token, que nunca é exibido. O limite de simulações por IP só salva inteiros a partir de 0. Um valor negativo ou com casas decimais não salva, com a mensagem embaixo do campo, que o admin também mostra enquanto o lojista digita. Em branco, o limite fica em 60.
 
@@ -110,6 +112,16 @@ Medições da tabela com o código do módulo e o driver mysqli do OpenCart, no 
 - Com 1 milhão de linhas acumuladas, 90% vencidas, as mesmas 10 mil simulações apagaram cerca de 30 mil linhas, com p99 abaixo de 300 ms.
 
 A limpeza apaga as linhas pela chave, e não com `DELETE ... WHERE expires <= ...`: o `DELETE` por intervalo travava o índice `expires` e fazia as gravações de outros IPs esperarem, com p99 de 0,7 a 1,1 s e picos de 7 a 9 s no mesmo teste. Ela lê as linhas a partir de um ponto aleatório da chave, porque limpezas simultâneas que liam as linhas mais antigas pelo índice `expires` apagavam as mesmas linhas, e a tabela de 1 milhão crescia em vez de diminuir. Uma linha ocupa cerca de 250 bytes com os índices, e a tabela fica perto do número de IPs que simularam nos últimos minutos.
+
+### Taxa de produtos virtuais
+
+Taxa fixa cobrada uma vez por pedido quando o carrinho tem um produto com `shipping = 0` (`Frenet\VirtualFee`), ligada no admin com valor maior que zero. Os vales-presente do carrinho não são produtos e não contam.
+
+- **Carrinho com produtos com e sem envio:** o model de frete soma a taxa ao `cost` de cada serviço Frenet e cita a taxa no nome (`text_frenet_virtual_fee_rate`: `PAC ... + Taxa de processamento do pedido (R$4,90)`). O valor no nome leva o imposto quando a loja mostra preços com imposto, como o preço do frete. Com outra forma de entrega, nenhuma taxa: o `title` e o `cost` gravados no pedido são os do frete escolhido.
+- **Carrinho só com produtos sem envio:** o core pula a etapa de frete (`Cart::hasShipping()` falso), então nenhum método de frete roda. A taxa entra pelo total `extension/total/frenet` (`catalog/model/extension/total/frenet.php`), que soma a linha aos totais do carrinho, do checkout e do pedido, com o grupo de impostos da Frenet. Ele confere a região geográfica da Frenet pelo endereço de pagamento da sessão ou, antes de o comprador informá-lo, pelo endereço da loja, e só cobra com a Frenet habilitada. Num carrinho com envio, o total não faz nada.
+- O simulador não soma a taxa: ele cota só o produto da página, que tem envio.
+
+O OpenCart só roda totais instalados em **Extensões → Totais**, e a lista de Totais desinstala sozinha um total sem `admin/controller/extension/total/<código>.php`. Por isso existe a tela `extension/total/frenet`, que só tem a posição e um link para a configuração da Frenet. Quando o lojista salva a configuração com a taxa ligada e o total não está instalado, o admin de frete o instala como o core faz (`setting/extension` `install`, permissões de acesso e alteração para o grupo do usuário e o `install()` do total, que o habilita na posição do total de frete) e avisa na mensagem de sucesso. O `uninstall()` do frete desinstala o total junto.
 
 A versão do módulo fica em `Frenet\Module::VERSION`.
 
