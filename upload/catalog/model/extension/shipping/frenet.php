@@ -8,6 +8,7 @@ use Frenet\Postcode;
 use Frenet\Quote\Builder;
 use Frenet\Quote\Cache as QuoteCache;
 use Frenet\Quote\Catalog;
+use Frenet\VirtualFee;
 
 class ModelExtensionShippingFrenet extends Model {
 	private const FILE_CACHE = 'file';
@@ -134,15 +135,21 @@ class ModelExtensionShippingFrenet extends Model {
 
 		$template = $config->isDeliveryTimeShown() ? ($config->getDeliveryTimeMessage() ?: $this->language->get('text_delivery_time')) : '';
 
+		$fee = (new VirtualFee($config))->getAmount($products);
+		$fee_title = $fee > 0 ? $this->getVirtualFeeTitle($config) : '';
+
 		$quote_data = [];
 
 		foreach ($result->getServices() as $service) {
+			$title = $service->getTitle($template, $config->getAdditionalDays());
+			$cost = $service->getPrice() + $fee;
+
 			$quote_data[$service->getCode()] = [
 				'code'         => 'frenet.' . $service->getCode(),
-				'title'        => $service->getTitle($template, $config->getAdditionalDays()),
-				'cost'         => $service->getPrice(),
+				'title'        => $fee > 0 ? sprintf($this->language->get('text_frenet_virtual_fee_rate'), $title, $fee_title, $this->formatPrice($config, $fee)) : $title,
+				'cost'         => $cost,
 				'tax_class_id' => $config->getTaxClassId(),
-				'text'         => $this->currency->format($this->tax->calculate($service->getPrice(), $config->getTaxClassId(), $this->config->get('config_tax')), $this->session->data['currency'])
+				'text'         => $this->formatPrice($config, $cost)
 			];
 		}
 
@@ -164,6 +171,27 @@ class ModelExtensionShippingFrenet extends Model {
 		} else {
 			$log->error($message, $context);
 		}
+	}
+
+	/**
+	 * Name of the virtual products fee added to the Frenet rates, the default one of the store language when none is set.
+	 *
+	 * @param FrenetConfig $config
+	 * @return string
+	 */
+	private function getVirtualFeeTitle(FrenetConfig $config): string {
+		$this->load->language('extension/total/frenet');
+
+		return $config->getVirtualFeeName() ?: $this->language->get('text_frenet_virtual_fee');
+	}
+
+	/**
+	 * @param FrenetConfig $config
+	 * @param float $amount
+	 * @return string
+	 */
+	private function formatPrice(FrenetConfig $config, float $amount): string {
+		return $this->currency->format($this->tax->calculate($amount, $config->getTaxClassId(), $this->config->get('config_tax')), $this->session->data['currency']);
 	}
 
 	/**
