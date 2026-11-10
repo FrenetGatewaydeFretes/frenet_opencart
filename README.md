@@ -1,33 +1,96 @@
 ![Frenet_logo_painel.png](https://painel.frenet.com.br/Content/images/Frenet_logo_painel.png)
-# [Frenet - Gateway de fretes para e-commerce](http://www.www.frenet.com.br) #
+# [Frenet - Gateway de fretes para e-commerce](https://www.frenet.com.br) #
 
-## -- Módulo Frenet para Opencart -- ##
+## -- Módulo Frenet para OpenCart 3 -- ##
 
 ### Links ###
 * [Painel Administrativo](https://painel.frenet.com.br)
 * [Central de Ajuda](https://frenet.zendesk.com/)
-* [Loja de Aplicativos Opencart](https://www.opencart.com/index.php?route=marketplace/extension/info&extension_id=26072)
+* [Loja de Aplicativos OpenCart](https://www.opencart.com/index.php?route=marketplace/extension/info&extension_id=26072)
 
-Painel admistrativo
-------------------------------------
-
-Primeiramente você deve se cadastrar no painel administrativo do Frenet para obter uma chave de acesso para ser utilizada no módulo.
-https://painel.frenet.com.br/
-
-Instalação
+Antes de começar
 ------------------------
 
-1 - Instale o módulo pelo admin (Extensões -> Instalador).<br /> 
-2 - Configure as opções do módulo Frenet (Extensões -> Fretes).
+* Cadastre-se no [painel Frenet](https://painel.frenet.com.br/) e gere o **token** da loja. Sem token, a Frenet não cota.
+* Cadastre o peso e as medidas dos produtos. A Frenet cota pelo peso e pelas medidas de cada item.
+* O módulo funciona no OpenCart 3.0 (testado na 3.0.0.0, 3.0.3.3, 3.0.3.8 e 3.0.5.1), com PHP 7.1 ou mais novo e a extensão cURL.
+
+Instalação: loja que ainda não tem a Frenet
+------------------------
+
+1. Em **Extensões → Instalador**, clique em **Enviar**, escolha o arquivo `frenet.ocmod.zip` e aguarde a mensagem **Concluído**.
+2. Em **Extensões → Extensões**, escolha o tipo **Frete**. Na linha **Frenet**, clique no botão verde **Instalar**.
+3. Na mesma linha, clique no lápis (**Editar**). Preencha o **Token**, o **CEP de origem** e mude a **Situação** para **Habilitado**. Clique em **Salvar**.
+4. Confira na loja: a página do produto mostra **Calcule o frete** logo abaixo do botão Comprar, e o checkout mostra os fretes Frenet.
+
+Atualização: loja que já tem a Frenet instalada
+------------------------
+
+> **⚠️ Importante: depois de enviar o pacote novo, abra a configuração da Frenet no admin.**
+>
+> Até a configuração ser aberta, o simulador de frete **não aparece** na página do produto. Se a loja usava a versão antiga do módulo, com **Chave** e **Senha**, o frete Frenet também **não aparece no checkout** até o token ser salvo.
+
+1. Em **Extensões → Instalador**, clique em **Enviar**, escolha o arquivo `frenet.ocmod.zip` e aguarde a mensagem **Concluído**.
+   * **Não desinstale a Frenet antes de atualizar.** Desinstalar apaga toda a configuração da Frenet, inclusive o token.
+2. Em **Extensões → Extensões**, escolha o tipo **Frete** e clique no lápis (**Editar**) da linha **Frenet**.
+   * Entre com um usuário do grupo **Administrador**, ou de um grupo com permissão de **modificar** a extensão Frenet. Abrir a configuração com um usuário que só tem permissão de acesso não conclui a atualização.
+3. Se a tela avisar que a **Chave e a Senha da versão anterior foram removidas**, gere o token no painel Frenet, cole no campo **Token** e clique em **Salvar**.
+4. Confira os campos novos **Simulador na página do produto** e **Limite de simulações por IP** e clique em **Salvar**.
+5. Confira na loja: a página do produto mostra **Calcule o frete**, e o checkout mostra os fretes Frenet.
+
+**Por que abrir a configuração?** O instalador do OpenCart 3 só copia os arquivos do pacote: ele não executa nenhum código do módulo. Numa instalação nova, o botão **Instalar** prepara o simulador. Numa atualização, o botão Instalar não aparece, porque a Frenet já está instalada, e quem prepara o simulador é a tela de configuração: ela registra o simulador na página do produto (o evento `frenet_simulator`) e cria a tabela do limite de simulações. Isso acontece uma vez só; depois, a loja não precisa de nenhum passo a mais.
 
 Configuração
----------------------------
-1 - CEP de Origem: Informe o CEP do local de origem das cotações de frete.<br />
-2 - Mensagem que exibe o prazo de entrega: Caso seja informada sistema irá montar uma mensagem amigavél ao usuário substituindo o %s e o %d respectivamente por método de entrega e quantidade de dias. Ex: %s - Em média %d dia(s)<br />
-3 - Chave de acesso - Chave: Usuário de acesso ao webservice do Frenet (acesse o painel administrativo, em Dados Cadastrais, obtenha esta informação<br />
-4 - Chave de acesso - Senha: Senha de acesso ao webservice do Frenet (acesse o painel administrativo, em Dados Cadastrais, obtenha esta informação<br />
-5 - Situação: Habilite o módulo para utilizá-lo
+------------------------
+
+| Campo | O que faz |
+| --- | --- |
+| Token | Token gerado no painel Frenet. Por segurança, o token salvo nunca é exibido: deixe em branco para mantê-lo. |
+| CEP de origem | CEP de onde os pedidos saem, com 8 dígitos. |
+| Exibir prazo | Mostra no nome do frete o prazo da Frenet mais os dias adicionais. |
+| Mensagem do prazo de entrega | Nome do frete na loja: `%s` é o serviço e `%d` os dias. Exemplo: `%s - Em média %d dia(s)`. |
+| Dias adicionais | Dias somados ao prazo de todos os serviços, como o tempo para separar o pedido. |
+| Classe de peso em quilos | Classe de peso da loja que corresponde ao quilograma. |
+| Classe de medida em centímetros | Classe de medida da loja que corresponde ao centímetro. |
+| Altura, largura e comprimento mínimos | Menores medidas enviadas à Frenet. Padrão: 2 × 11 × 16 cm, as mínimas dos Correios. |
+| Peso padrão | Peso enviado para o produto cadastrado sem peso. Padrão: 1 kg. |
+| Tempo limite e Tentativas | Quanto cada cotação espera a Frenet responder (2 a 10 s) e quantas vezes tenta (1 a 3). |
+| Simulador na página do produto | Liga e desliga o campo **Calcule o frete** na página do produto. Vem ligado. |
+| Limite de simulações por IP | Quantas simulações cada visitante pode fazer por minuto. Padrão: 60. Use 0 para não limitar. |
+| Debug | Grava cada cotação no `frenet.log`, sem o token. Os erros são gravados sempre. |
+| Grupo de impostos | Imposto aplicado ao frete Frenet. |
+| Região geográfica | O frete Frenet só aparece para endereços desta região. |
+| Situação | Habilita a Frenet. Só habilita com o token preenchido. |
+| Posição | Ordem da Frenet entre as formas de entrega. |
+
+Simulador de frete na página do produto
+------------------------
+
+O comprador digita o CEP na página do produto e vê os fretes Frenet com o preço e o prazo que o carrinho mostraria para aquele produto, quantidade e opções. O simulador usa a região geográfica, o grupo de impostos e as regras de preço do produto como o checkout.
+
+Cada visitante pode simular até o **Limite de simulações por IP** por minuto. A loja atrás do Cloudflare, de um balanceador ou de um proxy na própria rede conta cada visitante pelo IP dele, sem nenhuma configuração no servidor.
+
+Problemas comuns
+------------------------
+
+**O simulador não aparece na página do produto.** Confira, nesta ordem:
+
+1. Depois de atualizar o módulo, a configuração da Frenet foi aberta por um usuário com permissão de modificar a extensão? Veja [Atualização](#atualização-loja-que-já-tem-a-frenet-instalada).
+2. A **Situação** está **Habilitado** e o **Token** está preenchido?
+3. O campo **Simulador na página do produto** está **Habilitado**?
+4. O produto exige envio? Na aba **Dados** do produto, o campo **Precisa de frete?** (*Requires Shipping* no admin em inglês) precisa estar em **Sim**. Produtos sem envio não mostram o simulador.
+5. Em **Extensões → Eventos**, o evento `frenet_simulator` está habilitado?
+6. O tema usa o botão **Comprar** padrão do OpenCart (`id="button-cart"`)? O simulador aparece logo abaixo dele; num tema sem esse botão, ele não aparece.
+
+**O frete Frenet não aparece no checkout.** Confira o token, a **Situação**, o **CEP de origem**, a **Região geográfica** e o peso e as medidas dos produtos. Ligue o **Debug** e veja o arquivo `frenet.log` na pasta de logs do OpenCart (normalmente `system/storage/logs/`).
+
+**O simulador pede para aguardar um minuto.** O visitante passou do **Limite de simulações por IP**. Aumente o limite ou use 0 para não limitar.
+
+Desinstalação
+------------------------
+
+Em **Extensões → Extensões → Frete**, clique em **Desinstalar** na linha **Frenet**. A desinstalação remove o simulador, a tabela do limite e toda a configuração da Frenet, inclusive o token.
 
 Observações
----------------------------
-* Para o correto funcionamento do módulo é essencial o cadastro correto das dimensões e pesos do produtos e CEP de origem.
+------------------------
+* Para o correto funcionamento do módulo é essencial o cadastro correto das dimensões e pesos dos produtos e do CEP de origem.

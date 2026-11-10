@@ -35,6 +35,8 @@ $_['entry_delivery_time']   = 'Exibir prazo';
 $_['entry_additional_days'] = 'Dias adicionais';
 $_['entry_tax_class']       = 'Grupo de impostos';
 $_['entry_geo_zone']        = 'Região geográfica';
+$_['entry_simulator']       = 'Simulador na página do produto';
+$_['entry_simulator_limit'] = 'Limite de simulações por IP';
 
 // Help
 $_['help_token']            = 'Token gerado no painel Frenet. Por segurança, o token salvo nunca é exibido.';
@@ -51,10 +53,13 @@ $_['help_debug']            = 'Grava em frenet.log cada requisição e resposta 
 $_['help_delivery_time']    = 'Mostra no nome do frete o prazo da Frenet mais os dias adicionais, com a mensagem abaixo.';
 $_['help_additional_days']  = 'Dias somados ao prazo de todos os serviços Frenet, como o tempo para separar o pedido. Somados também quando a transportadora não informa o prazo.';
 $_['help_geo_zone']         = 'O frete Frenet só aparece para endereços desta região. Em Todas as regiões, aparece para qualquer endereço.';
+$_['help_simulator']        = 'Mostra na página do produto um campo de CEP que calcula os fretes Frenet do produto, com os preços e prazos do carrinho.';
+$_['help_simulator_limit']  = 'Quantas simulações cada IP pode fazer por minuto. Acima disso, o simulador pede para aguardar e o bloqueio vai para o frenet.log. Use 0 para não limitar.';
 $_['placeholder_msg_prazo'] = '%s - Em média %d dia(s)';
 
 // Error
 $_['error_permission']      = 'Atenção: você não tem permissão para modificar a extensão Frenet!';
 $_['error_warning']         = 'Atenção: a configuração não foi salva. Corrija os campos destacados.';
 $_['error_postcode']        = 'O CEP de origem precisa ter 8 dígitos, como 01310-100.';
+$_['error_simulator_limit_value'] = 'Valores negativos não são permitidos. Use 0 ou um número inteiro positivo.';
 $_['error_token']           = 'Informe o token gerado no painel Frenet para habilitar o frete.';

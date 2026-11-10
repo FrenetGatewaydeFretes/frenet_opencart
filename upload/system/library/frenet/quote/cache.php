@@ -23,10 +23,17 @@ class Cache {
 	private $cache;
 
 	/**
-	 * @param \Cache $cache
+	 * @var bool
 	 */
-	public function __construct(\Cache $cache) {
+	private $writable;
+
+	/**
+	 * @param \Cache $cache
+	 * @param bool $writable
+	 */
+	public function __construct(\Cache $cache, bool $writable = true) {
 		$this->cache = $cache;
+		$this->writable = $writable;
 	}
 
 	/**
@@ -47,7 +54,9 @@ class Cache {
 	 * @return string|null
 	 */
 	public function get(string $key): ?string {
-		$entry = $this->cache->get($key);
+		$entry = $this->quietly(function () use ($key) {
+			return $this->cache->get($key);
+		});
 
 		if (!is_array($entry) || !is_string($entry['body'] ?? null) || (int)($entry['expires'] ?? 0) <= time()) {
 			return null;
@@ -62,6 +71,30 @@ class Cache {
 	 * @return void
 	 */
 	public function set(string $key, string $body): void {
-		$this->cache->set($key, ['expires' => time() + self::TTL, 'body' => $body]);
+		if (!$this->writable) {
+			return;
+		}
+
+		$this->quietly(function () use ($key, $body) {
+			$this->cache->set($key, ['expires' => time() + self::TTL, 'body' => $body]);
+		});
+	}
+
+	/**
+	 * Runs a call to the core cache without its warnings, which the file cache of old OpenCart 3 prints before the JSON.
+	 *
+	 * @param callable $call
+	 * @return mixed
+	 */
+	private function quietly(callable $call) {
+		set_error_handler(static function (): bool {
+			return true;
+		}, E_WARNING | E_NOTICE);
+
+		try {
+			return $call();
+		} finally {
+			restore_error_handler();
+		}
 	}
 }

@@ -35,6 +35,8 @@ $_['entry_delivery_time']   = 'Show delivery time';
 $_['entry_additional_days'] = 'Additional days';
 $_['entry_tax_class']       = 'Tax Class';
 $_['entry_geo_zone']        = 'Geo Zone';
+$_['entry_simulator']       = 'Product page simulator';
+$_['entry_simulator_limit'] = 'Simulator limit per IP';
 
 // Help
 $_['help_token']            = 'Token generated in the Frenet panel. For security, the saved token is never displayed.';
@@ -51,10 +53,13 @@ $_['help_debug']            = 'Writes every quote request and response to frenet
 $_['help_delivery_time']    = 'Shows the Frenet delivery time plus the additional days in the rate name, with the message below.';
 $_['help_additional_days']  = 'Days added to the delivery time of every Frenet service, such as the time to pick the order. Also added when the carrier informs no delivery time.';
 $_['help_geo_zone']         = 'Frenet shipping is only offered to addresses in this geo zone. With All Zones, it is offered to any address.';
+$_['help_simulator']        = 'Shows on the product page a postcode field that estimates the Frenet rates of the product, with the cart prices and delivery times.';
+$_['help_simulator_limit']  = 'How many estimates each IP may ask per minute. Above it, the simulator asks to wait and the block goes to frenet.log. Use 0 for no limit.';
 $_['placeholder_msg_prazo'] = '%s - Average %d day(s)';
 
 // Error
 $_['error_permission']      = 'Warning: You do not have permission to modify Frenet shipping!';
 $_['error_warning']         = 'Warning: the settings were not saved. Fix the highlighted fields.';
 $_['error_postcode']        = 'The origin postcode must have 8 digits, such as 01310-100.';
+$_['error_simulator_limit_value'] = 'Negative values are not allowed. Use 0 or a positive whole number.';
 $_['error_token']           = 'Enter the token generated in the Frenet panel to enable the shipping.';

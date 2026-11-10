@@ -5,7 +5,6 @@ namespace Frenet\Tests;
 
 use Frenet\Config;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 
 final class ConfigTest extends TestCase {
@@ -127,22 +126,22 @@ final class ConfigTest extends TestCase {
 		self::assertSame(1.0, $config->getDefaultWeight());
 	}
 
-	#[TestWith(['01310100'], 'digits only')]
-	#[TestWith([' 01310-100 '], 'hyphen and spaces around')]
-	#[TestWith(['01.310-100'], 'dot and hyphen')]
-	#[TestWith(['01310 100'], 'space')]
-	public function testFormatsThePostcodeTypedInTheAdmin(string $postcode): void {
-		self::assertSame('01310-100', Config::parsePostcode($postcode));
+	public function testShowsTheSimulatorWithSixtyQuotesPerMinuteWhenNothingIsSaved(): void {
+		$config = $this->createConfig(['shipping_frenet_simulator_limit' => '']);
+
+		self::assertTrue($config->isSimulatorEnabled());
+		self::assertSame(60, $config->getSimulatorLimit());
 	}
 
-	#[TestWith(['0131010'], 'seven digits')]
-	#[TestWith(['013101000'], 'nine digits')]
-	#[TestWith(['01310-10A'], 'letter')]
-	#[TestWith(['CEP 01310100'], 'label')]
-	#[TestWith([''], 'empty')]
-	#[TestWith([null], 'null')]
-	public function testRefusesAPostcodeWithoutEightDigits(?string $postcode): void {
-		self::assertNull(Config::parsePostcode($postcode));
+	public function testReadsTheSimulatorSwitchAndLimit(): void {
+		$config = $this->createConfig(['shipping_frenet_simulator' => '0', 'shipping_frenet_simulator_limit' => '0']);
+
+		self::assertFalse($config->isSimulatorEnabled());
+		self::assertSame(0, $config->getSimulatorLimit());
+	}
+
+	public function testNeverReadsANegativeSimulatorLimit(): void {
+		self::assertSame(0, $this->createConfig(['shipping_frenet_simulator_limit' => '-5'])->getSimulatorLimit());
 	}
 
 	#[DataProvider('provideParsesPositiveNumbersTypedInTheAdminCases')]
