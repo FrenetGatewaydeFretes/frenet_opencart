@@ -1,22 +1,37 @@
-Módulo Frenet
+Módulo Frenet para OpenCart 3
 -----------------------------------------------
 
-Painel admistrativo
+A documentação completa está no README.md e em https://github.com/FrenetGatewaydeFretes/frenet_opencart
+
+Antes de começar
 ------------------------------------
 
-Primeiramente você deve se cadastrar no painel administrativo do Frenet para obter uma chave de acesso para ser utilizada no módulo. 
+Cadastre-se no painel Frenet e gere o token da loja. Sem token, a Frenet não cota.
 https://painel.frenet.com.br/
 
-Instalação
-------------------------
+Instalação: loja que ainda não tem a Frenet
+------------------------------------
 
-1 - Instale o módulo pelo admin (Extensões -> Instalador).
-2 - Configure as opções do módulo Frenet (Extensões -> Fretes).
+1 - Em Extensões -> Instalador, envie o arquivo frenet.ocmod.zip e aguarde a mensagem Concluído.
+2 - Em Extensões -> Extensões, tipo Frete, clique em Instalar na linha Frenet.
+3 - Clique em Editar na linha Frenet, preencha o Token, o CEP de origem, mude a Situação para Habilitado e salve.
 
-Configuração
----------------------------
-1 - CEP de Origem: Informe o CEP do local de origem das cotações de frete.
-2 - Mensagem que exibe o prazo de entrega: Caso seja informada sistema irá montar uma mensagem amigavél ao usuário substituindo o %s e o %d respectivamente por método de entrega e quantidade de dias. Ex: %s - Em média %d dia(s)
-3 - Chave de acesso - Chava: Usuário de acesso ao webservice do Frenet (acesse o painel administrativo, em Dados Cadastrais, obtenha esta informação
-4 - Chave de acesso - Senha: Senha de acesso ao webservice do Frenet (acesse o painel administrativo, em Dados Cadastrais, obtenha esta informação
-5 - Situação: Habilite o módulo para utilizá-lo
+Atualização: loja que já tem a Frenet instalada
+------------------------------------
+
+IMPORTANTE: depois de enviar o pacote novo, abra a configuração da Frenet no admin.
+Até a configuração ser aberta, o simulador de frete não aparece na página do produto.
+Se a loja usava a versão antiga do módulo, com Chave e Senha, o frete Frenet também
+não aparece no checkout até o token ser salvo.
+
+1 - Em Extensões -> Instalador, envie o arquivo frenet.ocmod.zip e aguarde a mensagem Concluído.
+    Não desinstale a Frenet antes de atualizar: desinstalar apaga toda a configuração, inclusive o token.
+2 - Em Extensões -> Extensões, tipo Frete, clique em Editar na linha Frenet, com um usuário do grupo
+    Administrador ou com permissão de modificar a extensão Frenet.
+3 - Se a tela avisar que a Chave e a Senha da versão anterior foram removidas, cole o token do painel
+    Frenet no campo Token e salve.
+4 - Confira os campos Simulador na página do produto e Limite de simulações por IP e salve.
+
+O instalador do OpenCart 3 só copia os arquivos: ele não executa nenhum código do módulo.
+Numa atualização, é a tela de configuração que registra o simulador na página do produto
+e cria a tabela do limite de simulações. Isso acontece uma vez só.
