@@ -5,6 +5,7 @@ namespace Frenet\Tests;
 
 use Frenet\Config;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 
 final class ConfigTest extends TestCase {
@@ -159,6 +160,24 @@ final class ConfigTest extends TestCase {
 		yield 'negative' => ['-3', null];
 		yield 'text' => ['abc', null];
 		yield 'null' => [null, null];
+	}
+
+	#[TestWith(['1', '5.5', 5.5], 'dot decimals')]
+	#[TestWith(['1', ' 7,90 ', 7.9], 'comma decimals')]
+	#[TestWith(['1', '0', 0.0], 'zero')]
+	#[TestWith(['1', '-3', 0.0], 'negative')]
+	#[TestWith(['1', 'abc', 0.0], 'not a number')]
+	#[TestWith(['0', '5', 0.0], 'fee off')]
+	#[TestWith([null, '5', 0.0], 'never saved')]
+	public function testReadsTheVirtualFeeOnlyWhenItIsOnAndGreaterThanZero(?string $status, string $amount, float $fee): void {
+		$config = $this->createConfig(['shipping_frenet_virtual_fee' => $status, 'shipping_frenet_virtual_fee_amount' => $amount]);
+
+		self::assertSame($fee, $config->getVirtualFee());
+	}
+
+	public function testReadsTheVirtualFeeName(): void {
+		self::assertSame('Taxa de ativação', $this->createConfig(['shipping_frenet_virtual_fee_name' => " Taxa de ativação \n"])->getVirtualFeeName());
+		self::assertSame('', $this->createConfig([])->getVirtualFeeName());
 	}
 
 	/**
