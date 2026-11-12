@@ -95,6 +95,7 @@ if (!class_exists('Model', false)) {
 	 * @property mixed $tax
 	 * @property mixed $url
 	 * @property mixed $user
+	 * @property mixed $model_extension_total_coupon
 	 * @property mixed $model_localisation_country
 	 * @property mixed $model_localisation_geo_zone
 	 * @property mixed $model_localisation_length_class

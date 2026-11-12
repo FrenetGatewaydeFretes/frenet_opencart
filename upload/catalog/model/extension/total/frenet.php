@@ -23,7 +23,7 @@ class ModelExtensionTotalFrenet extends Model {
 
 		$fee = (new VirtualFee($config))->getAmount($this->cart->getProducts());
 
-		if ($fee <= 0 || !$this->inGeoZone($config->getGeoZoneId())) {
+		if ($fee <= 0 || !$this->inGeoZone($config->getGeoZoneId()) || $this->hasFreeShippingCoupon()) {
 			return;
 		}
 
@@ -41,6 +41,21 @@ class ModelExtensionTotalFrenet extends Model {
 		}
 
 		$total['total'] += $fee;
+	}
+
+	/**
+	 * Whether the coupon of the session gives free shipping, which waives the fee as it waives the Frenet rate that carries it.
+	 *
+	 * @return bool
+	 */
+	private function hasFreeShippingCoupon(): bool {
+		if (empty($this->session->data['coupon']) || !$this->config->get('total_coupon_status')) {
+			return false;
+		}
+
+		$this->load->model('extension/total/coupon');
+
+		return !empty($this->model_extension_total_coupon->getCoupon($this->session->data['coupon'])['shipping']);
 	}
 
 	/**

@@ -92,6 +92,7 @@ Regras da taxa:
 * A Frenet precisa estar com a **Situação** **Habilitado**.
 * A taxa recebe o **Grupo de impostos** do frete Frenet.
 * A **Região geográfica** da Frenet vale também para a taxa. No carrinho só com produtos sem envio, que não tem endereço de entrega, vale o endereço de pagamento; antes de o comprador informá-lo, vale o endereço da loja.
+* Um cupom com frete grátis também tira a taxa: no carrinho misto, o cupom desconta o frete Frenet com a taxa; no carrinho só com produtos sem envio, a linha da taxa não aparece.
 * O simulador da página do produto não soma a taxa: ele calcula o frete do produto da página, que tem envio.
 
 Problemas comuns
@@ -115,6 +116,7 @@ Problemas comuns
 3. No carrinho com produtos com envio, o comprador escolheu um frete Frenet? Outras formas de entrega não somam a taxa.
 4. No carrinho só com produtos sem envio, o total **Frenet - taxa de produtos virtuais** aparece instalado e habilitado em **Extensões → Totais**? Se alguém o desinstalou, abra a configuração da Frenet e clique em **Salvar** com a taxa ligada: ele é instalado de novo.
 5. O endereço de pagamento está na **Região geográfica** da Frenet?
+6. O comprador usou um cupom com frete grátis? Ele tira a taxa também.
 
 **O simulador pede para aguardar um minuto.** O visitante passou do **Limite de simulações por IP**. Aumente o limite ou use 0 para não limitar.
 
