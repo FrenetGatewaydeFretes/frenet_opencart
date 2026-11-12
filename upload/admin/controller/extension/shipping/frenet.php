@@ -260,6 +260,7 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 		$this->load->model('extension/shipping/frenet');
 
+		$this->model_extension_shipping_frenet->removePermissions('extension/total/' . self::TOTAL_CODE);
 		$this->model_extension_shipping_frenet->dropSimulatorTable();
 	}
 
