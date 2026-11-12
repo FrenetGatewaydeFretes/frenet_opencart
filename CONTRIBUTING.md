@@ -38,6 +38,8 @@ O `composer compat` (PHPCompatibility com `testVersion 7.1-`) e o `php -l` do CI
 
 Os templates do admin e do simulador precisam funcionar do Twig 1.24 ao 3.x. Use só `{{ }}`, `{% if %}`, `{% for %}` e o filtro `escape`. Não use a tag `spaceless`, a tag `filter`, `for ... if`, nem os filtros `filter` e `map`.
 
+O OpenCart aplica `htmlspecialchars` em todo `$this->request->post` e `get`, e a configuração é gravada assim, já escapada. Um campo de texto livre do admin (como a mensagem do prazo e o nome da taxa) volta ao formulário sem o filtro `escape`, como nos templates do core: com o filtro, cada vez que o lojista salva, um `&` vira `&amp;`, depois `&amp;amp;`, e assim por diante.
+
 O OpenCart 3 roda o Twig com `autoescape` desligado, então todo valor impresso no template leva `|escape`.
 
 Em versões antigas do OpenCart 3, como a 3.0.3.3, o catálogo e o admin guardam o template compilado e não conferem se o arquivo mudou (o Twig roda sem `auto_reload`). Por isso o admin e o simulador renderizam os templates da Frenet com `template_cache` desligado. Sem isso, depois de uma atualização do módulo, a loja mostraria o template antigo até o lojista limpar o cache de tema. A chave só tem efeito nessas versões: a 3.0.0.0 não guarda o template compilado, e da 3.0.3.8 em diante o core guarda sempre, com `auto_reload`, sem ler `template_cache`. Onde ela vale, o simulador recompila o template a cada página de produto, um custo de poucos milissegundos.
