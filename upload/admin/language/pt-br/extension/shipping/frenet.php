@@ -62,6 +62,7 @@ $_['help_simulator_limit']  = 'Quantas simulações cada IP pode fazer por minut
 $_['help_virtual_fee']      = 'Cobra uma taxa fixa, uma vez por pedido, quando o carrinho tem um produto sem envio (Precisa de frete? Não), como uma taxa de processamento. Com produtos com envio, a taxa é somada a cada frete Frenet; só com produtos sem envio, ela aparece numa linha dos totais do pedido.';
 $_['help_virtual_fee_amount'] = 'Valor cobrado uma vez por pedido, na moeda padrão da loja, com o Grupo de impostos do frete Frenet.';
 $_['help_virtual_fee_name'] = 'Nome mostrado ao comprador no carrinho, no checkout e no pedido. Em branco, usa o do exemplo.';
+$_['placeholder_virtual_fee_amount'] = '4,90';
 $_['placeholder_virtual_fee_name'] = 'Taxa de processamento do pedido';
 $_['placeholder_msg_prazo'] = '%s - Em média %d dia(s)';
 
@@ -70,5 +71,5 @@ $_['error_permission']      = 'Atenção: você não tem permissão para modific
 $_['error_warning']         = 'Atenção: a configuração não foi salva. Corrija os campos destacados.';
 $_['error_postcode']        = 'O CEP de origem precisa ter 8 dígitos, como 01310-100.';
 $_['error_simulator_limit_value'] = 'Valores negativos não são permitidos. Use 0 ou um número inteiro positivo.';
-$_['error_virtual_fee_amount'] = 'Informe um valor maior que zero, como 4,90, para ligar a taxa.';
+$_['error_virtual_fee_amount'] = 'O valor da taxa precisa ser maior que zero, como 4,90.';
 $_['error_token']           = 'Informe o token gerado no painel Frenet para habilitar o frete.';

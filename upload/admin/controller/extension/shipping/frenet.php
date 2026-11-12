@@ -197,6 +197,10 @@ class ControllerExtensionShippingFrenet extends Controller {
 			$data['shipping_frenet_minimum_length'] = $this->formatNumber($frenet_config->getMinimumLength());
 			$data['shipping_frenet_default_weight'] = $this->formatNumber($frenet_config->getDefaultWeight());
 			$data['shipping_frenet_virtual_fee_name'] = $frenet_config->getVirtualFeeName();
+
+			$virtual_fee = FrenetConfig::parsePositive($this->config->get('shipping_frenet_virtual_fee_amount'));
+
+			$data['shipping_frenet_virtual_fee_amount'] = $virtual_fee !== null ? $this->formatAmount($virtual_fee) : '';
 		}
 
 		$data['timeout_min'] = FrenetConfig::TIMEOUT_MIN;
@@ -274,7 +278,9 @@ class ControllerExtensionShippingFrenet extends Controller {
 			$this->error['simulator_limit'] = $this->language->get('error_simulator_limit_value');
 		}
 
-		if (!empty($this->request->post['shipping_frenet_virtual_fee']) && FrenetConfig::parsePositive($this->request->post['shipping_frenet_virtual_fee_amount'] ?? '') === null) {
+		$virtual_fee_amount = trim((string)($this->request->post['shipping_frenet_virtual_fee_amount'] ?? ''));
+
+		if ((!empty($this->request->post['shipping_frenet_virtual_fee']) || $virtual_fee_amount !== '') && FrenetConfig::parsePositive($virtual_fee_amount) === null) {
 			$this->error['virtual_fee_amount'] = $this->language->get('error_virtual_fee_amount');
 		}
 
@@ -351,6 +357,18 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 	private function formatNumber(float $value): string {
 		return rtrim(rtrim(number_format($value, 6, '.', ''), '0'), '.');
+	}
+
+	/**
+	 * Money typed in the admin with at least two decimals and the decimal point of the admin language, such as 4,90.
+	 *
+	 * @param float $value
+	 * @return string
+	 */
+	private function formatAmount(float $value): string {
+		$decimals = strlen((string)substr((string)strrchr($this->formatNumber($value), '.'), 1));
+
+		return number_format($value, max(2, $decimals), (string)$this->language->get('decimal_point'), '');
 	}
 
 	/**

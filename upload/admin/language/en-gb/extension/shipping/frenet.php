@@ -62,6 +62,7 @@ $_['help_simulator_limit']  = 'How many estimates each IP may ask per minute. Ab
 $_['help_virtual_fee']      = 'Charges a fixed fee, once per order, when the cart has a product without shipping (Requires Shipping: No), such as a processing fee. With shipped products, the fee is added to every Frenet rate; with only products without shipping, it shows as a line of the order totals.';
 $_['help_virtual_fee_amount'] = 'Amount charged once per order, in the store default currency, with the Tax Class of the Frenet shipping.';
 $_['help_virtual_fee_name'] = 'Name shown to the customer in the cart, checkout and order. Leave blank to use the example name.';
+$_['placeholder_virtual_fee_amount'] = '4.90';
 $_['placeholder_virtual_fee_name'] = 'Order processing fee';
 $_['placeholder_msg_prazo'] = '%s - Average %d day(s)';
 
@@ -70,5 +71,5 @@ $_['error_permission']      = 'Warning: You do not have permission to modify Fre
 $_['error_warning']         = 'Warning: the settings were not saved. Fix the highlighted fields.';
 $_['error_postcode']        = 'The origin postcode must have 8 digits, such as 01310-100.';
 $_['error_simulator_limit_value'] = 'Negative values are not allowed. Use 0 or a positive whole number.';
-$_['error_virtual_fee_amount'] = 'Enter an amount greater than zero, such as 4.90, to turn the fee on.';
+$_['error_virtual_fee_amount'] = 'The fee amount must be greater than zero, such as 4.90.';
 $_['error_token']           = 'Enter the token generated in the Frenet panel to enable the shipping.';

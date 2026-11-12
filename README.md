@@ -58,7 +58,7 @@ Configuração
 | Simulador na página do produto | Liga e desliga o campo **Calcule o frete** na página do produto. Vem ligado. |
 | Limite de simulações por IP | Quantas simulações cada visitante pode fazer por minuto. Padrão: 60. Use 0 para não limitar. |
 | Taxa de produtos virtuais | Liga e desliga a taxa cobrada nos pedidos com produtos sem envio. Vem desligada. Veja [Taxa de produtos virtuais](#taxa-de-produtos-virtuais). |
-| Valor da taxa | Valor fixo cobrado uma vez por pedido, na moeda padrão da loja, como `4,90`. Precisa ser maior que zero para ligar a taxa. |
+| Valor da taxa | Valor fixo cobrado uma vez por pedido, na moeda padrão da loja, como `4,90`. Precisa ser maior que zero; pode ficar em branco com a taxa desligada. |
 | Nome da taxa | Nome que o comprador vê no carrinho, no checkout e no pedido. Em branco, usa **Taxa de processamento do pedido**. |
 | Debug | Grava cada cotação no `frenet.log`, sem o token. Os erros são gravados sempre. |
 | Grupo de impostos | Imposto aplicado ao frete Frenet. |
