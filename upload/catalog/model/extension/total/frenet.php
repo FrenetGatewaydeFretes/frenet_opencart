@@ -21,7 +21,8 @@ class ModelExtensionTotalFrenet extends Model {
 			return;
 		}
 
-		$fee = (new VirtualFee($config))->getAmount($this->cart->getProducts());
+		$virtual_fee = new VirtualFee($config);
+		$fee = $virtual_fee->getAmount($this->cart->getProducts());
 
 		if ($fee <= 0 || !$this->inGeoZone($config->getGeoZoneId()) || $this->hasFreeShippingCoupon()) {
 			return;
@@ -31,7 +32,7 @@ class ModelExtensionTotalFrenet extends Model {
 
 		$total['totals'][] = [
 			'code'       => 'frenet',
-			'title'      => $config->getVirtualFeeName() ?: $this->language->get('text_frenet_virtual_fee'),
+			'title'      => $virtual_fee->getName($this->language->get('text_frenet_virtual_fee')),
 			'value'      => $fee,
 			'sort_order' => $this->config->get('total_frenet_sort_order')
 		];

@@ -40,4 +40,14 @@ final class VirtualFee {
 
 		return 0.0;
 	}
+
+	/**
+	 * Name of the fee shown to the buyer: the one of the settings, or the default of the store language when it is blank.
+	 *
+	 * @param string $default
+	 * @return string
+	 */
+	public function getName(string $default): string {
+		return $this->config->getVirtualFeeName() ?: $default;
+	}
 }

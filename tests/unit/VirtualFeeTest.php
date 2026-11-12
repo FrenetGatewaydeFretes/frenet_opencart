@@ -33,10 +33,16 @@ final class VirtualFeeTest extends TestCase {
 		self::assertSame(0.0, $this->createFee('1', '0')->getAmount([self::NOT_SHIPPED]));
 	}
 
-	private function createFee(string $status, string $amount): VirtualFee {
+	public function testNamesTheFeeWithTheSettingsOrTheDefaultOfTheStoreLanguage(): void {
+		self::assertSame('Taxa de ativação', $this->createFee('1', '4.90', ' Taxa de ativação ')->getName('Taxa de processamento do pedido'));
+		self::assertSame('Taxa de processamento do pedido', $this->createFee('1', '4.90', '  ')->getName('Taxa de processamento do pedido'));
+	}
+
+	private function createFee(string $status, string $amount, string $name = ''): VirtualFee {
 		$config = new \Config();
 		$config->set('shipping_frenet_virtual_fee', $status);
 		$config->set('shipping_frenet_virtual_fee_amount', $amount);
+		$config->set('shipping_frenet_virtual_fee_name', $name);
 
 		return new VirtualFee(new Config($config));
 	}

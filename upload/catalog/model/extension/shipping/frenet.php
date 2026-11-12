@@ -135,8 +135,15 @@ class ModelExtensionShippingFrenet extends Model {
 
 		$template = $config->isDeliveryTimeShown() ? ($config->getDeliveryTimeMessage() ?: $this->language->get('text_delivery_time')) : '';
 
-		$fee = (new VirtualFee($config))->getAmount($products);
-		$fee_title = $fee > 0 ? $this->getVirtualFeeTitle($config) : '';
+		$virtual_fee = new VirtualFee($config);
+		$fee = $virtual_fee->getAmount($products);
+		$fee_suffix = '';
+
+		if ($fee > 0) {
+			$this->load->language('extension/total/frenet');
+
+			$fee_suffix = sprintf($this->language->get('text_frenet_virtual_fee_rate'), $virtual_fee->getName($this->language->get('text_frenet_virtual_fee')), $this->formatPrice($config, $fee));
+		}
 
 		$quote_data = [];
 
@@ -146,7 +153,7 @@ class ModelExtensionShippingFrenet extends Model {
 
 			$quote_data[$service->getCode()] = [
 				'code'         => 'frenet.' . $service->getCode(),
-				'title'        => $fee > 0 ? sprintf($this->language->get('text_frenet_virtual_fee_rate'), $title, $fee_title, $this->formatPrice($config, $fee)) : $title,
+				'title'        => $title . $fee_suffix,
 				'cost'         => $cost,
 				'tax_class_id' => $config->getTaxClassId(),
 				'text'         => $this->formatPrice($config, $cost)
@@ -171,18 +178,6 @@ class ModelExtensionShippingFrenet extends Model {
 		} else {
 			$log->error($message, $context);
 		}
-	}
-
-	/**
-	 * Name of the virtual products fee added to the Frenet rates, the default one of the store language when none is set.
-	 *
-	 * @param FrenetConfig $config
-	 * @return string
-	 */
-	private function getVirtualFeeTitle(FrenetConfig $config): string {
-		$this->load->language('extension/total/frenet');
-
-		return $config->getVirtualFeeName() ?: $this->language->get('text_frenet_virtual_fee');
 	}
 
 	/**
