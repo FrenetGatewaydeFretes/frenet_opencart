@@ -18,8 +18,8 @@ final class Matcher {
 	public const FULL = 'full';
 
 	/**
-	 * Correios services quoted in every package, with the sum of the prices and the longest delivery time, followed by the
-	 * services of the other carriers quoted for the whole cart.
+	 * Correios services quoted in every package, with the sum of the prices and the longest delivery time, and the services of
+	 * the other carriers quoted for the whole cart, cheapest first as the Frenet API lists them.
 	 *
 	 * @param array<int|string, Result|UnavailableException> $results
 	 * @return Result
@@ -88,6 +88,13 @@ final class Matcher {
 		if (!$services && $failure) {
 			throw $failure;
 		}
+
+		$prices = array_map(static function (Service $service): float {
+			return $service->getPrice();
+		}, $services);
+		$positions = array_keys($services);
+
+		array_multisort($prices, SORT_ASC, SORT_NUMERIC, $positions, SORT_ASC, SORT_NUMERIC, $services);
 
 		return new Result($services, $errors, $full instanceof Result ? $full->getMessage() : '');
 	}

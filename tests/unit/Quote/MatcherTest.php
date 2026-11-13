@@ -17,7 +17,17 @@ final class MatcherTest extends TestCase {
 			2      => $this->answer([$this->correios('03298', 'PAC', 35.0, 8), $this->correios('03220', 'SEDEX', 55.0, 2)])
 		]);
 
-		self::assertSame([['03298', 'PAC', 75.0, 8], ['03220', 'SEDEX', 115.0, 3], ['JADLOG', 'Jadlog', 70.0, 4]], $this->describe($result));
+		self::assertSame([['JADLOG', 'Jadlog', 70.0, 4], ['03298', 'PAC', 75.0, 8], ['03220', 'SEDEX', 115.0, 3]], $this->describe($result));
+	}
+
+	public function testListsTheServicesCheapestFirstKeepingTheOrderOfTheSamePrice(): void {
+		$result = Matcher::match([
+			'full' => $this->answer([$this->service('LOGGI', 'Loggi', 'Loggi', 50.0, 3), $this->service('JADLOG', 'Jadlog', 'Jadlog', 50.0, 4), $this->service('JET', 'J&T', 'J&T', 20.0, 2)]),
+			1      => $this->answer([$this->correios('03298', 'PAC', 30.0, 7)]),
+			2      => $this->answer([$this->correios('03298', 'PAC', 20.0, 7)])
+		]);
+
+		self::assertSame(['J&T', 'PAC', 'Loggi', 'Jadlog'], array_column($this->describe($result), 1));
 	}
 
 	public function testKeepsTheLongestDeliveryTimeOfThePackages(): void {
