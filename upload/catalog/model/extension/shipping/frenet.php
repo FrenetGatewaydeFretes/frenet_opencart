@@ -1,12 +1,14 @@
 <?php
 use Frenet\Api;
 use Frenet\Config as FrenetConfig;
+use Frenet\GeoZone;
 use Frenet\Http\Client;
 use Frenet\Log as FrenetLog;
 use Frenet\Postcode;
 use Frenet\Quote\Builder;
 use Frenet\Quote\Cache as QuoteCache;
 use Frenet\Quote\Catalog;
+use Frenet\VirtualFee;
 
 class ModelExtensionShippingFrenet extends Model {
 	private const FILE_CACHE = 'file';
@@ -76,9 +78,10 @@ class ModelExtensionShippingFrenet extends Model {
 		$log = new FrenetLog(new \Log(FrenetLog::FILENAME), $config->isDebug());
 
 		$geo_zone_id = $config->getGeoZoneId();
+		$geo_zone = new GeoZone($this->db, DB_PREFIX);
 
-		if ($geo_zone_id && !$this->inGeoZone($geo_zone_id, $address)) {
-			if ($this->geoZoneExists($geo_zone_id)) {
+		if ($geo_zone_id && !$geo_zone->contains($geo_zone_id, $address)) {
+			if ($geo_zone->exists($geo_zone_id)) {
 				$log->debug('Quote skipped: the address is outside the Frenet geo zone', ['country_id' => $address['country_id'] ?? 0, 'zone_id' => $address['zone_id'] ?? 0]);
 			} else {
 				$log->error('Quote skipped: the geo zone ' . $geo_zone_id . ' chosen for Frenet no longer exists, choose another one in the settings');
@@ -132,15 +135,28 @@ class ModelExtensionShippingFrenet extends Model {
 
 		$template = $config->isDeliveryTimeShown() ? ($config->getDeliveryTimeMessage() ?: $this->language->get('text_delivery_time')) : '';
 
+		$virtual_fee = new VirtualFee($config);
+		$fee = $virtual_fee->getAmount($products);
+		$fee_suffix = '';
+
+		if ($fee > 0) {
+			$this->load->language('extension/total/frenet');
+
+			$fee_suffix = sprintf($this->language->get('text_frenet_virtual_fee_rate'), $virtual_fee->getName($this->language->get('text_frenet_virtual_fee')), $this->formatPrice($config, $fee));
+		}
+
 		$quote_data = [];
 
 		foreach ($result->getServices() as $service) {
+			$title = $service->getTitle($template, $config->getAdditionalDays());
+			$cost = $service->getPrice() + $fee;
+
 			$quote_data[$service->getCode()] = [
 				'code'         => 'frenet.' . $service->getCode(),
-				'title'        => $service->getTitle($template, $config->getAdditionalDays()),
-				'cost'         => $service->getPrice(),
+				'title'        => $title . $fee_suffix,
+				'cost'         => $cost,
 				'tax_class_id' => $config->getTaxClassId(),
-				'text'         => $this->currency->format($this->tax->calculate($service->getPrice(), $config->getTaxClassId(), $this->config->get('config_tax')), $this->session->data['currency'])
+				'text'         => $this->formatPrice($config, $cost)
 			];
 		}
 
@@ -165,14 +181,12 @@ class ModelExtensionShippingFrenet extends Model {
 	}
 
 	/**
-	 * @param int $geo_zone_id
-	 * @param array<string, mixed> $address
-	 * @return bool
+	 * @param FrenetConfig $config
+	 * @param float $amount
+	 * @return string
 	 */
-	private function inGeoZone(int $geo_zone_id, array $address): bool {
-		$query = $this->db->query("SELECT 1 FROM `" . DB_PREFIX . "zone_to_geo_zone` WHERE `geo_zone_id` = '" . $geo_zone_id . "' AND `country_id` = '" . (int)($address['country_id'] ?? 0) . "' AND (`zone_id` = '" . (int)($address['zone_id'] ?? 0) . "' OR `zone_id` = '0') LIMIT 1");
-
-		return (bool)$query->num_rows;
+	private function formatPrice(FrenetConfig $config, float $amount): string {
+		return $this->currency->format($this->tax->calculate($amount, $config->getTaxClassId(), $this->config->get('config_tax')), $this->session->data['currency']);
 	}
 
 	/**
@@ -189,10 +203,6 @@ class ModelExtensionShippingFrenet extends Model {
 		}
 
 		return [];
-	}
-
-	private function geoZoneExists(int $geo_zone_id): bool {
-		return (bool)$this->db->query("SELECT 1 FROM `" . DB_PREFIX . "geo_zone` WHERE `geo_zone_id` = '" . $geo_zone_id . "' LIMIT 1")->num_rows;
 	}
 
 	/**

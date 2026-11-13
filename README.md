@@ -57,6 +57,9 @@ Configuração
 | Tempo limite e Tentativas | Quanto cada cotação espera a Frenet responder (2 a 10 s) e quantas vezes tenta (1 a 3). |
 | Simulador na página do produto | Liga e desliga o campo **Calcule o frete** na página do produto. Vem ligado. |
 | Limite de simulações por IP | Quantas simulações cada visitante pode fazer por minuto. Padrão: 60. Use 0 para não limitar. |
+| Taxa de produtos virtuais | Liga e desliga a taxa cobrada nos pedidos com produtos sem envio. Vem desligada. Veja [Taxa de produtos virtuais](#taxa-de-produtos-virtuais). |
+| Valor da taxa | Valor fixo cobrado uma vez por pedido, na moeda padrão da loja, como `4,90`. Precisa ser maior que zero; pode ficar em branco com a taxa desligada. |
+| Nome da taxa | Nome que o comprador vê no carrinho, no checkout e no pedido. Em branco, usa **Taxa de processamento do pedido**. |
 | Debug | Grava cada cotação no `frenet.log`, sem o token. Os erros são gravados sempre. |
 | Grupo de impostos | Imposto aplicado ao frete Frenet. |
 | Região geográfica | O frete Frenet só aparece para endereços desta região. |
@@ -69,6 +72,28 @@ Simulador de frete na página do produto
 O comprador digita o CEP na página do produto e vê os fretes Frenet com o preço e o prazo que o carrinho mostraria para aquele produto, quantidade e opções. O simulador usa a região geográfica, o grupo de impostos e as regras de preço do produto como o checkout.
 
 Cada visitante pode simular até o **Limite de simulações por IP** por minuto. A loja atrás do Cloudflare, de um balanceador ou de um proxy na própria rede conta cada visitante pelo IP dele, sem nenhuma configuração no servidor.
+
+Taxa de produtos virtuais
+------------------------
+
+Cobra uma taxa fixa, uma vez por pedido, quando o carrinho tem um produto sem envio, como um e-book, um serviço ou um download. Produto sem envio é o que tem **Precisa de frete?** (*Requires Shipping*) em **Não**, na aba **Dados** do produto.
+
+* **Carrinho com produtos com e sem envio:** a taxa é somada a cada frete Frenet e aparece no nome dele, por exemplo `PAC - Em média 7 dia(s) + Taxa de processamento do pedido (R$4,90)`. Se o comprador escolher outra forma de entrega, a taxa não é cobrada.
+* **Carrinho só com produtos sem envio:** o OpenCart pula a etapa de frete, então a taxa aparece numa linha própria dos totais, no carrinho, no checkout e no pedido.
+* **Carrinho só com produtos com envio:** nenhuma taxa.
+
+Para ligar:
+
+1. Na configuração da Frenet, mude **Taxa de produtos virtuais** para **Habilitado**, preencha o **Valor da taxa** e, se quiser, o **Nome da taxa**. Clique em **Salvar**.
+2. A mensagem de sucesso avisa que a taxa dos carrinhos sem envio foi instalada em **Extensões → Totais**, como **Frenet - taxa de produtos virtuais**. Esse total é instalado sozinho: não é preciso instalá-lo à mão. Nele, você só muda a **Posição** da linha da taxa nos totais (vem com a mesma posição do Frete).
+
+Regras da taxa:
+
+* A Frenet precisa estar com a **Situação** **Habilitado**.
+* A taxa recebe o **Grupo de impostos** do frete Frenet.
+* A **Região geográfica** da Frenet vale também para a taxa. No carrinho só com produtos sem envio, que não tem endereço de entrega, vale o endereço de pagamento; antes de o comprador informá-lo, vale o endereço da loja.
+* Um cupom com frete grátis também tira a taxa: no carrinho misto, o cupom desconta o frete Frenet com a taxa; no carrinho só com produtos sem envio, a linha da taxa não aparece.
+* O simulador da página do produto não soma a taxa: ele calcula o frete do produto da página, que tem envio.
 
 Problemas comuns
 ------------------------
@@ -84,12 +109,21 @@ Problemas comuns
 
 **O frete Frenet não aparece no checkout.** Confira o token, a **Situação**, o **CEP de origem**, a **Região geográfica** e o peso e as medidas dos produtos. Ligue o **Debug** e veja o arquivo `frenet.log` na pasta de logs do OpenCart (normalmente `system/storage/logs/`).
 
+**A taxa de produtos virtuais não aparece.** Confira:
+
+1. O campo **Taxa de produtos virtuais** está **Habilitado**, com o **Valor da taxa** maior que zero, e a **Situação** da Frenet está **Habilitado**?
+2. O produto está com **Precisa de frete?** em **Não**? Só esses produtos geram a taxa.
+3. No carrinho com produtos com envio, o comprador escolheu um frete Frenet? Outras formas de entrega não somam a taxa.
+4. No carrinho só com produtos sem envio, o total **Frenet - taxa de produtos virtuais** aparece instalado e habilitado em **Extensões → Totais**? Se alguém o desinstalou, abra a configuração da Frenet e clique em **Salvar** com a taxa ligada: ele é instalado de novo.
+5. O endereço de pagamento está na **Região geográfica** da Frenet?
+6. O comprador usou um cupom com frete grátis? Ele tira a taxa também.
+
 **O simulador pede para aguardar um minuto.** O visitante passou do **Limite de simulações por IP**. Aumente o limite ou use 0 para não limitar.
 
 Desinstalação
 ------------------------
 
-Em **Extensões → Extensões → Frete**, clique em **Desinstalar** na linha **Frenet**. A desinstalação remove o simulador, a tabela do limite e toda a configuração da Frenet, inclusive o token.
+Em **Extensões → Extensões → Frete**, clique em **Desinstalar** na linha **Frenet**. A desinstalação remove o simulador, a tabela do limite, o total **Frenet - taxa de produtos virtuais** e toda a configuração da Frenet, inclusive o token.
 
 Observações
 ------------------------

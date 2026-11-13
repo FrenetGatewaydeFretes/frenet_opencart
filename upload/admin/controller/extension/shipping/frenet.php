@@ -12,6 +12,8 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 	private const EVENT_ACTION = 'extension/shipping/frenet/addSimulator';
 
+	private const TOTAL_CODE = 'frenet';
+
 	private const LEGACY_KEYS = [
 		'shipping_frenet_contrato_codigo',
 		'shipping_frenet_contrato_senha',
@@ -34,6 +36,9 @@ class ControllerExtensionShippingFrenet extends Controller {
 		'shipping_frenet_attempts',
 		'shipping_frenet_simulator',
 		'shipping_frenet_simulator_limit',
+		'shipping_frenet_virtual_fee',
+		'shipping_frenet_virtual_fee_amount',
+		'shipping_frenet_virtual_fee_name',
 		'shipping_frenet_debug',
 		'shipping_frenet_tax_class_id',
 		'shipping_frenet_geo_zone_id',
@@ -122,7 +127,17 @@ class ControllerExtensionShippingFrenet extends Controller {
 				$values[$field] = $this->formatNumber($value);
 			}
 
+			$virtual_fee = FrenetConfig::parsePositive($values['shipping_frenet_virtual_fee_amount']);
+
+			$values['shipping_frenet_virtual_fee'] = (int)!empty($values['shipping_frenet_virtual_fee']);
+			$values['shipping_frenet_virtual_fee_amount'] = $virtual_fee !== null ? $this->formatNumber($virtual_fee) : '';
+			$values['shipping_frenet_virtual_fee_name'] = trim((string)$values['shipping_frenet_virtual_fee_name']);
+
 			$this->model_setting_setting->editSetting('shipping_frenet', $values);
+
+			if ($values['shipping_frenet_virtual_fee'] && $this->installTotal()) {
+				$adjusted[] = $this->language->get('text_total_installed');
+			}
 
 			$this->session->data['success'] = implode(' ', array_merge([$this->language->get('text_success')], $adjusted));
 
@@ -133,6 +148,7 @@ class ControllerExtensionShippingFrenet extends Controller {
 		$data['error_token'] = $this->error['token'] ?? '';
 		$data['error_postcode'] = $this->error['postcode'] ?? '';
 		$data['error_simulator_limit'] = $this->error['simulator_limit'] ?? '';
+		$data['error_virtual_fee_amount'] = $this->error['virtual_fee_amount'] ?? '';
 
 		$data['breadcrumbs'] = [];
 
@@ -180,6 +196,11 @@ class ControllerExtensionShippingFrenet extends Controller {
 			$data['shipping_frenet_minimum_width'] = $this->formatNumber($frenet_config->getMinimumWidth());
 			$data['shipping_frenet_minimum_length'] = $this->formatNumber($frenet_config->getMinimumLength());
 			$data['shipping_frenet_default_weight'] = $this->formatNumber($frenet_config->getDefaultWeight());
+			$data['shipping_frenet_virtual_fee_name'] = $frenet_config->getVirtualFeeName();
+
+			$virtual_fee = FrenetConfig::parsePositive($this->config->get('shipping_frenet_virtual_fee_amount'));
+
+			$data['shipping_frenet_virtual_fee_amount'] = $virtual_fee !== null ? $this->formatAmount($virtual_fee) : '';
 		}
 
 		$data['timeout_min'] = FrenetConfig::TIMEOUT_MIN;
@@ -233,8 +254,13 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 		$this->model_setting_event->deleteEventByCode(self::EVENT_CODE);
 
+		$this->load->model('setting/extension');
+
+		$this->model_setting_extension->uninstall('total', self::TOTAL_CODE);
+
 		$this->load->model('extension/shipping/frenet');
 
+		$this->model_extension_shipping_frenet->removePermissions('extension/total/' . self::TOTAL_CODE);
 		$this->model_extension_shipping_frenet->dropSimulatorTable();
 	}
 
@@ -251,6 +277,12 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 		if ($simulator_limit !== '' && !ctype_digit($simulator_limit)) {
 			$this->error['simulator_limit'] = $this->language->get('error_simulator_limit_value');
+		}
+
+		$virtual_fee_amount = trim((string)($this->request->post['shipping_frenet_virtual_fee_amount'] ?? ''));
+
+		if ((!empty($this->request->post['shipping_frenet_virtual_fee']) || $virtual_fee_amount !== '') && FrenetConfig::parsePositive($virtual_fee_amount) === null) {
+			$this->error['virtual_fee_amount'] = $this->language->get('error_virtual_fee_amount');
 		}
 
 		if (!empty($this->request->post['shipping_frenet_status']) && $saved_token === '' && trim((string)($this->request->post['shipping_frenet_token'] ?? '')) === '') {
@@ -288,6 +320,30 @@ class ControllerExtensionShippingFrenet extends Controller {
 		$this->model_extension_shipping_frenet->createSimulatorTable();
 	}
 
+	/**
+	 * Installs the Frenet order total, which charges the fee on carts the core sends to checkout without the shipping step.
+	 *
+	 * @return bool
+	 */
+	private function installTotal(): bool {
+		$this->load->model('setting/extension');
+
+		if (in_array(self::TOTAL_CODE, $this->model_setting_extension->getInstalled('total'), true)) {
+			return false;
+		}
+
+		$this->model_setting_extension->install('total', self::TOTAL_CODE);
+
+		$this->load->model('user/user_group');
+
+		$this->model_user_user_group->addPermission($this->user->getGroupId(), 'access', 'extension/total/' . self::TOTAL_CODE);
+		$this->model_user_user_group->addPermission($this->user->getGroupId(), 'modify', 'extension/total/' . self::TOTAL_CODE);
+
+		$this->load->controller('extension/total/' . self::TOTAL_CODE . '/install');
+
+		return true;
+	}
+
 	private function addEvent(): void {
 		$this->load->model('setting/event');
 
@@ -302,6 +358,18 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 	private function formatNumber(float $value): string {
 		return rtrim(rtrim(number_format($value, 6, '.', ''), '0'), '.');
+	}
+
+	/**
+	 * Money typed in the admin with at least two decimals and the decimal point of the admin language, such as 4,90.
+	 *
+	 * @param float $value
+	 * @return string
+	 */
+	private function formatAmount(float $value): string {
+		$decimals = strlen((string)substr((string)strrchr($this->formatNumber($value), '.'), 1));
+
+		return number_format($value, max(2, $decimals), (string)$this->language->get('decimal_point'), '');
 	}
 
 	/**

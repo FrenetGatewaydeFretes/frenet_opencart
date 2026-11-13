@@ -261,6 +261,28 @@ class Config {
 	}
 
 	/**
+	 * Fixed fee charged once per order with products that are not shipped, 0 when it is off or not greater than zero.
+	 *
+	 * @return float
+	 */
+	public function getVirtualFee(): float {
+		if (!$this->get('virtual_fee')) {
+			return 0.0;
+		}
+
+		return self::parsePositive($this->get('virtual_fee_amount')) ?? 0.0;
+	}
+
+	/**
+	 * Name of the virtual products fee shown to the buyer, empty for the default one of the store language.
+	 *
+	 * @return string
+	 */
+	public function getVirtualFeeName(): string {
+		return trim((string)$this->get('virtual_fee_name'));
+	}
+
+	/**
 	 * Position of Frenet among the shipping methods at checkout.
 	 *
 	 * @return int
