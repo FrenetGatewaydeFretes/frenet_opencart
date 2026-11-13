@@ -14,6 +14,7 @@ $_['text_panel']            = 'Open the Frenet panel';
 $_['text_adjusted']         = '%s adjusted to %d (accepts %d to %d).';
 $_['text_default_used']     = '%s must be greater than zero: %s used.';
 $_['text_adjusted_min']     = '%s only accepts whole numbers from 0: used %d.';
+$_['text_package_over_correios'] = 'The maximum package weight is over %s kg, the Correios limit: heavier packages get no PAC or SEDEX.';
 $_['text_total_installed']  = 'The fee of carts without shipping was installed in Extensions > Order Totals as Frenet - virtual products fee.';
 $_['text_geo_zone_missing']  = 'The geo zone chosen for Frenet was deleted, so Frenet shipping is offered to no address. Choose another geo zone and save.';
 
@@ -54,7 +55,7 @@ $_['help_minimum_width']    = 'Smallest width sent to Frenet: a narrower product
 $_['help_minimum_length']   = 'Smallest length sent to Frenet: a shorter product, or one without length, goes with this value. Default: 16 cm, the Correios minimum.';
 $_['help_default_weight']   = 'Weight sent to Frenet for a product registered without one. Default: 1 kg.';
 $_['help_package_split']    = 'Quotes a cart heavier than the maximum package weight in packages, so Correios is offered again: each Correios service comes with the sum of the packages and the longest delivery time, and only when every package was quoted. The other carriers are quoted with the whole cart. Works up to 10 packages; a product heavier than the package makes the cart be quoted whole.';
-$_['help_package_max_weight'] = 'Weight of each package in the package split. Default: 30 kg, the Correios limit.';
+$_['help_package_max_weight'] = 'Weight of each package in the package split. Default: 30 kg, the Correios limit; above it, heavier packages get no PAC or SEDEX.';
 $_['help_timeout']          = 'How long each quote attempt waits for Frenet to answer, from 2 to 10 seconds.';
 $_['help_attempts']         = 'How many times the quote is sent when Frenet does not answer or answers with a server error, from 1 to 3. It also retries 429 (too many requests) and 408; an invalid token and the other 4xx errors are never retried.';
 $_['help_debug']            = 'Writes every quote request and response to frenet.log, without the token. Errors are always written.';

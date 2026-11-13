@@ -130,6 +130,10 @@ class ControllerExtensionShippingFrenet extends Controller {
 				$values[$field] = $this->formatNumber($value);
 			}
 
+			if (!empty($values['shipping_frenet_package_split']) && (float)$values['shipping_frenet_package_max_weight'] > FrenetConfig::CORREIOS_MAX_WEIGHT) {
+				$adjusted[] = sprintf($this->language->get('text_package_over_correios'), $this->formatNumber(FrenetConfig::CORREIOS_MAX_WEIGHT));
+			}
+
 			$virtual_fee = FrenetConfig::parsePositive($values['shipping_frenet_virtual_fee_amount']);
 
 			$values['shipping_frenet_virtual_fee'] = (int)!empty($values['shipping_frenet_virtual_fee']);

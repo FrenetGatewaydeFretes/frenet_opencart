@@ -14,6 +14,7 @@ $_['text_panel']            = 'Abrir o painel Frenet';
 $_['text_adjusted']         = '%s ajustado para %d (aceita de %d a %d).';
 $_['text_default_used']     = '%s precisa ser maior que zero: usado %s.';
 $_['text_adjusted_min']     = '%s aceita só números inteiros a partir de 0: usado %d.';
+$_['text_package_over_correios'] = 'O peso máximo por pacote passa de %s kg, o limite dos Correios: os pacotes mais pesados ficam sem PAC e SEDEX.';
 $_['text_total_installed']  = 'A taxa dos carrinhos sem envio foi instalada em Extensões → Totais, como Frenet - taxa de produtos virtuais.';
 $_['text_geo_zone_missing']  = 'A região geográfica escolhida para a Frenet foi excluída, e o frete Frenet não aparece para nenhum endereço. Escolha outra região e salve.';
 
@@ -54,7 +55,7 @@ $_['help_minimum_width']    = 'Menor largura enviada à Frenet: produto mais est
 $_['help_minimum_length']   = 'Menor comprimento enviado à Frenet: produto mais curto ou sem comprimento vai com este valor. Padrão: 16 cm, o mínimo dos Correios.';
 $_['help_default_weight']   = 'Peso enviado à Frenet para o produto cadastrado sem peso. Padrão: 1 kg.';
 $_['help_package_split']    = 'Cota em pacotes o carrinho mais pesado que o peso máximo por pacote, para os Correios voltarem a aparecer: cada serviço dos Correios sai com a soma dos pacotes e o maior prazo, e só quando todos os pacotes foram cotados. As outras transportadoras são cotadas com o carrinho inteiro. Vale até 10 pacotes; um produto mais pesado que o pacote faz o carrinho ser cotado inteiro.';
-$_['help_package_max_weight'] = 'Peso de cada pacote na divisão em pacotes. Padrão: 30 kg, o limite dos Correios.';
+$_['help_package_max_weight'] = 'Peso de cada pacote na divisão em pacotes. Padrão: 30 kg, o limite dos Correios; acima disso, os pacotes mais pesados ficam sem PAC e SEDEX.';
 $_['help_timeout']          = 'Quanto cada tentativa de cotação espera a Frenet responder, de 2 a 10 segundos.';
 $_['help_attempts']         = 'Quantas vezes a cotação é enviada quando a Frenet não responde ou responde com erro do servidor, de 1 a 3. Também repete o 429 (muitas requisições) e o 408; token inválido e os outros erros 4xx nunca são repetidos.';
 $_['help_debug']            = 'Grava em frenet.log cada requisição e resposta da cotação, sem o token. Os erros são gravados sempre.';

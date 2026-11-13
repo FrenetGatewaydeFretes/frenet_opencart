@@ -55,7 +55,7 @@ Configuração
 | Altura, largura e comprimento mínimos | Menores medidas enviadas à Frenet. Padrão: 2 × 11 × 16 cm, as mínimas dos Correios. |
 | Peso padrão | Peso enviado para o produto cadastrado sem peso. Padrão: 1 kg. |
 | Divisão em pacotes | Cota em pacotes o carrinho mais pesado que o peso máximo por pacote. Vem desligada. Veja [Divisão em pacotes](#divisão-em-pacotes). |
-| Peso máximo por pacote | Peso de cada pacote na divisão. Padrão: 30 kg, o limite dos Correios. |
+| Peso máximo por pacote | Peso de cada pacote na divisão. Padrão: 30 kg, o limite dos Correios. Acima disso, os pacotes mais pesados ficam sem PAC e SEDEX, e o admin avisa ao salvar. |
 | Tempo limite e Tentativas | Quanto cada cotação espera a Frenet responder (2 a 10 s) e quantas vezes tenta (1 a 3). |
 | Simulador na página do produto | Liga e desliga o campo **Calcule o frete** na página do produto. Vem ligado. |
 | Limite de simulações por IP | Quantas simulações cada visitante pode fazer por minuto. Padrão: 60. Use 0 para não limitar. |

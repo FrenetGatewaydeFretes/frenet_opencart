@@ -50,7 +50,12 @@ class Config {
 	/**
 	 * @var float
 	 */
-	public const PACKAGE_MAX_WEIGHT_DEFAULT = 30.0;
+	public const CORREIOS_MAX_WEIGHT = 30.0;
+
+	/**
+	 * @var float
+	 */
+	public const PACKAGE_MAX_WEIGHT_DEFAULT = self::CORREIOS_MAX_WEIGHT;
 
 	/**
 	 * @var float
