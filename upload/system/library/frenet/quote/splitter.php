@@ -67,13 +67,7 @@ final class Splitter {
 		try {
 			$packages = Packer::pack($request->getItems(), $this->max_weight, self::MAX_PACKAGES);
 		} catch (Exception $exception) {
-			$message = 'Cart of ' . $weight . ' kg quoted whole, without Correios split in packages: ' . $exception->getMessage();
-
-			if ($this->quiet) {
-				$this->log->debug($message);
-			} else {
-				$this->log->error($message);
-			}
+			$this->report('Cart of ' . $weight . ' kg quoted whole, without Correios split in packages: ' . $exception->getMessage());
 
 			return $this->api->quote($request);
 		}
@@ -86,6 +80,28 @@ final class Splitter {
 
 		$this->log->debug('Cart of ' . $weight . ' kg quoted in ' . count($packages) . ' packages of up to ' . $this->max_weight . ' kg');
 
-		return Matcher::match($this->api->quoteAll($requests));
+		$results = $this->api->quoteAll($requests);
+
+		foreach ($results as $index => $result) {
+			if ($result instanceof UnavailableException) {
+				$this->report(($index === Matcher::FULL ? 'Whole cart could not be quoted, other carriers left out: ' : 'Package ' . $index . ' could not be quoted, Correios left out: ') . $result->getMessage());
+			}
+		}
+
+		return Matcher::match($results);
+	}
+
+	/**
+	 * Logs as an error at checkout and only in debug for the simulator, which buyers call far more.
+	 *
+	 * @param string $message
+	 * @return void
+	 */
+	private function report(string $message): void {
+		if ($this->quiet) {
+			$this->log->debug($message);
+		} else {
+			$this->log->error($message);
+		}
 	}
 }

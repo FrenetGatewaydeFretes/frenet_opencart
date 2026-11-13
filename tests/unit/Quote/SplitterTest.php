@@ -76,6 +76,25 @@ final class SplitterTest extends TestCase {
 		self::assertSame(['ERROR Cart of 275 kg quoted whole, without Correios split in packages: the cart needs more than 10 packages of up to 30 kg'], $this->writer->lines);
 	}
 
+	public function testLogsAPackageThatCouldNotBeQuotedAndLeavesCorreiosOut(): void {
+		$client = new FakeClient([new Response(200, self::FULL), new Response(200, self::PACKAGE_1), new Response(400, '{"Message":"Peso inválido"}')]);
+
+		$result = $this->createSplitter($client)->quote($this->request(15.0, 3));
+
+		self::assertSame(['Jadlog'], [$result->getServices()[0]->getDescription()]);
+		self::assertCount(1, $result->getServices());
+		self::assertSame(['ERROR Package 2 could not be quoted, Correios left out: The Frenet API refused the quote with HTTP 400: Peso inválido (not retried)'], $this->writer->lines);
+	}
+
+	public function testLogsTheWholeCartThatCouldNotBeQuotedAndKeepsCorreios(): void {
+		$client = new FakeClient([new Response(401, '{"Message":"Acesso negado!"}'), new Response(200, self::PACKAGE_1), new Response(200, self::PACKAGE_2)]);
+
+		$result = $this->createSplitter($client)->quote($this->request(15.0, 3));
+
+		self::assertSame(65.5, $result->getServices()[0]->getPrice());
+		self::assertSame(['ERROR Whole cart could not be quoted, other carriers left out: The Frenet API refused the quote with HTTP 401: Acesso negado! (not retried)'], $this->writer->lines);
+	}
+
 	public function testLogsWhyTheCartWasNotSplitOnlyInDebugWhenQuiet(): void {
 		$client = new FakeClient([new Response(200, self::FULL)]);
 
