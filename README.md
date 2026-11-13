@@ -58,7 +58,7 @@ Configuração
 | Peso máximo por pacote | Peso de cada pacote na divisão. Padrão: 30 kg, o limite dos Correios. Acima disso, os pacotes mais pesados ficam sem PAC e SEDEX, e o admin avisa ao salvar. |
 | Tempo limite e Tentativas | Quanto cada cotação espera a Frenet responder (2 a 10 s) e quantas vezes tenta (1 a 3). |
 | Simulador na página do produto | Liga e desliga o campo **Calcule o frete** na página do produto. Vem ligado. |
-| Limite de simulações por IP | Quantas simulações cada visitante pode fazer por minuto. Padrão: 60. Use 0 para não limitar. |
+| Limite de simulações por IP | Quantas simulações cada visitante pode fazer por minuto. Padrão: 60. Use 0 para não limitar. Com a divisão em pacotes, uma simulação dividida conta uma vez por cotação enviada à Frenet. |
 | Taxa de produtos virtuais | Liga e desliga a taxa cobrada nos pedidos com produtos sem envio. Vem desligada. Veja [Taxa de produtos virtuais](#taxa-de-produtos-virtuais). |
 | Valor da taxa | Valor fixo cobrado uma vez por pedido, na moeda padrão da loja, como `4,90`. Precisa ser maior que zero; pode ficar em branco com a taxa desligada. |
 | Nome da taxa | Nome que o comprador vê no carrinho, no checkout e no pedido. Em branco, usa **Taxa de processamento do pedido**. |
@@ -73,7 +73,7 @@ Simulador de frete na página do produto
 
 O comprador digita o CEP na página do produto e vê os fretes Frenet com o preço e o prazo que o carrinho mostraria para aquele produto, quantidade e opções. O simulador usa a região geográfica, o grupo de impostos e as regras de preço do produto como o checkout.
 
-Cada visitante pode simular até o **Limite de simulações por IP** por minuto. A loja atrás do Cloudflare, de um balanceador ou de um proxy na própria rede conta cada visitante pelo IP dele, sem nenhuma configuração no servidor.
+Cada visitante pode simular até o **Limite de simulações por IP** por minuto. Uma simulação que a **Divisão em pacotes** divide conta uma vez por cotação enviada à Frenet: dividida em 2 pacotes, conta 3 (o carrinho inteiro e os 2 pacotes). Assim o simulador público nunca faz mais chamadas à Frenet com o token da loja do que o limite. A loja atrás do Cloudflare, de um balanceador ou de um proxy na própria rede conta cada visitante pelo IP dele, sem nenhuma configuração no servidor.
 
 Divisão em pacotes
 ------------------------

@@ -13,6 +13,11 @@ class ControllerExtensionShippingFrenet extends Controller {
 	private const BLOCK_END = '</div>';
 
 	/**
+	 * @var int
+	 */
+	private $sent_quotes = 0;
+
+	/**
 	 * Adds the shipping simulator below the add to cart button, as the catalog/view/product/product/after event.
 	 *
 	 * @param string $route
@@ -84,7 +89,9 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 		$log = new FrenetLog(new \Log(FrenetLog::FILENAME), $config->isDebug());
 
-		$retry_after = (new RateLimit($this->db, DB_PREFIX, $log, $config->getSimulatorLimit()))->hit(ClientIp::fromServer($this->request->server));
+		$rate_limit = new RateLimit($this->db, DB_PREFIX, $log, $config->getSimulatorLimit());
+		$client_ip = ClientIp::fromServer($this->request->server);
+		$retry_after = $rate_limit->hit($client_ip);
 
 		if ($retry_after) {
 			$this->response->addHeader($this->getProtocol() . ' 429 Too Many Requests');
@@ -102,6 +109,8 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 			$json = ['error' => ['warning' => $this->language->get('error_unavailable')]];
 		}
+
+		$rate_limit->hit($client_ip, $this->sent_quotes - 1);
 
 		$this->respond($json);
 	}
@@ -157,6 +166,8 @@ class ControllerExtensionShippingFrenet extends Controller {
 		$this->setTaxAddresses($address);
 
 		$method = $this->model_extension_shipping_frenet->getProductQuote($address, $product);
+
+		$this->sent_quotes = (int)($method['sent_quotes'] ?? 0);
 
 		if (!$method) {
 			return ['error' => ['warning' => $this->language->get('error_no_services')]];

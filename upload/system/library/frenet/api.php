@@ -68,6 +68,11 @@ class Api {
 	private $quote_url;
 
 	/**
+	 * @var int
+	 */
+	private $sent = 0;
+
+	/**
 	 * @param Client $client
 	 * @param Cache $cache
 	 * @param Log $log
@@ -147,6 +152,8 @@ class Api {
 				usleep(self::RETRY_DELAY);
 			}
 
+			$this->sent += count($bodies);
+
 			foreach ($this->client->postAll($this->quote_url, $bodies, $this->getHeaders(), $this->timeout) as $index => $answer) {
 				$label = count($requests) > 1 ? ' (' . $index . ')' : '';
 
@@ -202,6 +209,15 @@ class Api {
 		}
 
 		return $ordered;
+	}
+
+	/**
+	 * Requests sent to the Frenet API so far, retries included and answers from the cache left out.
+	 *
+	 * @return int
+	 */
+	public function getSentCount(): int {
+		return $this->sent;
 	}
 
 	/**

@@ -17,6 +17,11 @@ class ModelExtensionShippingFrenet extends Model {
 	private const SIMULATION_ATTEMPTS = 1;
 
 	/**
+	 * @var int
+	 */
+	private $sent_quotes = 0;
+
+	/**
 	 * @param array<string, mixed> $address
 	 * @return array<string, mixed>
 	 */
@@ -25,14 +30,19 @@ class ModelExtensionShippingFrenet extends Model {
 	}
 
 	/**
-	 * Quotes the product of the page alone, as Frenet\Simulator\Product builds it, the way the cart would quote it.
+	 * Quotes the product of the page alone, as Frenet\Simulator\Product builds it, the way the cart would quote it, with
+	 * sent_quotes, the requests sent to Frenet, which the simulator limit counts.
 	 *
 	 * @param array<string, mixed> $address
 	 * @param array<string, mixed> $product
 	 * @return array<string, mixed>
 	 */
 	public function getProductQuote(array $address, array $product): array {
-		return $this->quote($address, [$product], true);
+		$this->sent_quotes = 0;
+
+		$method = $this->quote($address, [$product], true);
+
+		return $method ? ['sent_quotes' => $this->sent_quotes] + $method : $method;
 	}
 
 	/**
@@ -124,6 +134,8 @@ class ModelExtensionShippingFrenet extends Model {
 			$log->error('Quote failed: ' . $exception->getMessage(), ['request' => $request->toArray()]);
 
 			return $this->method($config, [], $this->language->get('error_unavailable'));
+		} finally {
+			$this->sent_quotes = $api->getSentCount();
 		}
 
 		if ($result->getErrors()) {

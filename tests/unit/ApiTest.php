@@ -132,6 +132,16 @@ final class ApiTest extends TestCase {
 		self::assertStringStartsWith('DEBUG Quote response {"attempt":1,"status":200', $this->writer->lines[1]);
 	}
 
+	public function testCountsTheRequestsSentWithRetriesButNotTheCachedOnes(): void {
+		$client = new FakeClient([new Response(200, self::SERVICES), new Response(503, ''), new Response(200, self::SERVICES)]);
+		$api = $this->createApi($client, 3);
+
+		$api->quote($this->request());
+		$api->quoteAll(['full' => $this->request(), 1 => $this->request(2)]);
+
+		self::assertSame(3, $api->getSentCount());
+	}
+
 	public function testNamesTheRequestOfEachDebugLineWhenSeveralAreSent(): void {
 		$client = new FakeClient([new Response(200, self::SERVICES), new Response(200, self::SERVICES)]);
 

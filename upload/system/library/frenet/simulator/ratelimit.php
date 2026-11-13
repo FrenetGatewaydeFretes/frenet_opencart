@@ -76,13 +76,14 @@ final class RateLimit {
 	}
 
 	/**
-	 * Counts a quote of the IP and returns 0 within the limit, otherwise the seconds until the minute of the IP ends.
+	 * Counts quotes of the IP and returns 0 within the limit, otherwise the seconds until the minute of the IP ends.
 	 *
 	 * @param string $ip
+	 * @param int $quotes
 	 * @return int
 	 */
-	public function hit(string $ip): int {
-		if ($this->limit <= 0) {
+	public function hit(string $ip, int $quotes = 1): int {
+		if ($this->limit <= 0 || $quotes < 1) {
 			return 0;
 		}
 
@@ -92,7 +93,7 @@ final class RateLimit {
 		$expires = $now + self::WINDOW;
 
 		try {
-			$count = $this->countInTable($key, $now, $expires);
+			$count = $this->countInTable($key, $quotes, $now, $expires);
 
 			if ($count > $this->limit) {
 				$expires = (int)($this->db->query("SELECT `expires` FROM " . $this->table . " WHERE `client` = '" . $key . "'")->row['expires'] ?? $expires);
@@ -103,7 +104,7 @@ final class RateLimit {
 			return 0;
 		}
 
-		if ($count === 1) {
+		if ($count === $quotes) {
 			$this->removeExpired($now);
 		}
 
@@ -113,7 +114,7 @@ final class RateLimit {
 
 		$retry_after = max(1, $expires - $now);
 
-		if ($count === $this->limit + 1) {
+		if ($count - $quotes <= $this->limit) {
 			$this->log->error('Simulator quote limit reached (' . $this->limit . ' quotes per ' . self::WINDOW . ' seconds): IP ' . $client . ' blocked for ' . $retry_after . ' seconds');
 		}
 
@@ -132,17 +133,18 @@ final class RateLimit {
 	}
 
 	/**
-	 * Counts the quote of the client, creating the table first when the module was updated and the admin did not create it yet.
+	 * Counts the quotes of the client, creating the table first when the module was updated and the admin did not create it yet.
 	 *
 	 * @param string $key
+	 * @param int $quotes
 	 * @param int $now
 	 * @param int $expires
 	 * @return int
 	 * @throws \Throwable
 	 */
-	private function countInTable(string $key, int $now, int $expires): int {
+	private function countInTable(string $key, int $quotes, int $now, int $expires): int {
 		try {
-			return $this->upsert($key, $now, $expires);
+			return $this->upsert($key, $quotes, $now, $expires);
 		} catch (\Throwable $exception) {
 			try {
 				self::createTable($this->db, $this->prefix);
@@ -150,18 +152,19 @@ final class RateLimit {
 				throw $exception;
 			}
 
-			return $this->upsert($key, $now, $expires);
+			return $this->upsert($key, $quotes, $now, $expires);
 		}
 	}
 
 	/**
 	 * @param string $key
+	 * @param int $quotes
 	 * @param int $now
 	 * @param int $expires
 	 * @return int
 	 */
-	private function upsert(string $key, int $now, int $expires): int {
-		$this->db->query("INSERT INTO " . $this->table . " (`client`, `count`, `expires`) VALUES ('" . $key . "', LAST_INSERT_ID(1), " . $expires . ") ON DUPLICATE KEY UPDATE `count` = LAST_INSERT_ID(IF(`expires` <= " . $now . ", 1, `count` + 1)), `expires` = IF(`expires` <= " . $now . ", " . $expires . ", `expires`)");
+	private function upsert(string $key, int $quotes, int $now, int $expires): int {
+		$this->db->query("INSERT INTO " . $this->table . " (`client`, `count`, `expires`) VALUES ('" . $key . "', LAST_INSERT_ID(" . $quotes . "), " . $expires . ") ON DUPLICATE KEY UPDATE `count` = LAST_INSERT_ID(IF(`expires` <= " . $now . ", " . $quotes . ", `count` + " . $quotes . ")), `expires` = IF(`expires` <= " . $now . ", " . $expires . ", `expires`)");
 
 		return (int)($this->db->query("SELECT LAST_INSERT_ID() AS `count`")->row['count'] ?? 0);
 	}
