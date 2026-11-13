@@ -16,6 +16,13 @@ final class ParserTest extends TestCase {
 		self::assertSame('PAC', $services[0]->getDescription());
 		self::assertSame(25.9, $services[0]->getPrice());
 		self::assertSame(7, $services[0]->getDeliveryTime());
+		self::assertSame('Correios', $services[0]->getCarrier());
+	}
+
+	public function testReadsAServiceWithoutCarrierAsAnEmptyCarrier(): void {
+		$services = (new Parser())->parse('{"ShippingSevicesArray":[{"ServiceCode":"JADLOG","ServiceDescription":"Jadlog","ShippingPrice":"30.00","Carrier":null}]}')->getServices();
+
+		self::assertSame('', $services[0]->getCarrier());
 	}
 
 	public function testReadsAResponseWithASingleService(): void {

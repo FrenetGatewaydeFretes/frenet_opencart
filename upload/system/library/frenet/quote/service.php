@@ -28,16 +28,23 @@ class Service {
 	private $delivery_time;
 
 	/**
+	 * @var string
+	 */
+	private $carrier;
+
+	/**
 	 * @param string $code
 	 * @param string $description
 	 * @param float $price
 	 * @param int $delivery_time
+	 * @param string $carrier
 	 */
-	public function __construct(string $code, string $description, float $price, int $delivery_time) {
+	public function __construct(string $code, string $description, float $price, int $delivery_time, string $carrier = '') {
 		$this->code = $code;
 		$this->description = $description;
 		$this->price = $price;
 		$this->delivery_time = $delivery_time;
+		$this->carrier = $carrier;
 	}
 
 	/**
@@ -52,6 +59,15 @@ class Service {
 	 */
 	public function getDescription(): string {
 		return $this->description;
+	}
+
+	/**
+	 * Name of the carrier of the service, such as Correios or Jadlog.
+	 *
+	 * @return string
+	 */
+	public function getCarrier(): string {
+		return $this->carrier;
 	}
 
 	/**
