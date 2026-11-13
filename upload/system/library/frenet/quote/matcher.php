@@ -41,6 +41,10 @@ final class Matcher {
 			}
 
 			foreach ($result->getErrors() as $error) {
+				if (!self::isCorreios($error['carrier'])) {
+					continue;
+				}
+
 				$error['message'] = 'Package ' . $package . ': ' . $error['message'];
 				$errors[] = $error;
 			}

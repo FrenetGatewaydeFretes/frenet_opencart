@@ -42,6 +42,17 @@ final class MatcherTest extends TestCase {
 		self::assertSame('Package 3: Peso excedido', $result->getErrors()[0]['message']);
 	}
 
+	public function testKeepsOnlyTheCorreiosErrorsOfThePackages(): void {
+		$package = new Result([], [
+			['code' => '03298', 'description' => 'PAC', 'carrier' => 'Correios', 'message' => 'CEP sem entrega'],
+			['code' => 'LOGGI', 'description' => 'Loggi', 'carrier' => 'Loggi', 'message' => 'CEP fora da área']
+		], '');
+
+		$result = Matcher::match(['full' => $this->answer([]), 1 => $package, 2 => $this->answer([])]);
+
+		self::assertSame(['Package 1: CEP sem entrega'], array_column($result->getErrors(), 'message'));
+	}
+
 	public function testLeavesOutCorreiosWhenAPackageCouldNotBeQuoted(): void {
 		$result = Matcher::match([
 			'full' => $this->answer([$this->service('JADLOG', 'Jadlog', 'Jadlog', 70.0, 4)]),
