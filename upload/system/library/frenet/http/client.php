@@ -80,9 +80,11 @@ class Client {
 		$results = $this->run($multi, $handles);
 
 		foreach ($handles as $key => $handle) {
-			$code = $results[$key] ?? CURLE_OK;
+			$code = $results[$key] ?? null;
 
-			if ($code !== CURLE_OK) {
+			if ($code === null) {
+				$answers[$key] = new Exception('The transfer stopped before an answer came back');
+			} elseif ($code !== CURLE_OK) {
 				$answers[$key] = new Exception(curl_error($handle) ?: curl_strerror($code), $code);
 			} else {
 				$answers[$key] = new Response((int)curl_getinfo($handle, CURLINFO_RESPONSE_CODE), (string)curl_multi_getcontent($handle));
@@ -103,7 +105,7 @@ class Client {
 	}
 
 	/**
-	 * Runs the transfers until all finish and returns the cURL result code of each one.
+	 * Runs the transfers until all finish or cURL fails, and returns the result code of each transfer that finished.
 	 *
 	 * @param resource $multi
 	 * @param array<int|string, resource> $handles
@@ -113,7 +115,9 @@ class Client {
 		$results = [];
 
 		do {
-			$status = curl_multi_exec($multi, $running);
+			do {
+				$status = curl_multi_exec($multi, $running);
+			} while ($status === CURLM_CALL_MULTI_PERFORM);
 
 			while ($info = curl_multi_info_read($multi)) {
 				$key = array_search($info['handle'], $handles, true);
