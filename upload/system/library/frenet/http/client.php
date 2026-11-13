@@ -60,18 +60,7 @@ class Client {
 				continue;
 			}
 
-			curl_setopt_array($handle, [
-				CURLOPT_POST           => true,
-				CURLOPT_POSTFIELDS     => $body,
-				CURLOPT_HTTPHEADER     => $this->formatHeaders($headers),
-				CURLOPT_RETURNTRANSFER => true,
-				CURLOPT_CONNECTTIMEOUT => $timeout,
-				CURLOPT_TIMEOUT        => $timeout,
-				CURLOPT_FOLLOWLOCATION => false,
-				CURLOPT_PROTOCOLS      => CURLPROTO_HTTP | CURLPROTO_HTTPS,
-				CURLOPT_SSL_VERIFYPEER => true,
-				CURLOPT_SSL_VERIFYHOST => 2
-			]);
+			curl_setopt_array($handle, $this->getOptions($body, $headers, $timeout));
 
 			curl_multi_add_handle($multi, $handle);
 			$handles[$key] = $handle;
@@ -133,6 +122,35 @@ class Client {
 		} while ($running && $status === CURLM_OK);
 
 		return $results;
+	}
+
+	/**
+	 * Options of one request, waiting to share an HTTP/2 connection so the requests sent together open a single connection.
+	 *
+	 * @param string $body
+	 * @param array<string, string> $headers
+	 * @param int $timeout
+	 * @return array<int, mixed>
+	 */
+	private function getOptions(string $body, array $headers, int $timeout): array {
+		$options = [
+			CURLOPT_POST           => true,
+			CURLOPT_POSTFIELDS     => $body,
+			CURLOPT_HTTPHEADER     => $this->formatHeaders($headers),
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_CONNECTTIMEOUT => $timeout,
+			CURLOPT_TIMEOUT        => $timeout,
+			CURLOPT_FOLLOWLOCATION => false,
+			CURLOPT_PROTOCOLS      => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+			CURLOPT_SSL_VERIFYPEER => true,
+			CURLOPT_SSL_VERIFYHOST => 2
+		];
+
+		if (defined('CURLOPT_PIPEWAIT')) {
+			$options[constant('CURLOPT_PIPEWAIT')] = true;
+		}
+
+		return $options;
 	}
 
 	/**
