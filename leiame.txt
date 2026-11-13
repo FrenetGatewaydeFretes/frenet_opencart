@@ -43,6 +43,13 @@ numa linha dos totais do pedido.
 2 - O total "Frenet - taxa de produtos virtuais" é instalado sozinho em Extensões -> Totais. Não o desinstale:
     se for desinstalado, salve de novo a configuração da Frenet com a taxa ligada.
 
+Divisão em pacotes
+------------------------------------
+
+Os Correios não cotam pacotes acima de 30 kg. Com a Divisão em pacotes ligada, um carrinho acima do Peso máximo
+por pacote é cotado em pacotes: cada serviço dos Correios sai com a soma dos pacotes e o maior prazo, só quando
+todos os pacotes foram cotados; as outras transportadoras são cotadas com o carrinho inteiro. Vale até 10 pacotes.
+
 Por que abrir a configuração depois de atualizar
 ------------------------------------
 
