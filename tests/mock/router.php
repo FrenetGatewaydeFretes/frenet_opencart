@@ -56,6 +56,8 @@ if ($path === '/shipping/quote') {
 	} elseif (preg_match('#^status-(\d{3})$#', $token, $match)) {
 		http_response_code((int)$match[1]);
 		echo json_encode(['Message' => 'Mock answering HTTP ' . $match[1]]);
+	} elseif ($token === 'packages') {
+		echo json_encode(packagesQuote(json_decode((string)file_get_contents('php://input'), true)));
 	} elseif ($token === 'flaky' && flakyFails()) {
 		http_response_code(503);
 		echo json_encode(['Message' => 'Mock failing every other quote']);
@@ -78,6 +80,34 @@ function flakyFails(): bool {
 	file_put_contents($counter, (string)$count);
 
 	return $count % 2 === 1;
+}
+
+/**
+ * Quote that depends on the weight sent, like the Correios limit: PAC and SEDEX refuse more than 30 kg, PAC refuses less
+ * than 5 kg, SEDEX takes 6 days above 20 kg, and Jadlog quotes any weight.
+ *
+ * @param mixed $body
+ * @return array<string, mixed>
+ */
+function packagesQuote($body): array {
+	$weight = 0.0;
+
+	foreach (is_array($body) ? (array)($body['ShippingItemArray'] ?? []) : [] as $item) {
+		$weight += (float)($item['Weight'] ?? 0) * (int)($item['Quantity'] ?? 0);
+	}
+
+	$weight = round($weight, 3);
+	$correios = static function (string $code, string $description, string $error, float $price, int $days): array {
+		$service = ['ServiceCode' => $code, 'ServiceDescription' => $description, 'Carrier' => 'Correios', 'CarrierCode' => 'COR'];
+
+		return $error !== '' ? $service + ['Error' => true, 'Msg' => $error] : $service + ['ShippingPrice' => number_format($price, 2, '.', ''), 'DeliveryTime' => (string)$days, 'Error' => false, 'Msg' => ''];
+	};
+
+	return ['ShippingSevicesArray' => [
+		$correios('03298', 'PAC', $weight > 30 ? 'Peso excedido' : ($weight < 5 ? 'PAC indisponível para pacotes leves' : ''), 10 + $weight, 7),
+		$correios('03220', 'SEDEX', $weight > 30 ? 'Peso excedido' : '', 20 + 2 * $weight, $weight > 20 ? 6 : 3),
+		['ServiceCode' => 'JADLOG', 'ServiceDescription' => 'Jadlog', 'Carrier' => 'Jadlog', 'CarrierCode' => 'JAD', 'ShippingPrice' => number_format(50 + $weight, 2, '.', ''), 'DeliveryTime' => '4', 'Error' => false, 'Msg' => '']
+	]];
 }
 
 http_response_code(404);

@@ -44,6 +44,21 @@ final class ApiMockTest extends TestCase {
 		self::assertSame('Erro: Peso excedido.', $errors->getErrors()[0]['message']);
 	}
 
+	public function testAnswersByWeightForThePackageSplit(): void {
+		$api = $this->createApi('packages');
+		$heavy = $api->quote(new Request('01310100', '20040020', 'BR', 100.0, '', [new Item(15.0, 30.0, 4.0, 20.0, 3, 'MBA', '')], '3.0.5.1'));
+		$package = $api->quote(new Request('01310100', '20040020', 'BR', 100.0, '', [new Item(15.0, 30.0, 4.0, 20.0, 2, 'MBA', '')], '3.0.5.1'));
+
+		self::assertSame(['Jadlog'], array_map(static function ($service): string {
+			return $service->getCarrier();
+		}, $heavy->getServices()));
+		self::assertSame('Peso excedido', $heavy->getErrors()[0]['message']);
+		self::assertSame([40.0, 80.0, 80.0], array_map(static function ($service): float {
+			return $service->getPrice();
+		}, $package->getServices()));
+		self::assertSame(6, $package->getServices()[1]->getDeliveryTime());
+	}
+
 	/**
 	 * @param string $token
 	 * @return Api
