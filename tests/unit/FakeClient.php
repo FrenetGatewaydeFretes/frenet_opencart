@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Frenet\Tests;
 
 use Frenet\Http\Client;
+use Frenet\Http\Exception;
 use Frenet\Http\Response;
 
 /**
@@ -27,19 +28,30 @@ class FakeClient extends Client {
 		$this->answers = $answers;
 	}
 
-	public function post(string $url, string $body, array $headers, int $timeout): Response {
-		$this->requests[] = ['url' => $url, 'body' => $body, 'headers' => $headers, 'timeout' => $timeout];
+	/**
+	 * @inheritDoc
+	 */
+	public function postAll(string $url, array $bodies, array $headers, int $timeout): array {
+		$answers = [];
 
-		$answer = array_shift($this->answers);
+		foreach ($bodies as $key => $body) {
+			$this->requests[] = ['url' => $url, 'body' => $body, 'headers' => $headers, 'timeout' => $timeout];
 
-		if ($answer instanceof \Throwable) {
+			$answer = array_shift($this->answers);
+
+			if ($answer === null) {
+				throw new \LogicException('No answer queued for request ' . count($this->requests));
+			}
+
+			if ($answer instanceof Exception || $answer instanceof Response) {
+				$answers[$key] = $answer;
+
+				continue;
+			}
+
 			throw $answer;
 		}
 
-		if ($answer === null) {
-			throw new \LogicException('No answer queued for request ' . count($this->requests));
-		}
-
-		return $answer;
+		return $answers;
 	}
 }

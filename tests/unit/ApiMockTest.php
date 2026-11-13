@@ -9,6 +9,7 @@ use Frenet\Log;
 use Frenet\Quote\Cache;
 use Frenet\Quote\Item;
 use Frenet\Quote\Request;
+use Frenet\Quote\UnavailableException;
 use PHPUnit\Framework\TestCase;
 
 final class ApiMockTest extends TestCase {
@@ -42,6 +43,34 @@ final class ApiMockTest extends TestCase {
 		self::assertCount(2, $errors->getServices());
 		self::assertSame(0, $errors->getServices()[1]->getDeliveryTime());
 		self::assertSame('Erro: Peso excedido.', $errors->getErrors()[0]['message']);
+	}
+
+	public function testAnswersByWeightForThePackageSplit(): void {
+		$api = $this->createApi('packages');
+		$heavy = $api->quote(new Request('01310100', '20040020', 'BR', 100.0, '', [new Item(15.0, 30.0, 4.0, 20.0, 3, 'MBA', '')], '3.0.5.1'));
+		$package = $api->quote(new Request('01310100', '20040020', 'BR', 100.0, '', [new Item(15.0, 30.0, 4.0, 20.0, 2, 'MBA', '')], '3.0.5.1'));
+
+		self::assertSame(['Jadlog'], array_map(static function ($service): string {
+			return $service->getCarrier();
+		}, $heavy->getServices()));
+		self::assertSame('Peso excedido', $heavy->getErrors()[0]['message']);
+		self::assertSame([40.0, 80.0, 80.0], array_map(static function ($service): float {
+			return $service->getPrice();
+		}, $package->getServices()));
+		self::assertSame(6, $package->getServices()[1]->getDeliveryTime());
+	}
+
+	public function testAnswersTooManyRequestsForTheFifteenKiloPackageWhenBusy(): void {
+		$api = $this->createApi('packages-busy');
+
+		try {
+			$api->quote(new Request('01310100', '20040020', 'BR', 100.0, '', [new Item(15.0, 30.0, 4.0, 20.0, 1, 'MBA', '')], '3.0.5.1'));
+			self::fail('Expected the busy mock to refuse the 15 kg package');
+		} catch (UnavailableException $exception) {
+			self::assertStringContainsString('HTTP 429: Too many requests', $exception->getMessage());
+		}
+
+		self::assertCount(3, $api->quote(new Request('01310100', '20040020', 'BR', 100.0, '', [new Item(15.0, 30.0, 4.0, 20.0, 2, 'MBA', '')], '3.0.5.1'))->getServices());
 	}
 
 	/**

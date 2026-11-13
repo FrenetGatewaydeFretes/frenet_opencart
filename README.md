@@ -54,9 +54,11 @@ Configuração
 | Classe de medida em centímetros | Classe de medida da loja que corresponde ao centímetro. |
 | Altura, largura e comprimento mínimos | Menores medidas enviadas à Frenet. Padrão: 2 × 11 × 16 cm, as mínimas dos Correios. |
 | Peso padrão | Peso enviado para o produto cadastrado sem peso. Padrão: 1 kg. |
+| Divisão em pacotes | Cota em pacotes o carrinho mais pesado que o peso máximo por pacote. Vem desligada. Veja [Divisão em pacotes](#divisão-em-pacotes). |
+| Peso máximo por pacote | Peso de cada pacote na divisão. Padrão: 30 kg, o limite dos Correios. Acima disso, os pacotes mais pesados ficam sem PAC e SEDEX, e o admin avisa ao salvar. |
 | Tempo limite e Tentativas | Quanto cada cotação espera a Frenet responder (2 a 10 s) e quantas vezes tenta (1 a 3). |
 | Simulador na página do produto | Liga e desliga o campo **Calcule o frete** na página do produto. Vem ligado. |
-| Limite de simulações por IP | Quantas simulações cada visitante pode fazer por minuto. Padrão: 60. Use 0 para não limitar. |
+| Limite de simulações por IP | Quantas simulações cada visitante pode fazer por minuto. Padrão: 60. Use 0 para não limitar. Com a divisão em pacotes, uma simulação dividida conta uma vez por cotação enviada à Frenet. |
 | Taxa de produtos virtuais | Liga e desliga a taxa cobrada nos pedidos com produtos sem envio. Vem desligada. Veja [Taxa de produtos virtuais](#taxa-de-produtos-virtuais). |
 | Valor da taxa | Valor fixo cobrado uma vez por pedido, na moeda padrão da loja, como `4,90`. Precisa ser maior que zero; pode ficar em branco com a taxa desligada. |
 | Nome da taxa | Nome que o comprador vê no carrinho, no checkout e no pedido. Em branco, usa **Taxa de processamento do pedido**. |
@@ -71,7 +73,20 @@ Simulador de frete na página do produto
 
 O comprador digita o CEP na página do produto e vê os fretes Frenet com o preço e o prazo que o carrinho mostraria para aquele produto, quantidade e opções. O simulador usa a região geográfica, o grupo de impostos e as regras de preço do produto como o checkout.
 
-Cada visitante pode simular até o **Limite de simulações por IP** por minuto. A loja atrás do Cloudflare, de um balanceador ou de um proxy na própria rede conta cada visitante pelo IP dele, sem nenhuma configuração no servidor.
+Cada visitante pode simular até o **Limite de simulações por IP** por minuto. Uma simulação que a **Divisão em pacotes** divide conta uma vez por cotação enviada à Frenet: dividida em 2 pacotes, conta 3 (o carrinho inteiro e os 2 pacotes). Assim o simulador público nunca faz mais chamadas à Frenet com o token da loja do que o limite. A loja atrás do Cloudflare, de um balanceador ou de um proxy na própria rede conta cada visitante pelo IP dele, sem nenhuma configuração no servidor.
+
+Divisão em pacotes
+------------------------
+
+Os Correios não cotam um pacote acima de 30 kg. Sem a divisão, um carrinho mais pesado que isso fica sem PAC e SEDEX no checkout. Com a **Divisão em pacotes** ligada, um carrinho acima do **Peso máximo por pacote** é dividido em pacotes e cotado assim:
+
+* **Correios:** cada pacote é cotado à parte. O serviço aparece com a soma dos preços dos pacotes e o maior prazo entre eles, e só se todos os pacotes foram cotados: se um pacote não tiver PAC, o PAC não aparece.
+* **Demais transportadoras** (Jadlog, Loggi, J&T...): cotadas com o carrinho inteiro, como sem a divisão.
+* As cotações do carrinho inteiro e dos pacotes saem ao mesmo tempo, então a etapa de frete leva quase o mesmo tempo de uma cotação só.
+* Os produtos entram nos pacotes na ordem do carrinho, enchendo um pacote antes de abrir o próximo. Cada pacote declara o valor dos próprios produtos.
+* O carrinho é cotado inteiro, sem dividir, quando um único produto pesa mais que o pacote ou quando seriam necessários mais de 10 pacotes. O motivo vai para o `frenet.log`.
+* O peso é sempre comparado em quilos, mesmo numa loja configurada em libras.
+* O simulador da página do produto também divide, para mostrar o mesmo frete que o carrinho.
 
 Taxa de produtos virtuais
 ------------------------
@@ -117,6 +132,8 @@ Problemas comuns
 4. No carrinho só com produtos sem envio, o total **Frenet - taxa de produtos virtuais** aparece instalado e habilitado em **Extensões → Totais**? Se alguém o desinstalou, abra a configuração da Frenet e clique em **Salvar** com a taxa ligada: ele é instalado de novo.
 5. O endereço de pagamento está na **Região geográfica** da Frenet?
 6. O comprador usou um cupom com frete grátis? Ele tira a taxa também.
+
+**Os Correios não aparecem num carrinho pesado.** Ligue a **Divisão em pacotes**. Com ela ligada, confira no `frenet.log` se o carrinho foi cotado inteiro porque um produto pesa mais que o pacote ou porque seriam mais de 10 pacotes, e confira o peso dos produtos.
 
 **O simulador pede para aguardar um minuto.** O visitante passou do **Limite de simulações por IP**. Aumente o limite ou use 0 para não limitar.
 

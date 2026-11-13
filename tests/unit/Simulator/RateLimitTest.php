@@ -58,6 +58,26 @@ final class RateLimitTest extends TestCase {
 		self::assertStringStartsWith('ERROR Simulator quote limit reached (1 quotes per 60 seconds): IP 203.0.113.7 blocked for ', $this->writer->lines[0]);
 	}
 
+	public function testCountsEachQuoteOfASplitCart(): void {
+		$limit = $this->createRateLimit(5);
+
+		self::assertSame(0, $limit->hit('203.0.113.7'));
+		self::assertSame(0, $limit->hit('203.0.113.7', 3));
+		self::assertSame([], $this->writer->lines);
+		self::assertSame(0, $limit->hit('203.0.113.7'));
+		self::assertGreaterThan(0, $limit->hit('203.0.113.7', 2));
+		self::assertCount(1, $this->writer->lines);
+		self::assertGreaterThan(0, $limit->hit('203.0.113.7'));
+		self::assertCount(1, $this->writer->lines);
+	}
+
+	public function testIgnoresNoQuote(): void {
+		$limit = $this->createRateLimit(1);
+
+		self::assertSame(0, $limit->hit('203.0.113.7', 0));
+		self::assertSame([], $this->db->queries);
+	}
+
 	public function testCountsEachIpApart(): void {
 		$limit = $this->createRateLimit(1);
 

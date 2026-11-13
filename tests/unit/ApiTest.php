@@ -93,6 +93,19 @@ final class ApiTest extends TestCase {
 		self::assertCount(1, $client->requests);
 	}
 
+	public function testRetriesTooManyRequestsAndRequestTimeout(): void {
+		$client = new FakeClient([new Response(429, '{"Message":"Too many requests"}'), new Response(408, ''), new Response(200, self::SERVICES)]);
+
+		$result = $this->createApi($client, 3)->quote($this->request());
+
+		self::assertCount(3, $client->requests);
+		self::assertSame('SEDEX', $result->getServices()[0]->getDescription());
+		self::assertSame([
+			'ERROR Quote attempt 1/3 failed: HTTP 429: Too many requests',
+			'ERROR Quote attempt 2/3 failed: HTTP 408'
+		], $this->writer->lines);
+	}
+
 	public function testSendsOnceWhenASingleAttemptIsConfigured(): void {
 		$client = new FakeClient([new Response(500, ''), new Response(200, self::SERVICES)]);
 
@@ -117,6 +130,27 @@ final class ApiTest extends TestCase {
 		self::assertStringContainsString('"RecipientCEP":"20040020"', $this->writer->lines[0]);
 		self::assertStringNotContainsString('abc123', implode("\n", $this->writer->lines));
 		self::assertStringStartsWith('DEBUG Quote response {"attempt":1,"status":200', $this->writer->lines[1]);
+	}
+
+	public function testCountsTheRequestsSentWithRetriesButNotTheCachedOnes(): void {
+		$client = new FakeClient([new Response(200, self::SERVICES), new Response(503, ''), new Response(200, self::SERVICES)]);
+		$api = $this->createApi($client, 3);
+
+		$api->quote($this->request());
+		$api->quoteAll(['full' => $this->request(), 1 => $this->request(2)]);
+
+		self::assertSame(3, $api->getSentCount());
+	}
+
+	public function testNamesTheRequestOfEachDebugLineWhenSeveralAreSent(): void {
+		$client = new FakeClient([new Response(200, self::SERVICES), new Response(200, self::SERVICES)]);
+
+		$this->createApi($client, 1, 5, true)->quoteAll(['full' => $this->request(), 1 => $this->request(2)]);
+
+		self::assertStringStartsWith('DEBUG Quote request {"request":"full","url":', $this->writer->lines[0]);
+		self::assertStringStartsWith('DEBUG Quote request {"request":1,"url":', $this->writer->lines[1]);
+		self::assertStringStartsWith('DEBUG Quote response {"request":"full","attempt":1,', $this->writer->lines[2]);
+		self::assertStringStartsWith('DEBUG Quote response {"request":1,"attempt":1,', $this->writer->lines[3]);
 	}
 
 	public function testQuotesTheMockOverHttp(): void {
@@ -290,6 +324,53 @@ final class ApiTest extends TestCase {
 		self::assertStringNotContainsString('abc123', implode("\n", $this->writer->lines));
 	}
 
+	public function testQuotesSeveralRequestsInOneRoundAndKeepsEachResultUnderItsKey(): void {
+		$client = new FakeClient([new Response(200, self::SERVICES), new Response(200, self::SERVICES)]);
+
+		$results = $this->createApi($client, 3)->quoteAll(['full' => $this->request(), 1 => $this->request(2)]);
+
+		self::assertSame(['full', 1], array_keys($results));
+		self::assertCount(2, $client->requests);
+		self::assertSame('SEDEX', $results[1]->getServices()[0]->getDescription());
+		self::assertSame([], $this->writer->lines);
+	}
+
+	public function testRetriesOnlyTheRequestsThatFailed(): void {
+		$client = new FakeClient([new Response(200, self::SERVICES), new Response(503, '{"Message":"Indisponível"}'), new Response(200, self::SERVICES)]);
+
+		$results = $this->createApi($client, 3)->quoteAll(['full' => $this->request(), 1 => $this->request(2)]);
+
+		self::assertCount(3, $client->requests);
+		self::assertSame($client->requests[1]['body'], $client->requests[2]['body']);
+		self::assertSame('SEDEX', $results['full']->getServices()[0]->getDescription());
+		self::assertSame('SEDEX', $results[1]->getServices()[0]->getDescription());
+		self::assertSame(['ERROR Quote attempt 1/3 failed: HTTP 503: Indisponível (1)'], $this->writer->lines);
+	}
+
+	public function testReturnsTheFailureOfEachRequestWithoutStoppingTheOthers(): void {
+		$client = new FakeClient([new Response(401, '{"Message":"Acesso negado!"}'), new Response(200, self::SERVICES), new HttpException('Connection refused', 7)]);
+
+		$results = $this->createApi($client, 1)->quoteAll(['full' => $this->request(), 1 => $this->request(2), 2 => $this->request(3)]);
+
+		self::assertCount(3, $client->requests);
+		self::assertInstanceOf(UnavailableException::class, $results['full']);
+		self::assertSame(401, $results['full']->getCode());
+		self::assertSame('SEDEX', $results[1]->getServices()[0]->getDescription());
+		self::assertInstanceOf(UnavailableException::class, $results[2]);
+		self::assertStringContainsString('Last error: Connection refused', $results[2]->getMessage());
+	}
+
+	public function testSendsOnlyTheRequestsMissingFromTheCache(): void {
+		$this->createApi(new FakeClient([new Response(200, self::SERVICES)]), 1)->quote($this->request(2));
+		$client = new FakeClient([new Response(200, self::SERVICES)]);
+
+		$results = $this->createApi($client, 1)->quoteAll(['full' => $this->request(), 1 => $this->request(2)]);
+
+		self::assertCount(1, $client->requests);
+		self::assertSame(1, json_decode($client->requests[0]['body'], true)['ShippingItemArray'][0]['Quantity']);
+		self::assertSame('SEDEX', $results[1]->getServices()[0]->getDescription());
+	}
+
 	/**
 	 * @param FakeClient $client
 	 * @param int $attempts
@@ -302,9 +383,10 @@ final class ApiTest extends TestCase {
 	}
 
 	/**
+	 * @param int $quantity
 	 * @return Request
 	 */
-	private function request(): Request {
-		return new Request('01310100', '20040020', 'BR', 100.0, '', [new Item(1.0, 16.0, 2.0, 11.0, 1, 'CAM-01', 'Camisetas')], '3.0.5.1');
+	private function request(int $quantity = 1): Request {
+		return new Request('01310100', '20040020', 'BR', 100.0, '', [new Item(1.0, 16.0, 2.0, 11.0, $quantity, 'CAM-01', 'Camisetas')], '3.0.5.1');
 	}
 }

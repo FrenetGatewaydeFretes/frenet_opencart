@@ -42,6 +42,7 @@ class Parser {
 				$errors[] = [
 					'code'        => (string)($entry['ServiceCode'] ?? ''),
 					'description' => (string)($entry['ServiceDescription'] ?? ''),
+					'carrier'     => is_scalar($entry['Carrier'] ?? null) ? trim((string)$entry['Carrier']) : '',
 					'message'     => (string)($entry['Msg'] ?? '')
 				];
 
@@ -56,7 +57,8 @@ class Parser {
 				(string)$entry['ServiceCode'],
 				(string)($entry['ServiceDescription'] ?? ''),
 				(float)str_replace(',', '.', (string)$entry['ShippingPrice']),
-				(int)($entry['DeliveryTime'] ?? 0)
+				(int)($entry['DeliveryTime'] ?? 0),
+				is_scalar($entry['Carrier'] ?? null) ? trim((string)$entry['Carrier']) : ''
 			);
 		}
 

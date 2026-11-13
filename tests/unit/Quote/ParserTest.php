@@ -16,6 +16,13 @@ final class ParserTest extends TestCase {
 		self::assertSame('PAC', $services[0]->getDescription());
 		self::assertSame(25.9, $services[0]->getPrice());
 		self::assertSame(7, $services[0]->getDeliveryTime());
+		self::assertSame('Correios', $services[0]->getCarrier());
+	}
+
+	public function testReadsAServiceWithoutCarrierAsAnEmptyCarrier(): void {
+		$services = (new Parser())->parse('{"ShippingSevicesArray":[{"ServiceCode":"JADLOG","ServiceDescription":"Jadlog","ShippingPrice":"30.00","Carrier":null}]}')->getServices();
+
+		self::assertSame('', $services[0]->getCarrier());
 	}
 
 	public function testReadsAResponseWithASingleService(): void {
@@ -44,8 +51,8 @@ final class ParserTest extends TestCase {
 		self::assertSame(['03220'], $this->codes($result->getServices()));
 		self::assertSame(42.5, $result->getServices()[0]->getPrice());
 		self::assertSame([
-			['code' => '04227', 'description' => 'Mini Envios', 'message' => 'Erro: Peso excedido.'],
-			['code' => '03298', 'description' => 'PAC', 'message' => 'CEP fora da área']
+			['code' => '04227', 'description' => 'Mini Envios', 'carrier' => '', 'message' => 'Erro: Peso excedido.'],
+			['code' => '03298', 'description' => 'PAC', 'carrier' => '', 'message' => 'CEP fora da área']
 		], $result->getErrors());
 	}
 

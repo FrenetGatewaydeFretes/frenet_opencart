@@ -8,12 +8,18 @@ use Frenet\Postcode;
 use Frenet\Quote\Builder;
 use Frenet\Quote\Cache as QuoteCache;
 use Frenet\Quote\Catalog;
+use Frenet\Quote\Splitter;
 use Frenet\VirtualFee;
 
 class ModelExtensionShippingFrenet extends Model {
 	private const FILE_CACHE = 'file';
 
 	private const SIMULATION_ATTEMPTS = 1;
+
+	/**
+	 * @var int
+	 */
+	private $sent_quotes = 0;
 
 	/**
 	 * @param array<string, mixed> $address
@@ -24,14 +30,19 @@ class ModelExtensionShippingFrenet extends Model {
 	}
 
 	/**
-	 * Quotes the product of the page alone, as Frenet\Simulator\Product builds it, the way the cart would quote it.
+	 * Quotes the product of the page alone, as Frenet\Simulator\Product builds it, the way the cart would quote it, with
+	 * sent_quotes, the requests sent to Frenet, which the simulator limit counts.
 	 *
 	 * @param array<string, mixed> $address
 	 * @param array<string, mixed> $product
 	 * @return array<string, mixed>
 	 */
 	public function getProductQuote(array $address, array $product): array {
-		return $this->quote($address, [$product], true);
+		$this->sent_quotes = 0;
+
+		$method = $this->quote($address, [$product], true);
+
+		return $method ? ['sent_quotes' => $this->sent_quotes] + $method : $method;
 	}
 
 	/**
@@ -115,12 +126,16 @@ class ModelExtensionShippingFrenet extends Model {
 
 		$this->load->language('extension/shipping/frenet');
 
+		$api = new Api(new Client(), new QuoteCache($this->cache, !$simulation || $this->config->get('cache_engine') !== self::FILE_CACHE), $log, $config->getToken(), VERSION, $config->getTimeout(), $simulation ? self::SIMULATION_ATTEMPTS : $config->getAttempts());
+
 		try {
-			$result = (new Api(new Client(), new QuoteCache($this->cache, !$simulation || $this->config->get('cache_engine') !== self::FILE_CACHE), $log, $config->getToken(), VERSION, $config->getTimeout(), $simulation ? self::SIMULATION_ATTEMPTS : $config->getAttempts()))->quote($request);
+			$result = $config->isPackageSplitEnabled() ? (new Splitter($api, $log, $config->getPackageMaxWeight(), $simulation))->quote($request) : $api->quote($request);
 		} catch (\Throwable $exception) {
 			$log->error('Quote failed: ' . $exception->getMessage(), ['request' => $request->toArray()]);
 
 			return $this->method($config, [], $this->language->get('error_unavailable'));
+		} finally {
+			$this->sent_quotes = $api->getSentCount();
 		}
 
 		if ($result->getErrors()) {
