@@ -8,6 +8,7 @@ use Frenet\Postcode;
 use Frenet\Quote\Builder;
 use Frenet\Quote\Cache as QuoteCache;
 use Frenet\Quote\Catalog;
+use Frenet\Quote\Splitter;
 use Frenet\VirtualFee;
 
 class ModelExtensionShippingFrenet extends Model {
@@ -115,8 +116,10 @@ class ModelExtensionShippingFrenet extends Model {
 
 		$this->load->language('extension/shipping/frenet');
 
+		$api = new Api(new Client(), new QuoteCache($this->cache, !$simulation || $this->config->get('cache_engine') !== self::FILE_CACHE), $log, $config->getToken(), VERSION, $config->getTimeout(), $simulation ? self::SIMULATION_ATTEMPTS : $config->getAttempts());
+
 		try {
-			$result = (new Api(new Client(), new QuoteCache($this->cache, !$simulation || $this->config->get('cache_engine') !== self::FILE_CACHE), $log, $config->getToken(), VERSION, $config->getTimeout(), $simulation ? self::SIMULATION_ATTEMPTS : $config->getAttempts()))->quote($request);
+			$result = $config->isPackageSplitEnabled() ? (new Splitter($api, $log, $config->getPackageMaxWeight(), $simulation))->quote($request) : $api->quote($request);
 		} catch (\Throwable $exception) {
 			$log->error('Quote failed: ' . $exception->getMessage(), ['request' => $request->toArray()]);
 
