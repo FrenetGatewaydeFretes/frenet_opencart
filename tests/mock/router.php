@@ -58,6 +58,15 @@ if ($path === '/shipping/quote') {
 		echo json_encode(['Message' => 'Mock answering HTTP ' . $match[1]]);
 	} elseif ($token === 'packages') {
 		echo json_encode(packagesQuote(json_decode((string)file_get_contents('php://input'), true)));
+	} elseif ($token === 'packages-busy') {
+		$body = json_decode((string)file_get_contents('php://input'), true);
+
+		if (packagesWeight($body) === 15.0) {
+			http_response_code(429);
+			echo json_encode(['Message' => 'Too many requests']);
+		} else {
+			echo json_encode(packagesQuote($body));
+		}
 	} elseif ($token === 'flaky' && flakyFails()) {
 		http_response_code(503);
 		echo json_encode(['Message' => 'Mock failing every other quote']);
@@ -83,6 +92,22 @@ function flakyFails(): bool {
 }
 
 /**
+ * Weight of the quote in kilograms.
+ *
+ * @param mixed $body
+ * @return float
+ */
+function packagesWeight($body): float {
+	$weight = 0.0;
+
+	foreach (is_array($body) ? (array)($body['ShippingItemArray'] ?? []) : [] as $item) {
+		$weight += (float)($item['Weight'] ?? 0) * (int)($item['Quantity'] ?? 0);
+	}
+
+	return round($weight, 3);
+}
+
+/**
  * Quote that depends on the weight sent, like the Correios limit: PAC and SEDEX refuse more than 30 kg, PAC refuses less
  * than 5 kg, SEDEX takes 6 days above 20 kg, and Jadlog quotes any weight.
  *
@@ -90,13 +115,7 @@ function flakyFails(): bool {
  * @return array<string, mixed>
  */
 function packagesQuote($body): array {
-	$weight = 0.0;
-
-	foreach (is_array($body) ? (array)($body['ShippingItemArray'] ?? []) : [] as $item) {
-		$weight += (float)($item['Weight'] ?? 0) * (int)($item['Quantity'] ?? 0);
-	}
-
-	$weight = round($weight, 3);
+	$weight = packagesWeight($body);
 	$correios = static function (string $code, string $description, string $error, float $price, int $days): array {
 		$service = ['ServiceCode' => $code, 'ServiceDescription' => $description, 'Carrier' => 'Correios', 'CarrierCode' => 'COR'];
 

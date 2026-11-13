@@ -192,6 +192,8 @@ docker run --rm -v "$PWD":/app -w /app php:7.1-cli sh -c 'find upload -name "*.p
 | `POST /shipping/quote` com `token: empty` | 200 sem serviços, com `Message` (`tests/mock/fixtures/quote-empty.json`) |
 | `POST /shipping/quote` com `token: with-errors` | 200 com SEDEX, Jadlog sem `DeliveryTime` e Mini Envios com `Error` (`tests/mock/fixtures/quote-errors.json`) |
 | `POST /shipping/quote` com `token: flaky` | alterna 503 e 200, começando pelo 503; o contador fica em `frenet-mock-flaky`, no diretório temporário do mock |
+| `POST /shipping/quote` com `token: packages` | 200 pelo peso enviado, com o limite dos Correios: PAC (R$ 10 + R$ 1/kg, de 5 a 30 kg, 7 dias), SEDEX (R$ 20 + R$ 2/kg, até 30 kg, 6 dias acima de 20 kg e 3 até 20 kg) e Jadlog (R$ 50 + R$ 1/kg, sem limite) |
+| `POST /shipping/quote` com `token: packages-busy` | como `packages`, mas 429 para a cotação de exatamente 15 kg, o segundo pacote de um carrinho de 45 kg |
 | `POST /shipping/quote` com `token: status-503` (ou outro código) | responde com esse status HTTP |
 | `/mock/status/{código}` | responde com esse status HTTP |
 | `/mock/delay/{segundos}` | espera antes de responder, para testar tempo limite |

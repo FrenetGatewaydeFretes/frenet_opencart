@@ -9,6 +9,7 @@ use Frenet\Log;
 use Frenet\Quote\Cache;
 use Frenet\Quote\Item;
 use Frenet\Quote\Request;
+use Frenet\Quote\UnavailableException;
 use PHPUnit\Framework\TestCase;
 
 final class ApiMockTest extends TestCase {
@@ -57,6 +58,19 @@ final class ApiMockTest extends TestCase {
 			return $service->getPrice();
 		}, $package->getServices()));
 		self::assertSame(6, $package->getServices()[1]->getDeliveryTime());
+	}
+
+	public function testAnswersTooManyRequestsForTheFifteenKiloPackageWhenBusy(): void {
+		$api = $this->createApi('packages-busy');
+
+		try {
+			$api->quote(new Request('01310100', '20040020', 'BR', 100.0, '', [new Item(15.0, 30.0, 4.0, 20.0, 1, 'MBA', '')], '3.0.5.1'));
+			self::fail('Expected the busy mock to refuse the 15 kg package');
+		} catch (UnavailableException $exception) {
+			self::assertStringContainsString('HTTP 429: Too many requests', $exception->getMessage());
+		}
+
+		self::assertCount(3, $api->quote(new Request('01310100', '20040020', 'BR', 100.0, '', [new Item(15.0, 30.0, 4.0, 20.0, 2, 'MBA', '')], '3.0.5.1'))->getServices());
 	}
 
 	/**
