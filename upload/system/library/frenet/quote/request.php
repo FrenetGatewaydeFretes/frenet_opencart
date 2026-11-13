@@ -67,6 +67,29 @@ class Request {
 	}
 
 	/**
+	 * @return Item[]
+	 */
+	public function getItems(): array {
+		return $this->items;
+	}
+
+	/**
+	 * Same quote for one package: only its items, declaring the selling price of those items.
+	 *
+	 * @param Item[] $items
+	 * @return self
+	 */
+	public function withItems(array $items): self {
+		$request = clone $this;
+		$request->items = $items;
+		$request->invoice_value = round(array_sum(array_map(static function (Item $item): float {
+			return $item->getValue() * $item->getQuantity();
+		}, $items)), 2);
+
+		return $request;
+	}
+
+	/**
 	 * @return array<string, mixed>
 	 */
 	public function toArray(): array {

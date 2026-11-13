@@ -91,7 +91,8 @@ class Builder {
 				$this->atLeast($this->toCentimetres($product['width'], $product['length_class_id'], $length_class_id), $minimum_width),
 				$quantity,
 				$details['sku'],
-				$details['category']
+				$details['category'],
+				(float)$product['total'] / $quantity
 			);
 
 			$invoice_value += (float)$product['total'];
