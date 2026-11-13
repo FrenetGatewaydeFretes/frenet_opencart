@@ -32,6 +32,8 @@ class ControllerExtensionShippingFrenet extends Controller {
 		'shipping_frenet_minimum_width',
 		'shipping_frenet_minimum_length',
 		'shipping_frenet_default_weight',
+		'shipping_frenet_package_split',
+		'shipping_frenet_package_max_weight',
 		'shipping_frenet_timeout',
 		'shipping_frenet_attempts',
 		'shipping_frenet_simulator',
@@ -54,7 +56,8 @@ class ControllerExtensionShippingFrenet extends Controller {
 		'shipping_frenet_minimum_height' => ['entry_minimum_height', FrenetConfig::DEFAULT_HEIGHT],
 		'shipping_frenet_minimum_width'  => ['entry_minimum_width', FrenetConfig::DEFAULT_WIDTH],
 		'shipping_frenet_minimum_length' => ['entry_minimum_length', FrenetConfig::DEFAULT_LENGTH],
-		'shipping_frenet_default_weight' => ['entry_default_weight', FrenetConfig::DEFAULT_WEIGHT]
+		'shipping_frenet_default_weight' => ['entry_default_weight', FrenetConfig::DEFAULT_WEIGHT],
+		'shipping_frenet_package_max_weight' => ['entry_package_max_weight', FrenetConfig::PACKAGE_MAX_WEIGHT_DEFAULT]
 	];
 
 	/**
@@ -196,6 +199,8 @@ class ControllerExtensionShippingFrenet extends Controller {
 			$data['shipping_frenet_minimum_width'] = $this->formatNumber($frenet_config->getMinimumWidth());
 			$data['shipping_frenet_minimum_length'] = $this->formatNumber($frenet_config->getMinimumLength());
 			$data['shipping_frenet_default_weight'] = $this->formatNumber($frenet_config->getDefaultWeight());
+			$data['shipping_frenet_package_split'] = $frenet_config->isPackageSplitEnabled();
+			$data['shipping_frenet_package_max_weight'] = $this->formatNumber($frenet_config->getPackageMaxWeight());
 			$data['shipping_frenet_virtual_fee_name'] = $frenet_config->getVirtualFeeName();
 
 			$virtual_fee = FrenetConfig::parsePositive($this->config->get('shipping_frenet_virtual_fee_amount'));
