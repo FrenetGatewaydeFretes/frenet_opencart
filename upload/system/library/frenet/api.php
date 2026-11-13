@@ -96,77 +96,124 @@ class Api {
 	 * @throws UnavailableException
 	 */
 	public function quote(Request $request): Result {
-		$payload = $request->toArray();
-		$body = json_encode($payload);
+		$result = $this->quoteAll([$request])[0];
 
-		if ($body === false) {
-			throw new UnavailableException('Could not encode the quote request: ' . json_last_error_msg());
+		if ($result instanceof UnavailableException) {
+			throw $result;
 		}
 
-		$key = $this->cache->getKey($this->token, $body);
-		$cached = $this->readCache($key);
+		return $result;
+	}
 
-		if ($cached !== null) {
-			$this->log->debug('Quote served from the cache', ['key' => $key, 'body' => $payload]);
+	/**
+	 * Quotes the requests at the same time, each from the cache or the API, with the attempts of the settings for each one.
+	 *
+	 * @param array<int|string, Request> $requests
+	 * @return array<int|string, Result|UnavailableException>
+	 */
+	public function quoteAll(array $requests): array {
+		$results = [];
+		$bodies = [];
+		$keys = [];
 
-			return $cached;
+		foreach ($requests as $index => $request) {
+			$payload = $request->toArray();
+			$body = json_encode($payload);
+
+			if ($body === false) {
+				$results[$index] = new UnavailableException('Could not encode the quote request: ' . json_last_error_msg());
+
+				continue;
+			}
+
+			$keys[$index] = $this->cache->getKey($this->token, $body);
+			$cached = $this->readCache($keys[$index]);
+
+			if ($cached !== null) {
+				$this->log->debug('Quote served from the cache', ['key' => $keys[$index], 'body' => $payload]);
+				$results[$index] = $cached;
+
+				continue;
+			}
+
+			$bodies[$index] = $body;
+			$this->log->debug('Quote request', ['url' => $this->quote_url, 'headers' => $this->getHeaders(), 'body' => $payload]);
 		}
 
-		$headers = [
+		$errors = [];
+
+		for ($attempt = 1; $attempt <= $this->attempts && $bodies; $attempt++) {
+			if ($attempt > 1) {
+				usleep(self::RETRY_DELAY);
+			}
+
+			foreach ($this->client->postAll($this->quote_url, $bodies, $this->getHeaders(), $this->timeout) as $index => $answer) {
+				$label = count($requests) > 1 ? ' (' . $index . ')' : '';
+
+				if ($answer instanceof HttpException) {
+					$errors[$index] = $answer->getMessage();
+					$this->logAttempt($attempt, $errors[$index] . $label);
+
+					continue;
+				}
+
+				$this->log->debug('Quote response', ['attempt' => $attempt, 'status' => $answer->getStatusCode(), 'body' => $answer->getBody()]);
+
+				if ($answer->isClientError()) {
+					$results[$index] = new UnavailableException('The Frenet API refused the quote with ' . $this->describe($answer) . ' (not retried)', $answer->getStatusCode());
+					unset($bodies[$index]);
+
+					continue;
+				}
+
+				if (!$answer->isSuccessful()) {
+					$errors[$index] = $this->describe($answer);
+					$this->logAttempt($attempt, $errors[$index] . $label);
+
+					continue;
+				}
+
+				try {
+					$result = (new Parser())->parse($answer->getBody());
+				} catch (Exception $exception) {
+					$errors[$index] = $exception->getMessage();
+					$this->logAttempt($attempt, $errors[$index] . $label);
+
+					continue;
+				}
+
+				if ($result->getServices()) {
+					$this->writeCache($keys[$index], $answer->getBody());
+				}
+
+				$results[$index] = $result;
+				unset($bodies[$index]);
+			}
+		}
+
+		foreach (array_keys($bodies) as $index) {
+			$results[$index] = new UnavailableException('The Frenet API gave no usable answer after ' . $this->attempts . ' attempt(s). Last error: ' . ($errors[$index] ?? ''));
+		}
+
+		$ordered = [];
+
+		foreach (array_keys($requests) as $index) {
+			$ordered[$index] = $results[$index];
+		}
+
+		return $ordered;
+	}
+
+	/**
+	 * @return array<string, string>
+	 */
+	private function getHeaders(): array {
+		return [
 			'Accept'       => 'application/json',
 			'Content-Type' => 'application/json',
 			'User-Agent'   => 'Frenet-' . Request::PLATFORM_NAME . '/' . Module::VERSION . ' (OpenCart ' . $this->opencart_version . ')',
 			'token'        => $this->token
 		];
-
-		$this->log->debug('Quote request', ['url' => $this->quote_url, 'headers' => $headers, 'body' => $payload]);
-
-		$error = '';
-
-		for ($attempt = 1; $attempt <= $this->attempts; $attempt++) {
-			if ($attempt > 1) {
-				usleep(self::RETRY_DELAY);
-			}
-
-			try {
-				$response = $this->client->post($this->quote_url, $body, $headers, $this->timeout);
-			} catch (HttpException $exception) {
-				$error = $exception->getMessage();
-				$this->logAttempt($attempt, $error);
-
-				continue;
-			}
-
-			$this->log->debug('Quote response', ['attempt' => $attempt, 'status' => $response->getStatusCode(), 'body' => $response->getBody()]);
-
-			if ($response->isClientError()) {
-				throw new UnavailableException('The Frenet API refused the quote with ' . $this->describe($response) . ' (not retried)', $response->getStatusCode());
-			}
-
-			if (!$response->isSuccessful()) {
-				$error = $this->describe($response);
-				$this->logAttempt($attempt, $error);
-
-				continue;
-			}
-
-			try {
-				$result = (new Parser())->parse($response->getBody());
-			} catch (Exception $exception) {
-				$error = $exception->getMessage();
-				$this->logAttempt($attempt, $error);
-
-				continue;
-			}
-
-			if ($result->getServices()) {
-				$this->writeCache($key, $response->getBody());
-			}
-
-			return $result;
-		}
-
-		throw new UnavailableException('The Frenet API gave no usable answer after ' . $this->attempts . ' attempt(s). Last error: ' . $error);
 	}
 
 	/**
