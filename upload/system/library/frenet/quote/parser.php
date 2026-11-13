@@ -42,6 +42,7 @@ class Parser {
 				$errors[] = [
 					'code'        => (string)($entry['ServiceCode'] ?? ''),
 					'description' => (string)($entry['ServiceDescription'] ?? ''),
+					'carrier'     => is_scalar($entry['Carrier'] ?? null) ? trim((string)$entry['Carrier']) : '',
 					'message'     => (string)($entry['Msg'] ?? '')
 				];
 

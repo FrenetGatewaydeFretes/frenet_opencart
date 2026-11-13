@@ -51,8 +51,8 @@ final class ParserTest extends TestCase {
 		self::assertSame(['03220'], $this->codes($result->getServices()));
 		self::assertSame(42.5, $result->getServices()[0]->getPrice());
 		self::assertSame([
-			['code' => '04227', 'description' => 'Mini Envios', 'message' => 'Erro: Peso excedido.'],
-			['code' => '03298', 'description' => 'PAC', 'message' => 'CEP fora da área']
+			['code' => '04227', 'description' => 'Mini Envios', 'carrier' => '', 'message' => 'Erro: Peso excedido.'],
+			['code' => '03298', 'description' => 'PAC', 'carrier' => '', 'message' => 'CEP fora da área']
 		], $result->getErrors());
 	}
 
