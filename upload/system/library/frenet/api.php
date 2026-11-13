@@ -89,7 +89,7 @@ class Api {
 	}
 
 	/**
-	 * Quotes the cart from the cache or the API, sending it again after a failure other than a 4xx until the attempts run out.
+	 * Quotes the cart from the cache or the API, sending it again after a failure other than a refusal (4xx but 408 and 429) until the attempts run out.
 	 *
 	 * @param Request $request
 	 * @return Result
@@ -159,7 +159,7 @@ class Api {
 
 				$this->log->debug('Quote response', ['attempt' => $attempt, 'status' => $answer->getStatusCode(), 'body' => $answer->getBody()]);
 
-				if ($answer->isClientError()) {
+				if ($answer->isRefused()) {
 					$results[$index] = new UnavailableException('The Frenet API refused the quote with ' . $this->describe($answer) . ' (not retried)', $answer->getStatusCode());
 					unset($bodies[$index]);
 

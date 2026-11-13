@@ -93,6 +93,19 @@ final class ApiTest extends TestCase {
 		self::assertCount(1, $client->requests);
 	}
 
+	public function testRetriesTooManyRequestsAndRequestTimeout(): void {
+		$client = new FakeClient([new Response(429, '{"Message":"Too many requests"}'), new Response(408, ''), new Response(200, self::SERVICES)]);
+
+		$result = $this->createApi($client, 3)->quote($this->request());
+
+		self::assertCount(3, $client->requests);
+		self::assertSame('SEDEX', $result->getServices()[0]->getDescription());
+		self::assertSame([
+			'ERROR Quote attempt 1/3 failed: HTTP 429: Too many requests',
+			'ERROR Quote attempt 2/3 failed: HTTP 408'
+		], $this->writer->lines);
+	}
+
 	public function testSendsOnceWhenASingleAttemptIsConfigured(): void {
 		$client = new FakeClient([new Response(500, ''), new Response(200, self::SERVICES)]);
 
