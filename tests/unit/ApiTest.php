@@ -132,6 +132,17 @@ final class ApiTest extends TestCase {
 		self::assertStringStartsWith('DEBUG Quote response {"attempt":1,"status":200', $this->writer->lines[1]);
 	}
 
+	public function testNamesTheRequestOfEachDebugLineWhenSeveralAreSent(): void {
+		$client = new FakeClient([new Response(200, self::SERVICES), new Response(200, self::SERVICES)]);
+
+		$this->createApi($client, 1, 5, true)->quoteAll(['full' => $this->request(), 1 => $this->request(2)]);
+
+		self::assertStringStartsWith('DEBUG Quote request {"request":"full","url":', $this->writer->lines[0]);
+		self::assertStringStartsWith('DEBUG Quote request {"request":1,"url":', $this->writer->lines[1]);
+		self::assertStringStartsWith('DEBUG Quote response {"request":"full","attempt":1,', $this->writer->lines[2]);
+		self::assertStringStartsWith('DEBUG Quote response {"request":1,"attempt":1,', $this->writer->lines[3]);
+	}
+
 	public function testQuotesTheMockOverHttp(): void {
 		$result = (new Api(new Client(), new Cache($this->store), new Log($this->writer, false), 'abc123', '3.0.5.1', 5, 3, getenv('FRENET_MOCK_URL') . '/shipping/quote'))->quote($this->request());
 

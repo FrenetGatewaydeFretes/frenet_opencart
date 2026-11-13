@@ -137,7 +137,7 @@ class Api {
 			}
 
 			$bodies[$index] = $body;
-			$this->log->debug('Quote request', ['url' => $this->quote_url, 'headers' => $this->getHeaders(), 'body' => $payload]);
+			$this->log->debug('Quote request', $this->label(['url' => $this->quote_url, 'headers' => $this->getHeaders(), 'body' => $payload], $requests, $index));
 		}
 
 		$errors = [];
@@ -157,7 +157,7 @@ class Api {
 					continue;
 				}
 
-				$this->log->debug('Quote response', ['attempt' => $attempt, 'status' => $answer->getStatusCode(), 'body' => $answer->getBody()]);
+				$this->log->debug('Quote response', $this->label(['attempt' => $attempt, 'status' => $answer->getStatusCode(), 'body' => $answer->getBody()], $requests, $index));
 
 				if ($answer->isRefused()) {
 					$results[$index] = new UnavailableException('The Frenet API refused the quote with ' . $this->describe($answer) . ' (not retried)', $answer->getStatusCode());
@@ -202,6 +202,18 @@ class Api {
 		}
 
 		return $ordered;
+	}
+
+	/**
+	 * Adds the key of the request to the log context when several requests are sent together.
+	 *
+	 * @param array<string, mixed> $context
+	 * @param array<int|string, Request> $requests
+	 * @param int|string $index
+	 * @return array<string, mixed>
+	 */
+	private function label(array $context, array $requests, $index): array {
+		return count($requests) > 1 ? ['request' => $index] + $context : $context;
 	}
 
 	/**
