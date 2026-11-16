@@ -11,11 +11,6 @@ use Frenet\Log;
  */
 final class Splitter {
 	/**
-	 * @var int
-	 */
-	public const MAX_PACKAGES = 10;
-
-	/**
 	 * @var Api
 	 */
 	private $api;
@@ -56,18 +51,20 @@ final class Splitter {
 	 * @throws UnavailableException
 	 */
 	public function quote(Request $request): Result {
-		$weight = round(array_sum(array_map(static function (Item $item): float {
-			return $item->getWeight() * $item->getQuantity();
-		}, $request->getItems())), 6);
+		$weight = 0.0;
+
+		foreach ($request->getItems() as $item) {
+			$weight += $item->getWeight() * $item->getQuantity();
+		}
 
 		if ($weight <= $this->max_weight) {
 			return $this->api->quote($request);
 		}
 
 		try {
-			$packages = Packer::pack($request->getItems(), $this->max_weight, self::MAX_PACKAGES);
+			$packages = Packer::pack($request->getItems(), $this->max_weight);
 		} catch (Exception $exception) {
-			$this->report('Cart of ' . $weight . ' kg quoted whole, without Correios split in packages: ' . $exception->getMessage());
+			$this->report('Cart of ' . round($weight, 6) . ' kg quoted whole, without Correios split in packages: ' . $exception->getMessage());
 
 			return $this->api->quote($request);
 		}
@@ -78,7 +75,7 @@ final class Splitter {
 			$requests[$index + 1] = $request->withItems($items);
 		}
 
-		$this->log->debug('Cart of ' . $weight . ' kg quoted in ' . count($packages) . ' packages of up to ' . $this->max_weight . ' kg');
+		$this->log->debug('Cart of ' . round($weight, 6) . ' kg quoted in ' . count($packages) . ' packages of up to ' . $this->max_weight . ' kg');
 
 		$results = $this->api->quoteAll($requests);
 

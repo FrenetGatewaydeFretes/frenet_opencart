@@ -67,13 +67,16 @@ final class SplitterTest extends TestCase {
 		self::assertSame(['ERROR Cart of 45 kg quoted whole, without Correios split in packages: one unit of SACO weighs 45 kg, more than the package limit of 30 kg'], $this->writer->lines);
 	}
 
-	public function testQuotesTheCartWholeWhenItNeedsMoreThanTenPackages(): void {
-		$client = new FakeClient([new Response(200, self::FULL)]);
+	public function testQuotesEveryPackageTheCartNeedsWithoutALimit(): void {
+		$client = new FakeClient(array_merge([new Response(200, self::FULL)], array_fill(0, 11, new Response(200, self::PACKAGE_1))));
 
-		$this->createSplitter($client)->quote($this->request(25.0, 11));
+		$result = $this->createSplitter($client)->quote($this->request(25.0, 11));
 
-		self::assertCount(1, $client->requests);
-		self::assertSame(['ERROR Cart of 275 kg quoted whole, without Correios split in packages: the cart needs more than 10 packages of up to 30 kg'], $this->writer->lines);
+		self::assertCount(12, $client->requests);
+		self::assertSame(['Jadlog', 'PAC'], array_map(static function ($service): string {
+			return $service->getDescription();
+		}, $result->getServices()));
+		self::assertSame(440.0, $result->getServices()[1]->getPrice());
 	}
 
 	public function testLogsAPackageThatCouldNotBeQuotedAndLeavesCorreiosOut(): void {

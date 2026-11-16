@@ -4,57 +4,97 @@ declare(strict_types=1);
 namespace Frenet\Quote;
 
 /**
- * Splits the cart lines into packages up to a weight, filling each package in cart order before opening the next one.
+ * Splits the cart lines into packages up to a weight, filling each package in cart order before opening the next one, as the
+ * Multi Quote of the Frenet module for Magento 2.
  */
 final class Packer {
 	/**
 	 * @var int
 	 */
-	private const SCALE = 1000000;
+	private const SCALE = 10000;
+
+	/**
+	 * @var int
+	 */
+	private const PRECISION = 6;
 
 	/**
 	 * Packages of the lines, splitting the quantity of a line between packages when it does not fit the current one.
 	 *
 	 * @param Item[] $items
 	 * @param float $max_weight
-	 * @param int $max_packages
 	 * @return array<int, Item[]>
 	 * @throws Exception
 	 */
-	public static function pack(array $items, float $max_weight, int $max_packages): array {
-		$capacity = (int)floor(round($max_weight * self::SCALE, 3));
-		$packages = [];
-		$remaining = 0;
-
+	public static function pack(array $items, float $max_weight): array {
 		foreach ($items as $item) {
-			$unit = (int)round($item->getWeight() * self::SCALE);
-			$quantity = $item->getQuantity();
-
-			if ($unit > $capacity) {
+			if ($item->getWeight() > $max_weight) {
 				throw new Exception('one unit of ' . $item->toArray()['SKU'] . ' weighs ' . $item->getWeight() . ' kg, more than the package limit of ' . $max_weight . ' kg');
 			}
+		}
 
-			while ($quantity > 0) {
-				$fits = $unit > 0 ? intdiv($remaining, $unit) : $quantity;
+		$capacity = (int)floor(self::scale($max_weight));
+		$packages = [];
 
-				if (!$packages || $fits < 1) {
-					if (count($packages) === $max_packages) {
-						throw new Exception('the cart needs more than ' . $max_packages . ' packages of up to ' . $max_weight . ' kg');
-					}
+		foreach ($items as $item) {
+			if (!$packages) {
+				$packages[] = [];
+			}
 
-					$packages[] = [];
-					$remaining = $capacity;
+			$quantity = $item->getQuantity();
 
-					continue;
-				}
+			if ($item->getWeight() <= 0) {
+				$packages[count($packages) - 1][] = $item;
 
-				$batch = min($quantity, $fits);
-				$packages[count($packages) - 1][] = $item->withQuantity($batch);
-				$remaining -= $batch * $unit;
-				$quantity -= $batch;
+				continue;
+			}
+
+			$unit = (int)ceil(self::scale($item->getWeight()));
+			$per_package = intdiv($capacity, max($unit, 1));
+
+			if ($per_package < 1) {
+				throw new Exception('one unit of ' . $item->toArray()['SKU'] . ' does not fit a package of ' . $max_weight . ' kg');
+			}
+
+			$remaining = max(0, (int)floor(self::scale($max_weight - self::weigh($packages[count($packages) - 1]))));
+			$first = min($quantity, intdiv($remaining, max($unit, 1)));
+			$left = $quantity - $first;
+
+			if ($first > 0) {
+				$packages[count($packages) - 1][] = $item->withQuantity($first);
+			}
+
+			for ($full = intdiv($left, $per_package); $full > 0; $full--) {
+				$packages[] = [$item->withQuantity($per_package)];
+			}
+
+			if ($left % $per_package > 0) {
+				$packages[] = [$item->withQuantity($left % $per_package)];
 			}
 		}
 
 		return $packages;
+	}
+
+	/**
+	 * @param float $weight
+	 * @return float
+	 */
+	private static function scale(float $weight): float {
+		return round($weight * self::SCALE, self::PRECISION);
+	}
+
+	/**
+	 * @param Item[] $package
+	 * @return float
+	 */
+	private static function weigh(array $package): float {
+		$total = 0.0;
+
+		foreach ($package as $item) {
+			$total += $item->getWeight() * $item->getQuantity();
+		}
+
+		return $total;
 	}
 }
