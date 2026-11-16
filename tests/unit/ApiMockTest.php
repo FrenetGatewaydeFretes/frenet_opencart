@@ -9,6 +9,8 @@ use Frenet\Log;
 use Frenet\Quote\Cache;
 use Frenet\Quote\Item;
 use Frenet\Quote\Request;
+use Frenet\Quote\Result;
+use Frenet\Quote\Service;
 use Frenet\Quote\UnavailableException;
 use PHPUnit\Framework\TestCase;
 
@@ -71,6 +73,22 @@ final class ApiMockTest extends TestCase {
 		}
 
 		self::assertCount(3, $api->quote(new Request('01310100', '20040020', 'BR', 100.0, '', [new Item(15.0, 30.0, 4.0, 20.0, 2, 'MBA', '')], '3.0.5.1'))->getServices());
+	}
+
+	public function testSendsAMessageWithEachServiceThatCanBeOffered(): void {
+		$cart = static function (int $quantity): Request {
+			return new Request('01310100', '20040020', 'BR', 100.0, '', [new Item(15.0, 30.0, 4.0, 20.0, $quantity, 'MBA', '')], '3.0.5.1');
+		};
+		$messages = static function (Result $result): array {
+			return array_map(static function (Service $service): string {
+				return $service->getMessage();
+			}, $result->getServices());
+		};
+		$api = $this->createApi('packages-msg');
+
+		self::assertSame(['Entrega aos sábados', 'Área de risco', 'Coleta em 2 dias úteis'], $messages($api->quote($cart(1))));
+		self::assertSame(['Área de risco', 'Área de risco', 'Coleta em 2 dias úteis'], $messages($api->quote($cart(2))));
+		self::assertSame(['Coleta em 2 dias úteis'], $messages($api->quote($cart(3))));
 	}
 
 	/**

@@ -58,6 +58,8 @@ if ($path === '/shipping/quote') {
 		echo json_encode(['Message' => 'Mock answering HTTP ' . $match[1]]);
 	} elseif ($token === 'packages') {
 		echo json_encode(packagesQuote(json_decode((string)file_get_contents('php://input'), true)));
+	} elseif ($token === 'packages-msg') {
+		echo json_encode(packagesQuote(json_decode((string)file_get_contents('php://input'), true), true));
 	} elseif ($token === 'packages-busy') {
 		$body = json_decode((string)file_get_contents('php://input'), true);
 
@@ -109,23 +111,25 @@ function packagesWeight($body): float {
 
 /**
  * Quote that depends on the weight sent, like the Correios limit: PAC and SEDEX refuse more than 30 kg, PAC refuses less
- * than 5 kg, SEDEX takes 6 days above 20 kg, and Jadlog quotes any weight.
+ * than 5 kg, SEDEX takes 6 days above 20 kg, and Jadlog quotes any weight. With messages, the services that can be offered
+ * come with a Msg: PAC with one for packages of 30 kg and another for lighter ones, SEDEX and Jadlog with a fixed one.
  *
  * @param mixed $body
+ * @param bool $messages
  * @return array<string, mixed>
  */
-function packagesQuote($body): array {
+function packagesQuote($body, bool $messages = false): array {
 	$weight = packagesWeight($body);
-	$correios = static function (string $code, string $description, string $error, float $price, int $days): array {
+	$correios = static function (string $code, string $description, string $error, float $price, int $days, string $message) use ($messages): array {
 		$service = ['ServiceCode' => $code, 'ServiceDescription' => $description, 'Carrier' => 'Correios', 'CarrierCode' => 'COR'];
 
-		return $error !== '' ? $service + ['Error' => true, 'Msg' => $error] : $service + ['ShippingPrice' => number_format($price, 2, '.', ''), 'DeliveryTime' => (string)$days, 'Error' => false, 'Msg' => ''];
+		return $error !== '' ? $service + ['Error' => true, 'Msg' => $error] : $service + ['ShippingPrice' => number_format($price, 2, '.', ''), 'DeliveryTime' => (string)$days, 'Error' => false, 'Msg' => $messages ? $message : ''];
 	};
 
 	return ['ShippingSevicesArray' => [
-		$correios('03298', 'PAC', $weight > 30 ? 'Peso excedido' : ($weight < 5 ? 'PAC indisponível para pacotes leves' : ''), 10 + $weight, 7),
-		$correios('03220', 'SEDEX', $weight > 30 ? 'Peso excedido' : '', 20 + 2 * $weight, $weight > 20 ? 6 : 3),
-		['ServiceCode' => 'JADLOG', 'ServiceDescription' => 'Jadlog', 'Carrier' => 'Jadlog', 'CarrierCode' => 'JAD', 'ShippingPrice' => number_format(50 + $weight, 2, '.', ''), 'DeliveryTime' => '4', 'Error' => false, 'Msg' => '']
+		$correios('03298', 'PAC', $weight > 30 ? 'Peso excedido' : ($weight < 5 ? 'PAC indisponível para pacotes leves' : ''), 10 + $weight, 7, $weight >= 30 ? 'Área de risco' : 'Entrega aos sábados'),
+		$correios('03220', 'SEDEX', $weight > 30 ? 'Peso excedido' : '', 20 + 2 * $weight, $weight > 20 ? 6 : 3, 'Área de risco'),
+		['ServiceCode' => 'JADLOG', 'ServiceDescription' => 'Jadlog', 'Carrier' => 'Jadlog', 'CarrierCode' => 'JAD', 'ShippingPrice' => number_format(50 + $weight, 2, '.', ''), 'DeliveryTime' => '4', 'Error' => false, 'Msg' => $messages ? 'Coleta em 2 dias úteis' : '']
 	]];
 }
 
