@@ -73,10 +73,10 @@ final class SplitterTest extends TestCase {
 		$result = $this->createSplitter($client)->quote($this->request(25.0, 11));
 
 		self::assertCount(12, $client->requests);
-		self::assertSame(['Jadlog', 'PAC'], array_map(static function ($service): string {
+		self::assertSame(['PAC', 'Jadlog'], array_map(static function ($service): string {
 			return $service->getDescription();
 		}, $result->getServices()));
-		self::assertSame(440.0, $result->getServices()[1]->getPrice());
+		self::assertSame(440.0, $result->getServices()[0]->getPrice());
 	}
 
 	public function testLogsAPackageThatCouldNotBeQuotedAndLeavesCorreiosOut(): void {

@@ -18,8 +18,8 @@ final class Matcher {
 	public const FULL = 'full';
 
 	/**
-	 * Correios services quoted in every package, with the sum of the prices and the longest delivery time, and the services of
-	 * the other carriers quoted for the whole cart, cheapest first as the Frenet API lists them.
+	 * Correios services quoted in every package, with the sum of the prices and the longest delivery time, followed by
+	 * the services of the other carriers quoted for the whole cart, as the Magento 2 module lists them.
 	 *
 	 * @param array<int|string, Result|UnavailableException> $results
 	 * @return Result
@@ -55,10 +55,13 @@ final class Matcher {
 				}
 
 				$code = $service->getCode();
-				$total = $totals[$code] ?? ['service' => $service, 'price' => 0.0, 'delivery_time' => 0, 'packages' => []];
+				$total = $totals[$code] ?? ['price' => 0.0, 'delivery_time' => 0, 'packages' => []];
+				$total['description'] = $service->getDescription();
+				$total['carrier'] = $service->getCarrier();
 				$total['price'] += $service->getPrice();
 				$total['delivery_time'] = max($total['delivery_time'], $service->getDeliveryTime());
 				$total['packages'][$package] = true;
+
 				$totals[$code] = $total;
 			}
 		}
@@ -67,7 +70,7 @@ final class Matcher {
 
 		foreach ($totals as $code => $total) {
 			if (count($total['packages']) === count($results)) {
-				$services[] = new Service((string)$code, $total['service']->getDescription(), round($total['price'], 2), $total['delivery_time'], $total['service']->getCarrier());
+				$services[] = new Service((string)$code, $total['description'], round($total['price'], 2), $total['delivery_time'], $total['carrier']);
 			}
 		}
 
@@ -89,13 +92,6 @@ final class Matcher {
 			throw $failure;
 		}
 
-		$prices = array_map(static function (Service $service): float {
-			return $service->getPrice();
-		}, $services);
-		$positions = array_keys($services);
-
-		array_multisort($prices, SORT_ASC, SORT_NUMERIC, $positions, SORT_ASC, SORT_NUMERIC, $services);
-
 		return new Result($services, $errors, $full instanceof Result ? $full->getMessage() : '');
 	}
 
@@ -104,6 +100,6 @@ final class Matcher {
 	 * @return bool
 	 */
 	private static function isCorreios(string $carrier): bool {
-		return strcasecmp($carrier, self::CORREIOS) === 0;
+		return $carrier === self::CORREIOS;
 	}
 }
