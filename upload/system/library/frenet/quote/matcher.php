@@ -18,8 +18,8 @@ final class Matcher {
 	public const FULL = 'full';
 
 	/**
-	 * Correios services quoted in every package, with the sum of the prices and the longest delivery time, followed by
-	 * the services of the other carriers quoted for the whole cart, as the Magento 2 module lists them.
+	 * Correios services quoted in every package, with the sum of the prices, the longest delivery time and the messages of the
+	 * packages, followed by the services of the other carriers quoted for the whole cart, as the Magento 2 module lists them.
 	 *
 	 * @param array<int|string, Result|UnavailableException> $results
 	 * @return Result
@@ -55,12 +55,18 @@ final class Matcher {
 				}
 
 				$code = $service->getCode();
-				$total = $totals[$code] ?? ['price' => 0.0, 'delivery_time' => 0, 'packages' => []];
+				$total = $totals[$code] ?? ['price' => 0.0, 'delivery_time' => 0, 'packages' => [], 'messages' => []];
 				$total['description'] = $service->getDescription();
 				$total['carrier'] = $service->getCarrier();
 				$total['price'] += $service->getPrice();
 				$total['delivery_time'] = max($total['delivery_time'], $service->getDeliveryTime());
 				$total['packages'][$package] = true;
+
+				$message = trim($service->getMessage());
+
+				if ($message !== '') {
+					$total['messages'][$message] = $message;
+				}
 
 				$totals[$code] = $total;
 			}
@@ -70,7 +76,7 @@ final class Matcher {
 
 		foreach ($totals as $code => $total) {
 			if (count($total['packages']) === count($results)) {
-				$services[] = new Service((string)$code, $total['description'], round($total['price'], 2), $total['delivery_time'], $total['carrier']);
+				$services[] = new Service((string)$code, $total['description'], round($total['price'], 2), $total['delivery_time'], $total['carrier'], implode('; ', $total['messages']));
 			}
 		}
 

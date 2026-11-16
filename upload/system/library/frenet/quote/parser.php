@@ -58,7 +58,8 @@ class Parser {
 				(string)($entry['ServiceDescription'] ?? ''),
 				(float)str_replace(',', '.', (string)$entry['ShippingPrice']),
 				(int)($entry['DeliveryTime'] ?? 0),
-				is_scalar($entry['Carrier'] ?? null) ? trim((string)$entry['Carrier']) : ''
+				is_scalar($entry['Carrier'] ?? null) ? trim((string)$entry['Carrier']) : '',
+				is_scalar($entry['Msg'] ?? null) ? trim((string)$entry['Msg']) : ''
 			);
 		}
 

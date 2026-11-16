@@ -31,6 +31,18 @@ final class MatcherTest extends TestCase {
 		self::assertSame(['SEDEX', 'Loggi', 'Jadlog', 'J&T'], array_column($this->describe($result), 1));
 	}
 
+	public function testJoinsTheMessagesOfThePackagesWithoutRepeatingThem(): void {
+		$result = Matcher::match([
+			'full' => $this->answer([]),
+			1      => $this->answer([new Service('03298', 'PAC', 40.0, 7, 'Correios', 'Área de risco')]),
+			2      => $this->answer([new Service('03298', 'PAC', 30.0, 7, 'Correios', ' Área de risco ')]),
+			3      => $this->answer([new Service('03298', 'PAC Mini', 20.0, 7, 'Correios', 'Entrega aos sábados')])
+		]);
+
+		self::assertSame('Área de risco; Entrega aos sábados', $result->getServices()[0]->getMessage());
+		self::assertSame('PAC Mini', $result->getServices()[0]->getDescription());
+	}
+
 	public function testComparesTheCarrierWithCorreiosExactly(): void {
 		$result = Matcher::match([
 			'full' => $this->answer([$this->service('X', 'Correios Log', 'CORREIOS', 70.0, 4)]),
