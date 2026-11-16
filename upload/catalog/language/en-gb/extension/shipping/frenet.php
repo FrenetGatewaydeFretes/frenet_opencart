@@ -14,6 +14,7 @@ $_['placeholder_simulator_postcode'] = 'Enter your postcode';
 $_['button_simulator']               = 'Estimate';
 $_['error_simulator_postcode']       = 'Enter a valid postcode, such as 01310-100.';
 $_['error_simulator_quantity']       = 'Enter the quantity to estimate the shipping.';
+$_['error_simulator_maximum']        = 'The largest quantity to estimate the shipping is %s.';
 $_['error_simulator_option']         = 'Choose %s to estimate the shipping.';
 $_['error_simulator_minimum']        = 'The minimum quantity of this product is %s.';
 $_['error_simulator_product']        = 'The shipping of this product cannot be estimated.';

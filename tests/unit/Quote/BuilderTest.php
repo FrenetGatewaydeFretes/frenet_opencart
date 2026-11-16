@@ -47,6 +47,16 @@ final class BuilderTest extends TestCase {
 		]], $request['ShippingItemArray']);
 	}
 
+	public function testQuotesALineWithAtMostTheMaximumQuantityPerLine(): void {
+		$products = [$this->product(['quantity' => 6000, 'weight' => 6000, 'total' => 60000.0]), $this->product(['quantity' => 2, 'weight' => 2, 'total' => 20.0])];
+
+		$request = $this->createBuilder()->build(['postcode' => '20040020'], $products, [], '')->toArray();
+
+		self::assertSame([5000, 2], array_column($request['ShippingItemArray'], 'Quantity'));
+		self::assertSame(50020.0, $request['ShipmentInvoiceValue']);
+		self::assertSame([3, 2], array_column($this->createBuilder(['shipping_frenet_max_unit_quantity' => '3'])->build(['postcode' => '20040020'], $products, [], '')->toArray()['ShippingItemArray'], 'Quantity'));
+	}
+
 	public function testConvertsEveryUnitToKilogramsAndCentimetres(): void {
 		$items = $this->items([
 			$this->product(['weight' => 500, 'weight_class_id' => self::G, 'length' => 160, 'height' => 20, 'width' => 110, 'length_class_id' => self::MM]),

@@ -135,6 +135,12 @@ class ControllerExtensionShippingFrenet extends Controller {
 			return ['error' => ['quantity' => $this->language->get('error_simulator_quantity')]];
 		}
 
+		$max_quantity = (new FrenetConfig($this->config))->getMaxUnitQuantity();
+
+		if ($quantity > $max_quantity) {
+			return ['error' => ['quantity' => sprintf($this->language->get('error_simulator_maximum'), $max_quantity)]];
+		}
+
 		$simulator = $this->createProduct();
 
 		$product = $simulator->getProduct($product_id, $quantity, $options);

@@ -14,6 +14,7 @@ $_['placeholder_simulator_postcode'] = 'Digite seu CEP';
 $_['button_simulator']               = 'Calcular';
 $_['error_simulator_postcode']       = 'Informe um CEP válido, como 01310-100.';
 $_['error_simulator_quantity']       = 'Informe a quantidade para calcular o frete.';
+$_['error_simulator_maximum']        = 'A quantidade máxima para calcular o frete é %s.';
 $_['error_simulator_option']         = 'Escolha %s para calcular o frete.';
 $_['error_simulator_minimum']        = 'A quantidade mínima deste produto é %s.';
 $_['error_simulator_product']        = 'Não é possível calcular o frete deste produto.';

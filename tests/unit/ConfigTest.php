@@ -193,6 +193,14 @@ final class ConfigTest extends TestCase {
 		self::assertSame($weight, $config->getPackageMaxWeight());
 	}
 
+	#[TestWith(['', 5000], 'nothing saved')]
+	#[TestWith(['0', 5000], 'zero')]
+	#[TestWith(['-3', 5000], 'negative')]
+	#[TestWith(['120', 120], 'whole number')]
+	public function testReadsTheMaximumQuantityPerLine(string $value, int $quantity): void {
+		self::assertSame($quantity, $this->createConfig(['shipping_frenet_max_unit_quantity' => $value])->getMaxUnitQuantity());
+	}
+
 	public function testReadsTheVirtualFeeName(): void {
 		self::assertSame('Taxa de ativação', $this->createConfig(['shipping_frenet_virtual_fee_name' => " Taxa de ativação \n"])->getVirtualFeeName());
 		self::assertSame('', $this->createConfig([])->getVirtualFeeName());

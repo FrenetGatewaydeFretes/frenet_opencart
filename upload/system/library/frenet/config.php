@@ -58,6 +58,11 @@ class Config {
 	public const PACKAGE_MAX_WEIGHT_DEFAULT = self::CORREIOS_MAX_WEIGHT;
 
 	/**
+	 * @var int
+	 */
+	public const MAX_UNIT_QUANTITY_DEFAULT = 5000;
+
+	/**
 	 * @var float
 	 */
 	public const DEFAULT_HEIGHT = 2.0;
@@ -286,6 +291,17 @@ class Config {
 	 */
 	public function getPackageMaxWeight(): float {
 		return $this->getPositive('package_max_weight', self::PACKAGE_MAX_WEIGHT_DEFAULT);
+	}
+
+	/**
+	 * Largest quantity of one cart line considered in the quote, a safety limit for the package split.
+	 *
+	 * @return int
+	 */
+	public function getMaxUnitQuantity(): int {
+		$quantity = (int)$this->get('max_unit_quantity');
+
+		return $quantity > 0 ? $quantity : self::MAX_UNIT_QUANTITY_DEFAULT;
 	}
 
 	/**

@@ -146,6 +146,12 @@
             </div>
           </div>
           <div class="form-group">
+            <label class="col-sm-2 control-label" for="input-max-unit-quantity"><span data-toggle="tooltip" title="{{ help_max_unit_quantity }}">{{ entry_max_unit_quantity }}</span></label>
+            <div class="col-sm-10">
+              <input type="number" name="shipping_frenet_max_unit_quantity" value="{{ shipping_frenet_max_unit_quantity|escape }}" min="1" step="1" placeholder="{{ max_unit_quantity_default }}" id="input-max-unit-quantity" class="form-control" />
+            </div>
+          </div>
+          <div class="form-group">
             <label class="col-sm-2 control-label" for="input-timeout"><span data-toggle="tooltip" title="{{ help_timeout }}">{{ entry_timeout }}</span></label>
             <div class="col-sm-10">
               <input type="number" name="shipping_frenet_timeout" value="{{ shipping_frenet_timeout|escape }}" min="{{ timeout_min }}" max="{{ timeout_max }}" step="1" required id="input-timeout" class="form-control" />
