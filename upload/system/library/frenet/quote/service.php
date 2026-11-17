@@ -103,8 +103,7 @@ class Service {
 	}
 
 	/**
-	 * Rate title from the store owner's template, where %s is the service name and %d the delivery days plus the additional ones,
-	 * followed by the message of the Frenet API in parentheses.
+	 * HTML rate title: the template with %s for the service and %d for the days plus the extra ones, then the API message.
 	 *
 	 * @param string $template
 	 * @param int $additional_days
@@ -112,8 +111,19 @@ class Service {
 	 */
 	public function getTitle(string $template, int $additional_days): string {
 		$days = $this->delivery_time + max(0, $additional_days);
-		$title = $template === '' || $days < 1 ? $this->description : strtr($template, ['%s' => $this->description, '%d' => (string)$days]);
+		$description = self::escape($this->description);
+		$title = $template === '' || $days < 1 ? $description : strtr($template, ['%s' => $description, '%d' => (string)$days]);
 
-		return $this->message !== '' ? $title . ' (' . $this->message . ')' : $title;
+		return $this->message !== '' ? $title . ' (' . self::escape($this->message) . ')' : $title;
+	}
+
+	/**
+	 * Escapes text of the Frenet API as OpenCart escapes request data, since the core templates print rate titles as HTML.
+	 *
+	 * @param string $text
+	 * @return string
+	 */
+	private static function escape(string $text): string {
+		return htmlspecialchars($text, ENT_COMPAT, 'UTF-8');
 	}
 }
