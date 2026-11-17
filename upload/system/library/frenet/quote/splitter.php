@@ -79,13 +79,42 @@ final class Splitter {
 
 		$results = $this->api->quoteAll($requests);
 
+		$failed = [];
+
 		foreach ($results as $index => $result) {
 			if ($result instanceof UnavailableException) {
-				$this->report(($index === Matcher::FULL ? 'Whole cart could not be quoted, other carriers left out: ' : 'Package ' . $index . ' could not be quoted, Correios left out: ') . $result->getMessage());
+				$failed[spl_object_hash($result)]['failure'] = $result;
+				$failed[spl_object_hash($result)]['indexes'][] = $index;
 			}
 		}
 
+		foreach ($failed as $part) {
+			$this->report($this->describeFailure($part['indexes'], $part['failure']));
+		}
+
 		return Matcher::match($results);
+	}
+
+	/**
+	 * What one failure left out of the checkout, naming every part that got it, as identical packages share one answer.
+	 *
+	 * @param array<int, int|string> $indexes
+	 * @param UnavailableException $failure
+	 * @return string
+	 */
+	private function describeFailure(array $indexes, UnavailableException $failure): string {
+		$packages = array_values(array_diff($indexes, [Matcher::FULL]));
+		$parts = [];
+
+		if (count($packages) !== count($indexes)) {
+			$parts[] = 'Whole cart could not be quoted, other carriers left out';
+		}
+
+		if ($packages) {
+			$parts[] = (count($packages) > 1 ? 'Packages ' : 'Package ') . implode(', ', $packages) . ' could not be quoted, Correios left out';
+		}
+
+		return implode('; ', $parts) . ': ' . $failure->getMessage();
 	}
 
 	/**

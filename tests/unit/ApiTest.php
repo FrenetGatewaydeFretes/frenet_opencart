@@ -12,6 +12,7 @@ use Frenet\Module;
 use Frenet\Quote\Cache;
 use Frenet\Quote\Item;
 use Frenet\Quote\Request;
+use Frenet\Quote\Result;
 use Frenet\Quote\UnavailableException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -333,6 +334,20 @@ final class ApiTest extends TestCase {
 		self::assertCount(2, $client->requests);
 		self::assertSame('SEDEX', $results[1]->getServices()[0]->getDescription());
 		self::assertSame([], $this->writer->lines);
+	}
+
+	public function testSendsIdenticalRequestsOnceAndSharesTheAnswer(): void {
+		$client = new FakeClient([new Response(200, self::SERVICES), new Response(503, ''), new Response(200, self::SERVICES)]);
+		$api = $this->createApi($client, 2);
+
+		$results = $api->quoteAll(['full' => $this->request(3), 1 => $this->request(), 2 => $this->request(), 3 => $this->request()]);
+
+		self::assertCount(3, $client->requests);
+		self::assertSame(3, $api->getSentCount());
+		self::assertSame(['full', 1, 2, 3], array_keys($results));
+		self::assertSame($results[1], $results[2]);
+		self::assertSame($results[1], $results[3]);
+		self::assertInstanceOf(Result::class, $results[3]);
 	}
 
 	public function testRetriesOnlyTheRequestsThatFailed(): void {

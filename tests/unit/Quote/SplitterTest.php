@@ -68,11 +68,11 @@ final class SplitterTest extends TestCase {
 	}
 
 	public function testQuotesEveryPackageTheCartNeedsWithoutALimit(): void {
-		$client = new FakeClient(array_merge([new Response(200, self::FULL)], array_fill(0, 11, new Response(200, self::PACKAGE_1))));
+		$client = new FakeClient([new Response(200, self::FULL), new Response(200, self::PACKAGE_1)]);
 
 		$result = $this->createSplitter($client)->quote($this->request(25.0, 11));
 
-		self::assertCount(12, $client->requests);
+		self::assertCount(2, $client->requests);
 		self::assertSame(['PAC', 'Jadlog'], array_map(static function ($service): string {
 			return $service->getDescription();
 		}, $result->getServices()));
@@ -87,6 +87,16 @@ final class SplitterTest extends TestCase {
 		self::assertSame(['Jadlog'], [$result->getServices()[0]->getDescription()]);
 		self::assertCount(1, $result->getServices());
 		self::assertSame(['ERROR Package 2 could not be quoted, Correios left out: The Frenet API refused the quote with HTTP 400: Peso inválido (not retried)'], $this->writer->lines);
+	}
+
+	public function testLogsIdenticalPackagesThatCouldNotBeQuotedInOneLine(): void {
+		$client = new FakeClient([new Response(200, self::FULL), new Response(400, '{"Message":"Peso inválido"}')]);
+
+		$result = $this->createSplitter($client)->quote($this->request(15.0, 4));
+
+		self::assertCount(2, $client->requests);
+		self::assertSame(['Jadlog'], [$result->getServices()[0]->getDescription()]);
+		self::assertSame(['ERROR Packages 1, 2 could not be quoted, Correios left out: The Frenet API refused the quote with HTTP 400: Peso inválido (not retried)'], $this->writer->lines);
 	}
 
 	public function testLogsTheWholeCartThatCouldNotBeQuotedAndKeepsCorreios(): void {

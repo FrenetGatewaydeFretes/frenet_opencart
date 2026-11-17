@@ -86,7 +86,7 @@ Os Correios não cotam um pacote acima de 30 kg. Sem a divisão, um carrinho mai
 * As cotações do carrinho inteiro e dos pacotes saem ao mesmo tempo, então a etapa de frete leva quase o mesmo tempo de uma cotação só.
 * Os produtos entram nos pacotes na ordem do carrinho, enchendo um pacote antes de abrir o próximo. Cada pacote declara o valor dos próprios produtos.
 * O carrinho é cotado inteiro, sem dividir, quando um único produto pesa mais que o pacote. O motivo vai para o `frenet.log`.
-* Não há limite de pacotes, como no Magento 2: cada pacote é uma cotação a mais. A **Quantidade máxima por linha** (padrão 5000) limita a quantidade de cada produto considerada.
+* Não há limite de pacotes, como no Magento 2. Pacotes iguais, como os cheios de um mesmo produto, são cotados uma vez só. A **Quantidade máxima por linha** (padrão 5000) limita a quantidade de cada produto considerada.
 * O peso é sempre comparado em quilos, mesmo numa loja configurada em libras.
 * O simulador da página do produto também divide, para mostrar o mesmo frete que o carrinho.
 * Quando a Frenet manda uma observação num frete (como uma restrição de entrega), ela aparece entre parênteses no nome do frete, com ou sem a divisão. No frete dos Correios dividido, aparecem as observações de todos os pacotes, sem repetir, separadas por `; `.

@@ -94,7 +94,7 @@ class Api {
 	}
 
 	/**
-	 * Quotes the cart from the cache or the API, sending it again after a failure other than a refusal (4xx but 408 and 429) until the attempts run out.
+	 * Quotes the cart from the cache or the API, retrying any failure but a refusal (4xx but 408 and 429) within the attempts.
 	 *
 	 * @param Request $request
 	 * @return Result
@@ -111,7 +111,7 @@ class Api {
 	}
 
 	/**
-	 * Quotes the requests at the same time, each from the cache or the API, with the attempts of the settings for each one.
+	 * Quotes the requests at the same time, each from the cache or the API once even when repeated, with the attempts.
 	 *
 	 * @param array<int|string, Request> $requests
 	 * @return array<int|string, Result|UnavailableException>
@@ -120,6 +120,8 @@ class Api {
 		$results = [];
 		$bodies = [];
 		$keys = [];
+		$owners = [];
+		$copies = [];
 
 		foreach ($requests as $index => $request) {
 			$payload = $request->toArray();
@@ -132,6 +134,14 @@ class Api {
 			}
 
 			$keys[$index] = $this->cache->getKey($this->token, $body);
+
+			if (isset($owners[$keys[$index]])) {
+				$copies[$index] = $owners[$keys[$index]];
+
+				continue;
+			}
+
+			$owners[$keys[$index]] = $index;
 			$cached = $this->readCache($keys[$index]);
 
 			if ($cached !== null) {
@@ -202,6 +212,10 @@ class Api {
 			$results[$index] = new UnavailableException('The Frenet API gave no usable answer after ' . $this->attempts . ' attempt(s). Last error: ' . ($errors[$index] ?? ''));
 		}
 
+		foreach ($copies as $index => $owner) {
+			$results[$index] = $results[$owner];
+		}
+
 		$ordered = [];
 
 		foreach (array_keys($requests) as $index) {
@@ -212,7 +226,7 @@ class Api {
 	}
 
 	/**
-	 * Requests sent to the Frenet API so far, retries included and answers from the cache left out.
+	 * Requests sent to the Frenet API so far, retries included and answers from the cache or repeated requests left out.
 	 *
 	 * @return int
 	 */
