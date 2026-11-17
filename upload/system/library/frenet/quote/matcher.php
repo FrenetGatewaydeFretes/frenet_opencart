@@ -18,8 +18,7 @@ final class Matcher {
 	public const FULL = 'full';
 
 	/**
-	 * Correios services quoted in every package, with the sum of the prices, the longest delivery time and the messages of the
-	 * packages, followed by the services of the other carriers quoted for the whole cart, as the Magento 2 module lists them.
+	 * Correios summed across the packages that all quoted them, then the other carriers of the whole cart, as in Magento 2.
 	 *
 	 * @param array<int|string, Result|UnavailableException> $results
 	 * @return Result

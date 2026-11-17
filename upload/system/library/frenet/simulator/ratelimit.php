@@ -133,7 +133,7 @@ final class RateLimit {
 	}
 
 	/**
-	 * Counts the quotes of the client, creating the table first when the module was updated and the admin did not create it yet.
+	 * Counts the quotes of the client, creating the table first when an update reached the store before the admin ran.
 	 *
 	 * @param string $key
 	 * @param int $quotes

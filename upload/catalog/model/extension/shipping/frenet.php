@@ -30,8 +30,7 @@ class ModelExtensionShippingFrenet extends Model {
 	}
 
 	/**
-	 * Quotes the product of the page alone, as Frenet\Simulator\Product builds it, the way the cart would quote it, with
-	 * sent_quotes, the requests sent to Frenet, which the simulator limit counts.
+	 * Quotes the page product alone as the cart would, adding sent_quotes, the Frenet requests the simulator limit counts.
 	 *
 	 * @param array<string, mixed> $address
 	 * @param array<string, mixed> $product
