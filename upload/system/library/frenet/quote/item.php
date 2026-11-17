@@ -78,6 +78,13 @@ class Item {
 	}
 
 	/**
+	 * @return string
+	 */
+	public function getSku(): string {
+		return $this->sku;
+	}
+
+	/**
 	 * @return int
 	 */
 	public function getQuantity(): int {

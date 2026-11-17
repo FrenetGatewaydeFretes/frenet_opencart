@@ -29,7 +29,7 @@ final class Packer {
 	public static function pack(array $items, float $max_weight): array {
 		foreach ($items as $item) {
 			if ($item->getWeight() > $max_weight) {
-				throw new Exception('one unit of ' . $item->toArray()['SKU'] . ' weighs ' . $item->getWeight() . ' kg, more than the package limit of ' . $max_weight . ' kg');
+				throw new Exception('one unit of ' . $item->getSku() . ' weighs ' . $item->getWeight() . ' kg, more than the package limit of ' . $max_weight . ' kg');
 			}
 		}
 
@@ -53,7 +53,7 @@ final class Packer {
 			$per_package = intdiv($capacity, max($unit, 1));
 
 			if ($per_package < 1) {
-				throw new Exception('one unit of ' . $item->toArray()['SKU'] . ' does not fit a package of ' . $max_weight . ' kg');
+				throw new Exception('one unit of ' . $item->getSku() . ' does not fit a package of ' . $max_weight . ' kg');
 			}
 
 			$remaining = max(0, (int)floor(self::scale($max_weight - self::weigh($packages[count($packages) - 1]))));
