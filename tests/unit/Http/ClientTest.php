@@ -33,7 +33,7 @@ final class ClientTest extends TestCase {
 			(new Client())->post($this->url('/mock/delay/3'), '', [], 1);
 			self::fail('Expected a timeout');
 		} catch (Exception $exception) {
-			self::assertTrue($exception->isTimeout());
+			self::assertSame(CURLE_OPERATION_TIMEDOUT, $exception->getCode());
 		}
 	}
 
@@ -42,7 +42,7 @@ final class ClientTest extends TestCase {
 			(new Client())->post('http://127.0.0.1:1/shipping/quote', '', [], 1);
 			self::fail('Expected a connection error');
 		} catch (Exception $exception) {
-			self::assertFalse($exception->isTimeout());
+			self::assertNotSame(CURLE_OPERATION_TIMEDOUT, $exception->getCode());
 			self::assertNotSame('', $exception->getMessage());
 		}
 	}
@@ -70,8 +70,8 @@ final class ClientTest extends TestCase {
 		$answers = (new Client())->postAll($this->url('/mock/delay/3'), ['x' => '', 'y' => ''], [], 1);
 
 		self::assertInstanceOf(Exception::class, $answers['x']);
-		self::assertTrue($answers['x']->isTimeout());
-		self::assertTrue($answers['y']->isTimeout());
+		self::assertSame(CURLE_OPERATION_TIMEDOUT, $answers['x']->getCode());
+		self::assertSame(CURLE_OPERATION_TIMEDOUT, $answers['y']->getCode());
 	}
 
 	public function testMockQuoteRejectsRequestsWithoutToken(): void {
