@@ -28,14 +28,14 @@ Atualização: loja que já tem a Frenet instalada
 
 > **⚠️ Importante: depois de enviar o pacote novo, abra a configuração da Frenet no admin.**
 >
-> Até a configuração ser aberta, o simulador de frete **não aparece** na página do produto. Se a loja usava a versão antiga do módulo, com **Chave** e **Senha**, o frete Frenet também **não aparece no checkout** até o token ser salvo.
+> Até a configuração ser aberta, o simulador de frete **não aparece** na página do produto. Se a loja usava uma versão do módulo anterior ao token, o frete Frenet também **não aparece no checkout** até o token ser salvo.
 
 1. Em **Extensões → Instalador**, clique em **Enviar**, escolha o arquivo `frenet.ocmod.zip` e aguarde a mensagem **Concluído**.
    * **Não desinstale a Frenet antes de atualizar.** Desinstalar apaga toda a configuração da Frenet, inclusive o token.
 2. Em **Extensões → Extensões**, escolha o tipo **Frete** e clique no lápis (**Editar**) da linha **Frenet**.
    * Entre com um usuário do grupo **Administrador**, ou de um grupo com permissão de **modificar** a extensão Frenet. Abrir a configuração com um usuário que só tem permissão de acesso não conclui a atualização.
-3. Se a tela avisar que a **Chave e a Senha da versão anterior foram removidas**, gere o token no painel Frenet, cole no campo **Token** e clique em **Salvar**.
-4. Confira os campos novos **Simulador na página do produto** e **Limite de simulações por IP** e clique em **Salvar**.
+3. Se a tela avisar que **a Frenet agora autentica só pelo token**, gere o token no painel Frenet, cole no campo **Token** e clique em **Salvar**.
+4. Confira os campos da [Configuração](#configuração) e clique em **Salvar**. Os campos novos vêm com o padrão descrito na tabela: o **Simulador na página do produto** vem ligado, e a **Taxa de produtos virtuais** e a **Divisão em pacotes** vêm desligadas.
 5. Confira na loja: a página do produto mostra **Calcule o frete**, e o checkout mostra os fretes Frenet.
 
 **Por que abrir a configuração?** O instalador do OpenCart 3 só copia os arquivos do pacote: ele não executa nenhum código do módulo. Numa instalação nova, o botão **Instalar** prepara o simulador. Numa atualização, o botão Instalar não aparece, porque a Frenet já está instalada, e quem prepara o simulador é a tela de configuração: ela registra o simulador na página do produto (o evento `frenet_simulator`) e cria a tabela do limite de simulações. Isso acontece uma vez só; depois, a loja não precisa de nenhum passo a mais.

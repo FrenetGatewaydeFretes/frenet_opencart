@@ -21,16 +21,17 @@ Atualização: loja que já tem a Frenet instalada
 
 IMPORTANTE: depois de enviar o pacote novo, abra a configuração da Frenet no admin.
 Até a configuração ser aberta, o simulador de frete não aparece na página do produto.
-Se a loja usava a versão antiga do módulo, com Chave e Senha, o frete Frenet também
+Se a loja usava uma versão do módulo anterior ao token, o frete Frenet também
 não aparece no checkout até o token ser salvo.
 
 1 - Em Extensões -> Instalador, envie o arquivo frenet.ocmod.zip e aguarde a mensagem Concluído.
     Não desinstale a Frenet antes de atualizar: desinstalar apaga toda a configuração, inclusive o token.
 2 - Em Extensões -> Extensões, tipo Frete, clique em Editar na linha Frenet, com um usuário do grupo
     Administrador ou com permissão de modificar a extensão Frenet.
-3 - Se a tela avisar que a Chave e a Senha da versão anterior foram removidas, cole o token do painel
-    Frenet no campo Token e salve.
-4 - Confira os campos Simulador na página do produto e Limite de simulações por IP e salve.
+3 - Se a tela avisar que a Frenet agora autentica só pelo token, cole o token do painel Frenet no campo
+    Token e salve.
+4 - Confira a configuração e salve. Os campos novos vêm com o padrão do README: o Simulador na página
+    do produto vem ligado, e a Taxa de produtos virtuais e a Divisão em pacotes vêm desligadas.
 
 Taxa de produtos virtuais
 ------------------------------------
