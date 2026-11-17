@@ -11,7 +11,9 @@ $mock_port = (int)parse_url((string)getenv('FRENET_MOCK_URL'), PHP_URL_PORT);
 $mock_server = proc_open(
 	[PHP_BINARY, '-S', $mock_host . ':' . $mock_port, __DIR__ . '/mock/router.php'],
 	[['file', '/dev/null', 'r'], ['file', '/dev/null', 'w'], ['file', '/dev/null', 'w']],
-	$pipes
+	$pipes,
+	null,
+	getenv() + ['PHP_CLI_SERVER_WORKERS' => '4']
 );
 
 if (!is_resource($mock_server)) {

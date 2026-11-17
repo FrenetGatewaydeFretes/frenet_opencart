@@ -13,7 +13,7 @@ class Result {
 	private $services;
 
 	/**
-	 * @var array<int, array{code: string, description: string, message: string}>
+	 * @var array<int, array{code: string, description: string, carrier: string, message: string}>
 	 */
 	private $errors;
 
@@ -24,7 +24,7 @@ class Result {
 
 	/**
 	 * @param Service[] $services
-	 * @param array<int, array{code: string, description: string, message: string}> $errors
+	 * @param array<int, array{code: string, description: string, carrier: string, message: string}> $errors
 	 * @param string $message
 	 */
 	public function __construct(array $services, array $errors, string $message) {
@@ -43,7 +43,7 @@ class Result {
 	/**
 	 * Services the API returned with Error set, with the Msg that explains why.
 	 *
-	 * @return array<int, array{code: string, description: string, message: string}>
+	 * @return array<int, array{code: string, description: string, carrier: string, message: string}>
 	 */
 	public function getErrors(): array {
 		return $this->errors;

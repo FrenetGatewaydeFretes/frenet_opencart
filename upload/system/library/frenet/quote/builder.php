@@ -75,6 +75,7 @@ class Builder {
 		$minimum_length = $this->config->getMinimumLength();
 		$minimum_height = $this->config->getMinimumHeight();
 		$minimum_width = $this->config->getMinimumWidth();
+		$max_quantity = $this->config->getMaxUnitQuantity();
 
 		$items = [];
 		$invoice_value = 0.0;
@@ -89,12 +90,13 @@ class Builder {
 				$this->atLeast($this->toCentimetres($product['length'], $product['length_class_id'], $length_class_id), $minimum_length),
 				$this->atLeast($this->toCentimetres($product['height'], $product['length_class_id'], $length_class_id), $minimum_height),
 				$this->atLeast($this->toCentimetres($product['width'], $product['length_class_id'], $length_class_id), $minimum_width),
-				$quantity,
+				min($quantity, $max_quantity),
 				$details['sku'],
-				$details['category']
+				$details['category'],
+				(float)$product['total'] / $quantity
 			);
 
-			$invoice_value += (float)$product['total'];
+			$invoice_value += (float)$product['total'] / $quantity * min($quantity, $max_quantity);
 		}
 
 		if (!$items) {

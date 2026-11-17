@@ -32,6 +32,9 @@ class ControllerExtensionShippingFrenet extends Controller {
 		'shipping_frenet_minimum_width',
 		'shipping_frenet_minimum_length',
 		'shipping_frenet_default_weight',
+		'shipping_frenet_package_split',
+		'shipping_frenet_package_max_weight',
+		'shipping_frenet_max_unit_quantity',
 		'shipping_frenet_timeout',
 		'shipping_frenet_attempts',
 		'shipping_frenet_simulator',
@@ -54,7 +57,8 @@ class ControllerExtensionShippingFrenet extends Controller {
 		'shipping_frenet_minimum_height' => ['entry_minimum_height', FrenetConfig::DEFAULT_HEIGHT],
 		'shipping_frenet_minimum_width'  => ['entry_minimum_width', FrenetConfig::DEFAULT_WIDTH],
 		'shipping_frenet_minimum_length' => ['entry_minimum_length', FrenetConfig::DEFAULT_LENGTH],
-		'shipping_frenet_default_weight' => ['entry_default_weight', FrenetConfig::DEFAULT_WEIGHT]
+		'shipping_frenet_default_weight' => ['entry_default_weight', FrenetConfig::DEFAULT_WEIGHT],
+		'shipping_frenet_package_max_weight' => ['entry_package_max_weight', FrenetConfig::PACKAGE_MAX_WEIGHT_DEFAULT]
 	];
 
 	/**
@@ -127,6 +131,18 @@ class ControllerExtensionShippingFrenet extends Controller {
 				$values[$field] = $this->formatNumber($value);
 			}
 
+			$max_quantity = trim((string)$values['shipping_frenet_max_unit_quantity']);
+
+			if ($max_quantity !== '' && (!ctype_digit($max_quantity) || (int)$max_quantity < 1)) {
+				$adjusted[] = sprintf($this->language->get('text_default_used'), $this->language->get('entry_max_unit_quantity'), FrenetConfig::MAX_UNIT_QUANTITY_DEFAULT);
+			}
+
+			$values['shipping_frenet_max_unit_quantity'] = ctype_digit($max_quantity) && (int)$max_quantity > 0 ? (int)$max_quantity : FrenetConfig::MAX_UNIT_QUANTITY_DEFAULT;
+
+			if (!empty($values['shipping_frenet_package_split']) && (float)$values['shipping_frenet_package_max_weight'] > FrenetConfig::CORREIOS_MAX_WEIGHT) {
+				$adjusted[] = sprintf($this->language->get('text_package_over_correios'), $this->formatNumber(FrenetConfig::CORREIOS_MAX_WEIGHT));
+			}
+
 			$virtual_fee = FrenetConfig::parsePositive($values['shipping_frenet_virtual_fee_amount']);
 
 			$values['shipping_frenet_virtual_fee'] = (int)!empty($values['shipping_frenet_virtual_fee']);
@@ -196,6 +212,9 @@ class ControllerExtensionShippingFrenet extends Controller {
 			$data['shipping_frenet_minimum_width'] = $this->formatNumber($frenet_config->getMinimumWidth());
 			$data['shipping_frenet_minimum_length'] = $this->formatNumber($frenet_config->getMinimumLength());
 			$data['shipping_frenet_default_weight'] = $this->formatNumber($frenet_config->getDefaultWeight());
+			$data['shipping_frenet_package_split'] = $frenet_config->isPackageSplitEnabled();
+			$data['shipping_frenet_package_max_weight'] = $this->formatNumber($frenet_config->getPackageMaxWeight());
+			$data['shipping_frenet_max_unit_quantity'] = $frenet_config->getMaxUnitQuantity();
 			$data['shipping_frenet_virtual_fee_name'] = $frenet_config->getVirtualFeeName();
 
 			$virtual_fee = FrenetConfig::parsePositive($this->config->get('shipping_frenet_virtual_fee_amount'));
@@ -203,6 +222,7 @@ class ControllerExtensionShippingFrenet extends Controller {
 			$data['shipping_frenet_virtual_fee_amount'] = $virtual_fee !== null ? $this->formatAmount($virtual_fee) : '';
 		}
 
+		$data['max_unit_quantity_default'] = FrenetConfig::MAX_UNIT_QUANTITY_DEFAULT;
 		$data['timeout_min'] = FrenetConfig::TIMEOUT_MIN;
 		$data['timeout_max'] = FrenetConfig::TIMEOUT_MAX;
 		$data['attempts_min'] = FrenetConfig::ATTEMPTS_MIN;

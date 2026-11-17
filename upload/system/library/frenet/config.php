@@ -50,6 +50,21 @@ class Config {
 	/**
 	 * @var float
 	 */
+	public const CORREIOS_MAX_WEIGHT = 30.0;
+
+	/**
+	 * @var float
+	 */
+	public const PACKAGE_MAX_WEIGHT_DEFAULT = self::CORREIOS_MAX_WEIGHT;
+
+	/**
+	 * @var int
+	 */
+	public const MAX_UNIT_QUANTITY_DEFAULT = 5000;
+
+	/**
+	 * @var float
+	 */
 	public const DEFAULT_HEIGHT = 2.0;
 
 	/**
@@ -258,6 +273,35 @@ class Config {
 		}
 
 		return max(0, (int)$value);
+	}
+
+	/**
+	 * Whether a cart heavier than the package limit is quoted in packages, off until the store owner turns it on.
+	 *
+	 * @return bool
+	 */
+	public function isPackageSplitEnabled(): bool {
+		return (bool)$this->get('package_split');
+	}
+
+	/**
+	 * Heaviest package in kilograms when the cart is quoted in packages.
+	 *
+	 * @return float
+	 */
+	public function getPackageMaxWeight(): float {
+		return $this->getPositive('package_max_weight', self::PACKAGE_MAX_WEIGHT_DEFAULT);
+	}
+
+	/**
+	 * Largest quantity of one cart line considered in the quote, a safety limit for the package split.
+	 *
+	 * @return int
+	 */
+	public function getMaxUnitQuantity(): int {
+		$quantity = (int)$this->get('max_unit_quantity');
+
+		return $quantity > 0 ? $quantity : self::MAX_UNIT_QUANTITY_DEFAULT;
 	}
 
 	/**

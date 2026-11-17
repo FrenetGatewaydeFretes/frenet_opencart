@@ -175,6 +175,32 @@ final class ConfigTest extends TestCase {
 		self::assertSame($fee, $config->getVirtualFee());
 	}
 
+	public function testKeepsThePackageSplitOffWithA30KgLimitUntilTheStoreOwnerChangesIt(): void {
+		$config = $this->createConfig([]);
+
+		self::assertFalse($config->isPackageSplitEnabled());
+		self::assertSame(30.0, $config->getPackageMaxWeight());
+	}
+
+	#[TestWith(['25,5', 25.5], 'comma decimals')]
+	#[TestWith(['0', 30.0], 'zero')]
+	#[TestWith(['-10', 30.0], 'negative')]
+	#[TestWith(['abc', 30.0], 'not a number')]
+	public function testReadsThePackageMaxWeight(string $value, float $weight): void {
+		$config = $this->createConfig(['shipping_frenet_package_split' => '1', 'shipping_frenet_package_max_weight' => $value]);
+
+		self::assertTrue($config->isPackageSplitEnabled());
+		self::assertSame($weight, $config->getPackageMaxWeight());
+	}
+
+	#[TestWith(['', 5000], 'nothing saved')]
+	#[TestWith(['0', 5000], 'zero')]
+	#[TestWith(['-3', 5000], 'negative')]
+	#[TestWith(['120', 120], 'whole number')]
+	public function testReadsTheMaximumQuantityPerLine(string $value, int $quantity): void {
+		self::assertSame($quantity, $this->createConfig(['shipping_frenet_max_unit_quantity' => $value])->getMaxUnitQuantity());
+	}
+
 	public function testReadsTheVirtualFeeName(): void {
 		self::assertSame('Taxa de ativação', $this->createConfig(['shipping_frenet_virtual_fee_name' => " Taxa de ativação \n"])->getVirtualFeeName());
 		self::assertSame('', $this->createConfig([])->getVirtualFeeName());

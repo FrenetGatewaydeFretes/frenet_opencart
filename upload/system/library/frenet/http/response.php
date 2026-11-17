@@ -8,6 +8,11 @@ namespace Frenet\Http;
  */
 class Response {
 	/**
+	 * @var int[]
+	 */
+	private const TEMPORARY_STATUSES = [408, 429];
+
+	/**
 	 * @var int
 	 */
 	private $status_code;
@@ -50,11 +55,11 @@ class Response {
 	}
 
 	/**
-	 * True for 4xx statuses, which repeating the same request cannot fix.
+	 * True for 4xx statuses, which repeating the same request cannot fix, except 408 and 429 that only ask to try again.
 	 *
 	 * @return bool
 	 */
-	public function isClientError(): bool {
-		return $this->status_code >= 400 && $this->status_code < 500;
+	public function isRefused(): bool {
+		return $this->status_code >= 400 && $this->status_code < 500 && !in_array($this->status_code, self::TEMPORARY_STATUSES, true);
 	}
 }
