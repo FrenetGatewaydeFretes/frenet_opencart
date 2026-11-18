@@ -1,0 +1,113 @@
+name: Package
+
+on:
+  push:
+    branches:
+      - master
+      - 3.0-develop
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PUBLISHED_COMMIT: bc4de4fc8efa8bd0e1e538c5a22e87516cd02832
+
+jobs:
+  checks:
+    name: Checks
+    if: github.ref_type == 'tag'
+    uses: ./.github/workflows/ci.yml
+
+  package:
+    name: Build frenet.ocmod.zip
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Match the tag with the module version and the changelog
+        if: github.ref_type == 'tag'
+        run: |
+          version=$(sed -n "s/.*const VERSION = '\(.*\)';/\1/p" upload/system/library/frenet/module.php)
+          [ "$version" = "$GITHUB_REF_NAME" ] || { echo "::error::Tag $GITHUB_REF_NAME does not match Module::VERSION $version"; exit 1; }
+          grep -qx "## $version" CHANGELOG.md || { echo "::error::CHANGELOG.md has no '## $version' section"; exit 1; }
+      - run: git archive --format=zip --output=frenet.ocmod.zip HEAD upload
+      - uses: actions/upload-artifact@v7
+        with:
+          name: frenet.ocmod.zip
+          path: frenet.ocmod.zip
+          if-no-files-found: error
+
+  e2e:
+    name: E2E ${{ matrix.mode }} OpenCart ${{ matrix.opencart }} (PHP ${{ matrix.php }})
+    needs: package
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mode:
+          - install
+          - upgrade
+        opencart:
+          - 3.0.0.0
+          - 3.0.3.3
+          - 3.0.3.8
+          - 3.0.5.1
+        include:
+          - opencart: 3.0.0.0
+            php: '7.1'
+          - opencart: 3.0.3.3
+            php: '7.4'
+          - opencart: 3.0.3.8
+            php: '7.4'
+          - opencart: 3.0.5.1
+            php: '8.2'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v8
+        with:
+          name: frenet.ocmod.zip
+      - name: Build the package of the published version
+        if: matrix.mode == 'upgrade'
+        run: |
+          git fetch --no-tags --depth=1 origin "$PUBLISHED_COMMIT"
+          git archive --format=zip --output=previous.ocmod.zip FETCH_HEAD upload
+      - run: npm ci --no-audit --no-fund
+        working-directory: tests/e2e
+      - run: npx playwright install --with-deps chromium
+        working-directory: tests/e2e
+      - run: tests/e2e/run.sh ${{ matrix.opencart }} ${{ matrix.php }} frenet.ocmod.zip ${{ matrix.mode == 'upgrade' && 'previous.ocmod.zip' || '' }}
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: e2e-${{ matrix.mode }}-opencart-${{ matrix.opencart }}
+          path: tests/e2e/.work/artifacts/${{ matrix.opencart }}-${{ matrix.mode }}
+          if-no-files-found: ignore
+
+  release:
+    name: Attach to the GitHub release
+    if: github.ref_type == 'tag'
+    needs:
+      - checks
+      - e2e
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v8
+        with:
+          name: frenet.ocmod.zip
+      - name: Release notes from the changelog
+        run: awk -v section="## $GITHUB_REF_NAME" '$0 == section { found = 1; next } /^## / { found = 0 } found' CHANGELOG.md > notes.md
+      - name: Create the release or replace its package
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" frenet.ocmod.zip --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" frenet.ocmod.zip --verify-tag --title "$GITHUB_REF_NAME" --notes-file notes.md
+          fi
