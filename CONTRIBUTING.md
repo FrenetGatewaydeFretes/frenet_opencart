@@ -152,7 +152,7 @@ O módulo segue o [padrão de código do OpenCart](https://github.com/opencart/o
 
 Os arquivos legados em `upload/admin` e `upload/catalog` entram no fixer à medida que forem reescritos.
 
-Todo texto que o lojista ou o comprador vê fica nos arquivos de idioma de `upload/admin/language` e `upload/catalog/language`, com as mesmas chaves em `pt-br` e `en-gb`; templates e JavaScript só imprimem chaves de idioma. O `tests/unit/LanguageTest.php` confere as chaves dos dois idiomas e que cada `language->get('...')` dos controllers e models existe no módulo ou no idioma padrão do core. As mensagens do `frenet.log` e das exceções ficam em inglês, para o suporte ler o mesmo texto em qualquer loja.
+Todo texto que o lojista ou o comprador vê fica nos arquivos de idioma de `upload/admin/language` e `upload/catalog/language`, com as mesmas chaves em `pt-br` e `en-gb`; templates e JavaScript só imprimem chaves de idioma. O `tests/unit/LanguageTest.php` confere que os dois idiomas têm as mesmas chaves e os mesmos `%s` e `%d` em cada texto, que cada `language->get('...')` dos controllers e models existe no módulo ou no idioma padrão do core, e que cada chave de idioma impressa nos templates existe no módulo, no core ou no `$data` do controller. As mensagens do `frenet.log` e das exceções ficam em inglês, para o suporte ler o mesmo texto em qualquer loja.
 
 Para o PHPStan, `tests/stubs/engine.php` imita o `Controller` e o `Model` do OpenCart 3, que leem os objetos do registry por `__get`, e declara com `@property` cada objeto que o módulo usa (`config`, `db`, `load`, `model_setting_setting`...). Ao usar um objeto novo do registry no controller ou no model, declare-o ali.
 
