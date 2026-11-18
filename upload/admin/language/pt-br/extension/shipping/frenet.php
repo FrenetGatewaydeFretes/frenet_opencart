@@ -13,9 +13,10 @@ $_['text_token_saved']      = 'Token salvo. Deixe em branco para mantê-lo.';
 $_['text_panel']            = 'Abrir o painel Frenet';
 $_['text_adjusted']         = '%s ajustado para %d (aceita de %d a %d).';
 $_['text_default_used']     = '%s precisa ser maior que zero: usado %s.';
+$_['text_integer_default_used'] = '%s aceita só números inteiros maiores que zero: usado %s.';
 $_['text_adjusted_min']     = '%s aceita só números inteiros a partir de 0: usado %d.';
 $_['text_package_over_correios'] = 'O peso máximo por pacote passa de %s kg, o limite dos Correios: os pacotes mais pesados ficam sem PAC e SEDEX.';
-$_['text_total_installed']  = 'A taxa dos carrinhos sem envio foi instalada em Extensões → Totais, como Frenet - taxa de produtos virtuais.';
+$_['text_total_installed']  = 'A taxa dos carrinhos sem envio foi instalada em Extensões → Extensões, no tipo Total do pedido, como Frenet - taxa de produtos virtuais.';
 $_['text_geo_zone_missing']  = 'A região geográfica escolhida para a Frenet foi excluída, e o frete Frenet não aparece para nenhum endereço. Escolha outra região e salve.';
 
 // Entry
@@ -77,6 +78,6 @@ $_['placeholder_msg_prazo'] = '%s - Em média %d dia(s)';
 $_['error_permission']      = 'Atenção: você não tem permissão para modificar a extensão Frenet!';
 $_['error_warning']         = 'Atenção: a configuração não foi salva. Corrija os campos destacados.';
 $_['error_postcode']        = 'O CEP de origem precisa ter 8 dígitos, como 01310-100.';
-$_['error_simulator_limit_value'] = 'Valores negativos não são permitidos. Use 0 ou um número inteiro positivo.';
+$_['error_simulator_limit_value'] = 'O limite aceita só 0 ou números inteiros positivos, como 60.';
 $_['error_virtual_fee_amount'] = 'O valor da taxa precisa ser maior que zero, como 4,90.';
 $_['error_token']           = 'Informe o token gerado no painel Frenet para habilitar o frete.';

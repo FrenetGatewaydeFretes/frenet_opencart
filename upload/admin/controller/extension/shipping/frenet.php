@@ -49,8 +49,8 @@ class ControllerExtensionShippingFrenet extends Controller {
 	];
 
 	private const RANGES = [
-		'shipping_frenet_timeout'  => ['entry_timeout', FrenetConfig::TIMEOUT_MIN, FrenetConfig::TIMEOUT_MAX],
-		'shipping_frenet_attempts' => ['entry_attempts', FrenetConfig::ATTEMPTS_MIN, FrenetConfig::ATTEMPTS_MAX]
+		'shipping_frenet_timeout'  => ['entry_timeout', FrenetConfig::TIMEOUT_MIN, FrenetConfig::TIMEOUT_MAX, FrenetConfig::TIMEOUT_DEFAULT],
+		'shipping_frenet_attempts' => ['entry_attempts', FrenetConfig::ATTEMPTS_MIN, FrenetConfig::ATTEMPTS_MAX, FrenetConfig::ATTEMPTS_DEFAULT]
 	];
 
 	private const MINIMUMS = [
@@ -98,10 +98,11 @@ class ControllerExtensionShippingFrenet extends Controller {
 
 			$adjusted = [];
 
-			foreach (self::RANGES as $field => [$label, $min, $max]) {
-				$value = max($min, min($max, (int)$values[$field]));
+			foreach (self::RANGES as $field => [$label, $min, $max, $default]) {
+				$typed = trim((string)$values[$field]);
+				$value = $typed !== '' ? max($min, min($max, (int)$typed)) : $default;
 
-				if ((string)$value !== trim((string)$values[$field])) {
+				if ($typed !== '' && (string)$value !== $typed) {
 					$adjusted[] = sprintf($this->language->get('text_adjusted'), $this->language->get($label), $value, $min, $max);
 				}
 
@@ -134,7 +135,7 @@ class ControllerExtensionShippingFrenet extends Controller {
 			$max_quantity = trim((string)$values['shipping_frenet_max_unit_quantity']);
 
 			if ($max_quantity !== '' && (!ctype_digit($max_quantity) || (int)$max_quantity < 1)) {
-				$adjusted[] = sprintf($this->language->get('text_default_used'), $this->language->get('entry_max_unit_quantity'), FrenetConfig::MAX_UNIT_QUANTITY_DEFAULT);
+				$adjusted[] = sprintf($this->language->get('text_integer_default_used'), $this->language->get('entry_max_unit_quantity'), FrenetConfig::MAX_UNIT_QUANTITY_DEFAULT);
 			}
 
 			$values['shipping_frenet_max_unit_quantity'] = ctype_digit($max_quantity) && (int)$max_quantity > 0 ? (int)$max_quantity : FrenetConfig::MAX_UNIT_QUANTITY_DEFAULT;

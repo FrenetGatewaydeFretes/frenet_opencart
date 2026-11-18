@@ -19,7 +19,7 @@ class Parser {
 			throw new Exception('The Frenet API answered with invalid JSON');
 		}
 
-		$message = is_scalar($data['Message'] ?? null) ? (string)$data['Message'] : '';
+		$message = self::text($data['Message'] ?? null);
 		$entries = $data['ShippingSevicesArray'] ?? [];
 
 		if (!is_array($entries)) {
@@ -40,29 +40,41 @@ class Parser {
 
 			if (!empty($entry['Error'])) {
 				$errors[] = [
-					'code'        => (string)($entry['ServiceCode'] ?? ''),
-					'description' => (string)($entry['ServiceDescription'] ?? ''),
-					'carrier'     => is_scalar($entry['Carrier'] ?? null) ? trim((string)$entry['Carrier']) : '',
-					'message'     => (string)($entry['Msg'] ?? '')
+					'code'        => self::text($entry['ServiceCode'] ?? null),
+					'description' => self::text($entry['ServiceDescription'] ?? null),
+					'carrier'     => self::text($entry['Carrier'] ?? null),
+					'message'     => self::text($entry['Msg'] ?? null)
 				];
 
 				continue;
 			}
 
-			if (!isset($entry['ServiceCode'], $entry['ShippingPrice']) || (string)$entry['ServiceCode'] === '') {
+			$code = self::text($entry['ServiceCode'] ?? null);
+
+			if ($code === '' || !isset($entry['ShippingPrice'])) {
 				continue;
 			}
 
 			$services[] = new Service(
-				(string)$entry['ServiceCode'],
-				(string)($entry['ServiceDescription'] ?? ''),
-				(float)str_replace(',', '.', (string)$entry['ShippingPrice']),
-				(int)($entry['DeliveryTime'] ?? 0),
-				is_scalar($entry['Carrier'] ?? null) ? trim((string)$entry['Carrier']) : '',
-				is_scalar($entry['Msg'] ?? null) ? trim((string)$entry['Msg']) : ''
+				$code,
+				self::text($entry['ServiceDescription'] ?? null),
+				(float)str_replace(',', '.', self::text($entry['ShippingPrice'])),
+				(int)self::text($entry['DeliveryTime'] ?? null),
+				self::text($entry['Carrier'] ?? null),
+				self::text($entry['Msg'] ?? null)
 			);
 		}
 
 		return new Result($services, $errors, $message);
+	}
+
+	/**
+	 * A field of the answer as trimmed text, empty when the API sent no text there, such as a list or an object.
+	 *
+	 * @param mixed $value
+	 * @return string
+	 */
+	private static function text($value): string {
+		return is_scalar($value) ? trim((string)$value) : '';
 	}
 }
