@@ -18,8 +18,8 @@ Antes de começar
 Instalação: loja que ainda não tem a Frenet
 ------------------------
 
-1. Em **Extensões → Instalador**, clique em **Enviar**, escolha o arquivo `frenet.ocmod.zip` e aguarde a mensagem **Concluído**.
-2. Em **Extensões → Extensões**, escolha o tipo **Frete**. Na linha **Frenet**, clique no botão verde **Instalar**.
+1. Em **Extensões → Instalador**, clique em **Upload**, escolha o arquivo `frenet.ocmod.zip` e aguarde a mensagem **Concluído**.
+2. Em **Extensões → Extensões**, escolha o tipo **Fretes**. Na linha **Frenet**, clique no botão verde **Instalar**.
 3. Na mesma linha, clique no lápis (**Editar**). Preencha o **Token**, o **CEP de origem** e mude a **Situação** para **Habilitado**. Clique em **Salvar**.
 4. Confira na loja: a página do produto mostra **Calcule o frete** logo abaixo do botão Comprar, e o checkout mostra os fretes Frenet.
 
@@ -30,9 +30,9 @@ Atualização: loja que já tem a Frenet instalada
 >
 > Até a configuração ser aberta, o simulador de frete **não aparece** na página do produto. Se a loja usava uma versão do módulo anterior ao token, o frete Frenet também **não aparece no checkout** até o token ser salvo.
 
-1. Em **Extensões → Instalador**, clique em **Enviar**, escolha o arquivo `frenet.ocmod.zip` e aguarde a mensagem **Concluído**.
+1. Em **Extensões → Instalador**, clique em **Upload**, escolha o arquivo `frenet.ocmod.zip` e aguarde a mensagem **Concluído**.
    * **Não desinstale a Frenet antes de atualizar.** Desinstalar apaga toda a configuração da Frenet, inclusive o token.
-2. Em **Extensões → Extensões**, escolha o tipo **Frete** e clique no lápis (**Editar**) da linha **Frenet**.
+2. Em **Extensões → Extensões**, escolha o tipo **Fretes** e clique no lápis (**Editar**) da linha **Frenet**.
    * Entre com um usuário do grupo **Administrador**, ou de um grupo com permissão de **modificar** a extensão Frenet. Abrir a configuração com um usuário que só tem permissão de acesso não conclui a atualização.
 3. Se a tela avisar que **a Frenet agora autentica só pelo token**, gere o token no painel Frenet, cole no campo **Token** e clique em **Salvar**.
 4. Confira os campos da [Configuração](#configuração) e clique em **Salvar**. Os campos novos vêm com o padrão descrito na tabela: o **Simulador na página do produto** vem ligado, e a **Taxa de produtos virtuais** e a **Divisão em pacotes** vêm desligadas.
@@ -103,7 +103,7 @@ Cobra uma taxa fixa, uma vez por pedido, quando o carrinho tem um produto sem en
 Para ligar:
 
 1. Na configuração da Frenet, mude **Taxa de produtos virtuais** para **Habilitado**, preencha o **Valor da taxa** e, se quiser, o **Nome da taxa**. Clique em **Salvar**.
-2. A mensagem de sucesso avisa que a taxa dos carrinhos sem envio foi instalada em **Extensões → Totais**, como **Frenet - taxa de produtos virtuais**. Esse total é instalado sozinho: não é preciso instalá-lo à mão. Nele, você só muda a **Posição** da linha da taxa nos totais (vem com a mesma posição do Frete).
+2. A mensagem de sucesso avisa que a taxa dos carrinhos sem envio foi instalada em **Extensões → Extensões**, no tipo **Total do pedido**, como **Frenet - taxa de produtos virtuais**. Esse total é instalado sozinho: não é preciso instalá-lo à mão. Nele, você só muda a **Posição** da linha da taxa nos totais (vem com a mesma posição do Frete).
 
 Regras da taxa:
 
@@ -132,7 +132,7 @@ Problemas comuns
 1. O campo **Taxa de produtos virtuais** está **Habilitado**, com o **Valor da taxa** maior que zero, e a **Situação** da Frenet está **Habilitado**?
 2. O produto está com **Precisa de frete?** em **Não**? Só esses produtos geram a taxa.
 3. No carrinho com produtos com envio, o comprador escolheu um frete Frenet? Outras formas de entrega não somam a taxa.
-4. No carrinho só com produtos sem envio, o total **Frenet - taxa de produtos virtuais** aparece instalado e habilitado em **Extensões → Totais**? Se alguém o desinstalou, abra a configuração da Frenet e clique em **Salvar** com a taxa ligada: ele é instalado de novo.
+4. No carrinho só com produtos sem envio, o total **Frenet - taxa de produtos virtuais** aparece instalado e habilitado em **Extensões → Extensões**, no tipo **Total do pedido**? Se alguém o desinstalou, abra a configuração da Frenet e clique em **Salvar** com a taxa ligada: ele é instalado de novo.
 5. O endereço de pagamento está na **Região geográfica** da Frenet?
 6. O comprador usou um cupom com frete grátis? Ele tira a taxa também.
 
@@ -143,7 +143,7 @@ Problemas comuns
 Desinstalação
 ------------------------
 
-Em **Extensões → Extensões → Frete**, clique em **Desinstalar** na linha **Frenet**. A desinstalação remove o simulador, a tabela do limite, o total **Frenet - taxa de produtos virtuais** e toda a configuração da Frenet, inclusive o token.
+Em **Extensões → Extensões**, no tipo **Fretes**, clique em **Desinstalar** na linha **Frenet**. A desinstalação remove o simulador, a tabela do limite, o total **Frenet - taxa de produtos virtuais** e toda a configuração da Frenet, inclusive o token.
 
 Observações
 ------------------------
