@@ -134,7 +134,7 @@ class ControllerExtensionShippingFrenet extends Controller {
 			$max_quantity = trim((string)$values['shipping_frenet_max_unit_quantity']);
 
 			if ($max_quantity !== '' && (!ctype_digit($max_quantity) || (int)$max_quantity < 1)) {
-				$adjusted[] = sprintf($this->language->get('text_default_used'), $this->language->get('entry_max_unit_quantity'), FrenetConfig::MAX_UNIT_QUANTITY_DEFAULT);
+				$adjusted[] = sprintf($this->language->get('text_integer_default_used'), $this->language->get('entry_max_unit_quantity'), FrenetConfig::MAX_UNIT_QUANTITY_DEFAULT);
 			}
 
 			$values['shipping_frenet_max_unit_quantity'] = ctype_digit($max_quantity) && (int)$max_quantity > 0 ? (int)$max_quantity : FrenetConfig::MAX_UNIT_QUANTITY_DEFAULT;
