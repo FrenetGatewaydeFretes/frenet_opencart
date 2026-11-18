@@ -127,6 +127,8 @@ Problemas comuns
 5. Em **Extensões → Eventos**, o evento `frenet_simulator` está habilitado?
 6. O tema usa o botão **Comprar** padrão do OpenCart (`id="button-cart"`)? O simulador aparece logo abaixo dele; num tema sem esse botão, ele não aparece.
 
+**Depois de atualizar, a configuração da Frenet continua com a tela antiga, sem o aviso do token.** O PHP da loja ainda está usando os arquivos antigos guardados pelo OPcache. Espere alguns segundos e abra a configuração de novo. Se o servidor usa o OPcache com `opcache.validate_timestamps=0`, os arquivos novos só valem depois de reiniciar o PHP (PHP-FPM ou Apache) ou de limpar o OPcache pelo painel da hospedagem.
+
 **O frete Frenet não aparece no checkout.** Confira o token, a **Situação**, o **CEP de origem**, a **Região geográfica** e o peso e as medidas dos produtos. Ligue o **Debug** e veja o arquivo `frenet.log` na pasta de logs do OpenCart (normalmente `system/storage/logs/`).
 
 **A taxa de produtos virtuais não aparece.** Confira:
