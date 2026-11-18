@@ -16,7 +16,7 @@ $_['text_default_used']     = '%s must be greater than zero: %s used.';
 $_['text_integer_default_used'] = '%s only accepts whole numbers greater than zero: %s used.';
 $_['text_adjusted_min']     = '%s only accepts whole numbers from 0: %d used.';
 $_['text_package_over_correios'] = 'The maximum package weight is over %s kg, the Correios limit: heavier packages get no PAC or SEDEX.';
-$_['text_total_installed']  = 'The fee of carts without shipping was installed in Extensions > Order Totals as Frenet - virtual products fee.';
+$_['text_total_installed']  = 'The fee of carts without shipping was installed in Extensions > Extensions, type Order Totals, as Frenet - virtual products fee.';
 $_['text_geo_zone_missing']  = 'The geo zone chosen for Frenet was deleted, so Frenet shipping is offered to no address. Choose another geo zone and save.';
 
 // Entry

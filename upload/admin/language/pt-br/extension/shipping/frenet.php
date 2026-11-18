@@ -16,7 +16,7 @@ $_['text_default_used']     = '%s precisa ser maior que zero: usado %s.';
 $_['text_integer_default_used'] = '%s aceita só números inteiros maiores que zero: usado %s.';
 $_['text_adjusted_min']     = '%s aceita só números inteiros a partir de 0: usado %d.';
 $_['text_package_over_correios'] = 'O peso máximo por pacote passa de %s kg, o limite dos Correios: os pacotes mais pesados ficam sem PAC e SEDEX.';
-$_['text_total_installed']  = 'A taxa dos carrinhos sem envio foi instalada em Extensões → Totais, como Frenet - taxa de produtos virtuais.';
+$_['text_total_installed']  = 'A taxa dos carrinhos sem envio foi instalada em Extensões → Extensões, no tipo Total do pedido, como Frenet - taxa de produtos virtuais.';
 $_['text_geo_zone_missing']  = 'A região geográfica escolhida para a Frenet foi excluída, e o frete Frenet não aparece para nenhum endereço. Escolha outra região e salve.';
 
 // Entry
