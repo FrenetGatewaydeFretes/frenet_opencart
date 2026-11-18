@@ -9,6 +9,8 @@ use PHPUnit\Framework\TestCase;
 final class LanguageTest extends TestCase {
 	private const LANGUAGES = ['en-gb', 'pt-br'];
 
+	private const KEY_PATTERN = '(?:text|entry|help|error|button|placeholder|heading)_[a-z0-9_]+';
+
 	private const CORE_KEYS = ['text_home', 'text_extension', 'text_enabled', 'text_disabled', 'text_yes', 'text_no', 'text_none', 'text_all_zones', 'text_loading', 'button_save', 'button_cancel', 'decimal_point'];
 
 	#[DataProvider('provideTranslatesEveryKeyInBothLanguagesCases')]
@@ -22,6 +24,23 @@ final class LanguageTest extends TestCase {
 
 		self::assertNotSame([], $keys['en-gb']);
 		self::assertSame($keys['en-gb'], $keys['pt-br']);
+	}
+
+	#[DataProvider('provideTranslatesEveryKeyInBothLanguagesCases')]
+	public function testKeepsThePlaceholdersOfEveryTextInBothLanguages(string $file): void {
+		$placeholders = [];
+
+		foreach (self::LANGUAGES as $language) {
+			foreach (self::load(str_replace('{language}', $language, $file)) as $key => $text) {
+				preg_match_all('/%[sd]/', $text, $matches);
+
+				$placeholders[$language][$key] = $matches[0];
+			}
+
+			ksort($placeholders[$language]);
+		}
+
+		self::assertSame($placeholders['en-gb'], $placeholders['pt-br']);
 	}
 
 	/**
@@ -39,16 +58,32 @@ final class LanguageTest extends TestCase {
 
 	#[DataProvider('provideDefinesEveryKeyTheCodeAsksForCases')]
 	public function testDefinesEveryKeyTheCodeAsksFor(string $area): void {
-		$defined = self::CORE_KEYS;
+		$defined = self::getDefinedKeys($area);
+		$missing = [];
 
-		foreach (glob(self::root() . 'upload/' . $area . '/language/*/extension/*/frenet.php') ?: [] as $path) {
-			$defined = array_merge($defined, array_keys(self::load(substr($path, strlen(self::root())))));
+		foreach (self::getCode($area, ['controller', 'model'], '.php') as $code) {
+			preg_match_all("/language->get\\('([a-z0-9_]+)'\\)/", $code, $matches);
+
+			$missing = array_merge($missing, array_diff($matches[1], $defined));
+		}
+
+		self::assertSame([], array_values(array_unique($missing)));
+	}
+
+	#[DataProvider('provideDefinesEveryKeyTheCodeAsksForCases')]
+	public function testDefinesEveryKeyTheTemplatesPrint(string $area): void {
+		$defined = self::getDefinedKeys($area);
+
+		foreach (self::getCode($area, ['controller'], '.php') as $code) {
+			preg_match_all("/\\\$data\\['([a-z0-9_]+)'\\]/", $code, $matches);
+
+			$defined = array_merge($defined, $matches[1]);
 		}
 
 		$missing = [];
 
-		foreach (glob(self::root() . 'upload/' . $area . '/{controller,model}/extension/*/frenet.php', GLOB_BRACE) ?: [] as $path) {
-			preg_match_all("/language->get\\('([a-z0-9_]+)'\\)/", (string)file_get_contents($path), $matches);
+		foreach (self::getCode($area, ['view'], '.twig') as $template) {
+			preg_match_all('/{[{%]-?\\s*(?:if\\s+(?:not\\s+)?)?(' . self::KEY_PATTERN . ')\\b/', $template, $matches);
 
 			$missing = array_merge($missing, array_diff($matches[1], $defined));
 		}
@@ -62,6 +97,44 @@ final class LanguageTest extends TestCase {
 	public static function provideDefinesEveryKeyTheCodeAsksForCases(): iterable {
 		yield 'admin' => ['admin'];
 		yield 'catalog' => ['catalog'];
+	}
+
+	/**
+	 * @param string $area
+	 * @return string[]
+	 */
+	private static function getDefinedKeys(string $area): array {
+		$defined = self::CORE_KEYS;
+
+		foreach (glob(self::root() . 'upload/' . $area . '/language/*/extension/*/frenet.php') ?: [] as $path) {
+			$defined = array_merge($defined, array_keys(self::load(substr($path, strlen(self::root())))));
+		}
+
+		return $defined;
+	}
+
+	/**
+	 * @param string $area
+	 * @param string[] $folders
+	 * @param string $extension
+	 * @return string[]
+	 */
+	private static function getCode(string $area, array $folders, string $extension): array {
+		$code = [];
+
+		foreach ($folders as $folder) {
+			$directory = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(self::root() . 'upload/' . $area . '/' . $folder, \FilesystemIterator::SKIP_DOTS));
+
+			foreach ($directory as $file) {
+				if (substr($file->getPathname(), -strlen($extension)) === $extension) {
+					$code[] = (string)file_get_contents($file->getPathname());
+				}
+			}
+		}
+
+		self::assertNotSame([], $code);
+
+		return $code;
 	}
 
 	/**
