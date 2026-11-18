@@ -42,7 +42,7 @@ final class ClientTest extends TestCase {
 			(new Client())->post('http://127.0.0.1:1/shipping/quote', '', [], 1);
 			self::fail('Expected a connection error');
 		} catch (Exception $exception) {
-			self::assertNotSame(CURLE_OPERATION_TIMEDOUT, $exception->getCode());
+			self::assertSame(CURLE_COULDNT_CONNECT, $exception->getCode());
 			self::assertNotSame('', $exception->getMessage());
 		}
 	}
