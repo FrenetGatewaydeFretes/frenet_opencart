@@ -62,6 +62,18 @@ final class ParserTest extends TestCase {
 		], $result->getErrors());
 	}
 
+	public function testReadsFieldsThatAreNotTextAsEmpty(): void {
+		$result = (new Parser())->parse((string)json_encode(['ShippingSevicesArray' => [
+			['ServiceCode' => '04227', 'ServiceDescription' => ['Mini Envios'], 'Carrier' => ['Correios'], 'Error' => true, 'Msg' => ['Erro']],
+			['ServiceCode' => ['03298'], 'ServiceDescription' => 'PAC', 'ShippingPrice' => '25.90'],
+			['ServiceCode' => '03220', 'ServiceDescription' => ['SEDEX'], 'ShippingPrice' => '42.50', 'DeliveryTime' => ['3'], 'Msg' => ['Área de risco']]
+		]]));
+
+		self::assertSame([['code' => '04227', 'description' => '', 'carrier' => '', 'message' => '']], $result->getErrors());
+		self::assertSame(['03220'], $this->codes($result->getServices()));
+		self::assertSame(['', 0, ''], [$result->getServices()[0]->getDescription(), $result->getServices()[0]->getDeliveryTime(), $result->getServices()[0]->getMessage()]);
+	}
+
 	public function testAServiceWithoutDeliveryTimeNeverInheritsThePreviousOne(): void {
 		$services = (new Parser())->parse((string)json_encode(['ShippingSevicesArray' => [
 			['ServiceCode' => '03220', 'ServiceDescription' => 'SEDEX', 'ShippingPrice' => '42.50', 'DeliveryTime' => '3'],
