@@ -7,13 +7,15 @@
 * [Painel Administrativo](https://painel.frenet.com.br)
 * [Central de Ajuda](https://frenet.zendesk.com/)
 * [Loja de Aplicativos OpenCart](https://www.opencart.com/index.php?route=marketplace/extension/info&extension_id=26072)
+* [Versões e changelog](CHANGELOG.md)
 
 Antes de começar
 ------------------------
 
 * Cadastre-se no [painel Frenet](https://painel.frenet.com.br/) e gere o **token** da loja. Sem token, a Frenet não cota.
 * Cadastre o peso e as medidas dos produtos. A Frenet cota pelo peso e pelas medidas de cada item.
-* O módulo funciona no OpenCart 3.0 (testado na 3.0.0.0, 3.0.3.3, 3.0.3.8 e 3.0.5.1), com PHP 7.1 ou mais novo e a extensão cURL.
+* O módulo funciona em todo o OpenCart 3, da 3.0.0.0 à 3.0.5.1, com PHP 7.1 ou mais novo e a extensão cURL. Cada versão é testada na 3.0.0.0, 3.0.3.3, 3.0.3.8 e 3.0.5.1.
+* Baixe o arquivo `frenet.ocmod.zip` da versão mais nova nos [releases do GitHub](https://github.com/FrenetGatewaydeFretes/frenet_opencart/releases/latest) ou no [marketplace do OpenCart](https://www.opencart.com/index.php?route=marketplace/extension/info&extension_id=26072). O [changelog](CHANGELOG.md) lista o que mudou em cada versão.
 
 Instalação: loja que ainda não tem a Frenet
 ------------------------
