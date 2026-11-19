@@ -229,6 +229,46 @@ A 3.0.3.3 representa o fim da primeira faixa: a 3.0.3.4 só tem pacotes de pré-
 
 O pacote é instalado pelo admin, em **Extensões → Instalador**.
 
+## E2E no CI
+
+`tests/e2e/` instala o pacote numa loja OpenCart 3 limpa e faz o caminho do lojista e do comprador com o Playwright:
+
+1. envia o `frenet.ocmod.zip` em **Extensões → Instalador**;
+2. instala a Frenet em **Extensões → Extensões**, no tipo **Fretes**, e salva o token, o CEP de origem e a situação;
+3. calcula o frete no simulador da página do produto;
+4. fecha um pedido de visitante com um frete Frenet e pagamento na entrega, e confere o frete no pedido do admin.
+
+Com um quarto argumento, o pacote de uma versão anterior, o `run.sh` testa a atualização: instala essa versão e salva a Chave e a Senha, envia o pacote novo por cima, abre a configuração, confere o aviso de que a Chave e a Senha foram removidas, salva o token e segue com o simulador e o pedido. O CI usa como versão anterior a última publicada antes do token, o commit `bc4de4f` da `master`, que é a que as lojas têm hoje.
+
+Depois do Playwright, o `run.sh` confere no banco que o pedido tem um frete `frenet.*`, que a Chave e a Senha não estão mais salvas, que o mock recebeu a cotação com o token salvo e o `PlatformName` `OpenCart3`, e que o `error.log` da loja não tem nenhuma linha da Frenet.
+
+A loja usa o zip oficial do OpenCart, sem o instalador dos ambientes, que é interno, e o tema padrão. O `compose.yml` sobe o MariaDB, o OpenCart com a versão de PHP pedida, o mock da Frenet (`tests/mock/router.php`) e um nginx com o nome `api.frenet.com.br`, que atende o mock por HTTPS com um certificado de uma CA criada a cada execução e confiada só no container da loja.
+
+O workflow `Package` roda a instalação e a atualização nas quatro versões de [Ambientes de teste](#ambientes-de-teste) em cada PR, em cada push na `3.0-develop` e na `master` e em cada tag. Capturas, vídeo, logs da loja e as cotações recebidas pelo mock ficam nos artefatos `e2e-<install|upgrade>-opencart-<versão>` da execução.
+
+A imagem da loja grava a sessão do PHP em `/tmp`, porque a 3.0.0.0 usa o `session.save_path` do PHP, vazio na imagem oficial, e faz o OPcache conferir os arquivos a cada requisição, para a configuração aberta logo depois do envio do pacote já usar o controller novo. O teste grava o cookie `language`, que o JavaScript do checkout e da página do produto da 3.0.0.0 lê sem conferir se existe. O instalador do OpenCart recusa um pacote enviado menos de 5 segundos depois do anterior ("please wait a few seconds"); nesse caso o teste espera e envia de novo.
+
+Para rodar na máquina, com o Docker:
+
+```bash
+git archive --format=zip --output=frenet.ocmod.zip HEAD upload
+tests/e2e/run.sh 3.0.0.0 7.1 frenet.ocmod.zip
+git archive --format=zip --output=previous.ocmod.zip bc4de4f upload
+tests/e2e/run.sh 3.0.0.0 7.1 frenet.ocmod.zip previous.ocmod.zip
+```
+
+O `run.sh` usa o Playwright de `tests/e2e/node_modules` quando há Node na máquina e, sem ele, a imagem `mcr.microsoft.com/playwright` da mesma versão do `package.json`. A loja responde em `http://localhost:8080` (mude com `E2E_PORT`) e é apagada no fim; com `E2E_KEEP=1`, ela continua de pé para investigar. Os resultados ficam em `tests/e2e/.work/artifacts/<versão>-<install|upgrade>`.
+
+## Versão e release
+
+O pacote é o `frenet.ocmod.zip`, com a pasta `upload/` do commit da tag (`git archive`), e é gerado só pelo workflow `Package`.
+
+1. Na branch da versão, mude `Module::VERSION` em `upload/system/library/frenet/module.php` e abra no `CHANGELOG.md` a seção `## <versão>` com o que muda para o lojista.
+2. Depois do merge na `3.0-develop`, abra o PR da `3.0-develop` para a `master`.
+3. Depois do merge na `master`, crie a tag com o número da versão, sem prefixo (ex.: `3.0.0`), no commit do merge.
+4. Na tag, o workflow `Package` confere que ela é igual a `Module::VERSION` e que o `CHANGELOG.md` tem a seção da versão, roda o CI e o E2E nas quatro versões e só então cria o release da tag com o `frenet.ocmod.zip` anexado e a seção do changelog como descrição. Se o release já existir, troca só o zip.
+5. Baixe o zip do release e publique na [extensão 26072](https://www.opencart.com/index.php?route=marketplace/extension/info&extension_id=26072) do marketplace do OpenCart, com a compatibilidade de 3.0.0.0 a 3.0.5.1.
+
 ## Branches e commits
 
 - `master`: só recebe versões publicadas.

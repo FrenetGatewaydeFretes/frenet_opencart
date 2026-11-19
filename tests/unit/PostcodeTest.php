@@ -62,6 +62,21 @@ final class PostcodeTest extends TestCase {
 		yield 'last postcode' => ['99999-999', 'RS'];
 	}
 
+	#[TestWith(['01310-100', 'BR'], 'Brazilian postcode')]
+	#[TestWith(['01310100', ''], 'country missing, taken as Brazil')]
+	#[TestWith(['1100-148', 'PT'], 'Portuguese postcode')]
+	public function testQuotesAnAddressWithAValidPostcode(string $postcode, string $country): void {
+		self::assertTrue(Postcode::isQuotable($postcode, $country));
+	}
+
+	#[TestWith(['', 'BR'], 'empty in Brazil')]
+	#[TestWith(['0131010', 'BR'], 'seven digits in Brazil')]
+	#[TestWith(['abc', ''], 'letters with the country missing')]
+	#[TestWith([' ', 'PT'], 'blank in another country')]
+	public function testDoesNotQuoteAnAddressWithoutAValidPostcode(string $postcode, string $country): void {
+		self::assertFalse(Postcode::isQuotable($postcode, $country));
+	}
+
 	public function testFindsNoStateBeforeTheFirstRange(): void {
 		self::assertSame('', Postcode::getState('00999-999'));
 	}

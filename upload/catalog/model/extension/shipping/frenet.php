@@ -106,6 +106,14 @@ class ModelExtensionShippingFrenet extends Model {
 			return [];
 		}
 
+		$this->load->language('extension/shipping/frenet');
+
+		if (!Postcode::isQuotable((string)($address['postcode'] ?? ''), (string)($address['iso_code_2'] ?? ''))) {
+			$log->debug('Quote skipped: the address has no valid postcode', ['postcode' => $address['postcode'] ?? '', 'country' => $address['iso_code_2'] ?? '']);
+
+			return $this->method($config, [], $this->language->get('error_postcode'));
+		}
+
 		$builder = new Builder($config, $this->weight, $this->length, VERSION);
 
 		try {
@@ -122,8 +130,6 @@ class ModelExtensionShippingFrenet extends Model {
 
 			return [];
 		}
-
-		$this->load->language('extension/shipping/frenet');
 
 		$api = new Api(new Client(), new QuoteCache($this->cache, !$simulation || $this->config->get('cache_engine') !== self::FILE_CACHE), $log, $config->getToken(), VERSION, $config->getTimeout(), $simulation ? self::SIMULATION_ATTEMPTS : $config->getAttempts());
 

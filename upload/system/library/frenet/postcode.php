@@ -8,6 +8,11 @@ namespace Frenet;
  */
 final class Postcode {
 	/**
+	 * @var string
+	 */
+	public const COUNTRY = 'BR';
+
+	/**
 	 * @var array<int, array{int, int, string}>
 	 */
 	private const RANGES = [
@@ -71,6 +76,21 @@ final class Postcode {
 		$digits = self::getDigits($postcode);
 
 		return $digits !== '' ? substr($digits, 0, 5) . '-' . substr($digits, 5) : null;
+	}
+
+	/**
+	 * Whether the Frenet API can quote the address: a postcode with 8 digits in Brazil, any postcode in other countries.
+	 *
+	 * @param string $postcode
+	 * @param string $country
+	 * @return bool
+	 */
+	public static function isQuotable(string $postcode, string $country): bool {
+		if ($country !== '' && $country !== self::COUNTRY) {
+			return trim($postcode) !== '';
+		}
+
+		return self::getDigits($postcode) !== '';
 	}
 
 	/**

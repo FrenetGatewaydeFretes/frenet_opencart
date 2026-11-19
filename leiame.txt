@@ -9,6 +9,13 @@ Antes de começar
 Cadastre-se no painel Frenet e gere o token da loja. Sem token, a Frenet não cota.
 https://painel.frenet.com.br/
 
+Baixe o frenet.ocmod.zip da versão mais nova nos releases do GitHub ou no marketplace do OpenCart:
+https://github.com/FrenetGatewaydeFretes/frenet_opencart/releases/latest
+https://www.opencart.com/index.php?route=marketplace/extension/info&extension_id=26072
+
+O módulo funciona em todo o OpenCart 3, da 3.0.0.0 à 3.0.5.1, com PHP 7.1 ou mais novo e a extensão cURL.
+O que mudou em cada versão está no CHANGELOG.md.
+
 Instalação: loja que ainda não tem a Frenet
 ------------------------------------
 

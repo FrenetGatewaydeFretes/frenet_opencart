@@ -7,13 +7,15 @@
 * [Painel Administrativo](https://painel.frenet.com.br)
 * [Central de Ajuda](https://frenet.zendesk.com/)
 * [Loja de Aplicativos OpenCart](https://www.opencart.com/index.php?route=marketplace/extension/info&extension_id=26072)
+* [Versões e changelog](CHANGELOG.md)
 
 Antes de começar
 ------------------------
 
 * Cadastre-se no [painel Frenet](https://painel.frenet.com.br/) e gere o **token** da loja. Sem token, a Frenet não cota.
 * Cadastre o peso e as medidas dos produtos. A Frenet cota pelo peso e pelas medidas de cada item.
-* O módulo funciona no OpenCart 3.0 (testado na 3.0.0.0, 3.0.3.3, 3.0.3.8 e 3.0.5.1), com PHP 7.1 ou mais novo e a extensão cURL.
+* O módulo funciona em todo o OpenCart 3, da 3.0.0.0 à 3.0.5.1, com PHP 7.1 ou mais novo e a extensão cURL. Cada versão é testada na 3.0.0.0, 3.0.3.3, 3.0.3.8 e 3.0.5.1.
+* Baixe o arquivo `frenet.ocmod.zip` da versão mais nova nos [releases do GitHub](https://github.com/FrenetGatewaydeFretes/frenet_opencart/releases/latest) ou no [marketplace do OpenCart](https://www.opencart.com/index.php?route=marketplace/extension/info&extension_id=26072). O [changelog](CHANGELOG.md) lista o que mudou em cada versão.
 
 Instalação: loja que ainda não tem a Frenet
 ------------------------
@@ -124,6 +126,8 @@ Problemas comuns
 4. O produto exige envio? Na aba **Dados** do produto, o campo **Precisa de frete?** (*Requires Shipping* no admin em inglês) precisa estar em **Sim**. Produtos sem envio não mostram o simulador.
 5. Em **Extensões → Eventos**, o evento `frenet_simulator` está habilitado?
 6. O tema usa o botão **Comprar** padrão do OpenCart (`id="button-cart"`)? O simulador aparece logo abaixo dele; num tema sem esse botão, ele não aparece.
+
+**Depois de atualizar, a configuração da Frenet continua com a tela antiga, sem o aviso do token.** O PHP da loja ainda está usando os arquivos antigos guardados pelo OPcache. Espere alguns segundos e abra a configuração de novo. Se o servidor usa o OPcache com `opcache.validate_timestamps=0`, os arquivos novos só valem depois de reiniciar o PHP (PHP-FPM ou Apache) ou de limpar o OPcache pelo painel da hospedagem.
 
 **O frete Frenet não aparece no checkout.** Confira o token, a **Situação**, o **CEP de origem**, a **Região geográfica** e o peso e as medidas dos produtos. Ligue o **Debug** e veja o arquivo `frenet.log` na pasta de logs do OpenCart (normalmente `system/storage/logs/`).
 
