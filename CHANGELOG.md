@@ -12,6 +12,7 @@ O módulo foi reescrito para voltar a cotar. A Frenet desativou o webservice com
 
 - Campo **Token** no lugar de **Chave** e **Senha**, que são apagadas na atualização. O token salvo nunca aparece na tela. O módulo não precisa mais da extensão `php-soap`.
 - A cotação com um único serviço aparece no checkout.
+- Endereço do Brasil sem um CEP de 8 dígitos não é enviado à Frenet: o comprador vê um aviso pedindo o CEP. No Brasil, o OpenCart não exige o CEP por padrão.
 - Se a Frenet estiver fora do ar ou lenta, a etapa de frete continua funcionando: o comprador vê um aviso e pode escolher outra forma de entrega. Novos campos **Tempo limite** e **Tentativas**.
 - Os erros de cotação vão sempre para o `frenet.log`. Com o novo campo **Debug**, cada cotação também vai para o log, sem o token.
 - A mesma cotação feita de novo em até 10 minutos aparece na hora, sem consultar a Frenet de novo.
