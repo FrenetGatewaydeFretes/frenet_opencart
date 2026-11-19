@@ -4,6 +4,7 @@ $_['text_delivery_time'] = '%s - Em média %d dia(s)';
 
 $_['error_unavailable'] = 'O frete Frenet está indisponível no momento. Escolha outra opção de entrega ou tente novamente em instantes.';
 $_['error_no_services'] = 'Nenhuma opção de entrega Frenet atende este endereço.';
+$_['error_postcode']    = 'Informe um CEP válido para ver as opções de entrega Frenet.';
 
 $_['entry_simulator_postcode']       = 'Calcule o frete';
 $_['placeholder_simulator_postcode'] = 'Digite seu CEP';

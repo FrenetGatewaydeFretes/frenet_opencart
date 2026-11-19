@@ -4,6 +4,7 @@ $_['text_delivery_time'] = '%s - Average %d day(s)';
 
 $_['error_unavailable'] = 'Frenet shipping is unavailable right now. Choose another delivery option or try again in a moment.';
 $_['error_no_services'] = 'No Frenet delivery option serves this address.';
+$_['error_postcode']    = 'Enter a valid postcode to see the Frenet delivery options.';
 
 $_['entry_simulator_postcode']       = 'Estimate shipping';
 $_['placeholder_simulator_postcode'] = 'Enter your postcode';
