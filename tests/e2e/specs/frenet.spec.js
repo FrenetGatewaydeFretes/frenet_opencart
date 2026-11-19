@@ -6,6 +6,9 @@ const PREVIOUS_PACKAGE = process.env.FRENET_PREVIOUS_PACKAGE ? path.resolve(proc
 const TOKEN = 'e2e-token';
 const ORIGIN = '01310-100';
 const PRODUCT_ID = 40;
+const INSTALLER_ATTEMPTS = 3;
+const INSTALLER_BUSY = /wait a few seconds/i;
+const INSTALLER_BUSY_WAIT = 6000;
 const ADDRESS = { address: 'Avenida Rio Branco, 1', city: 'Rio de Janeiro', postcode: '20040-020', zone: 'Rio de Janeiro' };
 
 const login = async (page) => {
@@ -18,10 +21,17 @@ const login = async (page) => {
 };
 
 const upload = async (page, token, file) => {
-	await page.goto(`admin/index.php?route=marketplace/installer&user_token=${token}`, { waitUntil: 'networkidle' });
-	await page.click('#button-upload');
-	await page.setInputFiles('#form-upload input[name=file]', file);
-	await page.waitForFunction(() => /text-(success|danger)/.test((document.querySelector('#progress-text') || {}).innerHTML || ''), null, { timeout: 120000 });
+	for (let attempt = 1; attempt <= INSTALLER_ATTEMPTS; attempt++) {
+		await page.goto(`admin/index.php?route=marketplace/installer&user_token=${token}`, { waitUntil: 'networkidle' });
+		await page.click('#button-upload');
+		await page.setInputFiles('#form-upload input[name=file]', file);
+		await page.waitForFunction(() => /text-(success|danger)/.test((document.querySelector('#progress-text') || {}).innerHTML || ''), null, { timeout: 120000 });
+
+		if (attempt === INSTALLER_ATTEMPTS || !(await page.locator('#progress-text .text-danger', { hasText: INSTALLER_BUSY }).count())) break;
+
+		await page.waitForTimeout(INSTALLER_BUSY_WAIT);
+	}
+
 	await expect(page.locator('#progress-text .text-danger')).toHaveCount(0);
 	await expect(page.locator('#progress-text .text-success')).toBeVisible();
 };
