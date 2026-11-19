@@ -6,16 +6,12 @@ namespace Frenet\Quote;
 use Cart\Length;
 use Cart\Weight;
 use Frenet\Config;
+use Frenet\Postcode;
 
 /**
  * Turns the OpenCart cart and shipping address into a quote request with the shipped products only, in kg and cm.
  */
 class Builder {
-	/**
-	 * @var string
-	 */
-	private const DEFAULT_COUNTRY = 'BR';
-
 	/**
 	 * @var Config
 	 */
@@ -108,7 +104,7 @@ class Builder {
 		return new Request(
 			$this->config->getOriginPostcode(),
 			(string)preg_replace('/\D/', '', (string)($address['postcode'] ?? '')),
-			$country !== '' ? $country : self::DEFAULT_COUNTRY,
+			$country !== '' ? $country : Postcode::COUNTRY,
 			round($invoice_value, 2),
 			$coupon,
 			$items,
