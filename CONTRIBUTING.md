@@ -246,7 +246,7 @@ A loja usa o zip oficial do OpenCart, sem o instalador dos ambientes, que é int
 
 O workflow `Package` roda a instalação e a atualização nas quatro versões de [Ambientes de teste](#ambientes-de-teste) em cada PR, em cada push na `3.0-develop` e na `master` e em cada tag. Capturas, vídeo, logs da loja e as cotações recebidas pelo mock ficam nos artefatos `e2e-<install|upgrade>-opencart-<versão>` da execução.
 
-A imagem da loja grava a sessão do PHP em `/tmp`, porque a 3.0.0.0 usa o `session.save_path` do PHP, vazio na imagem oficial, e faz o OPcache conferir os arquivos a cada requisição, para a configuração aberta logo depois do envio do pacote já usar o controller novo. O teste grava o cookie `language`, que o JavaScript do checkout e da página do produto da 3.0.0.0 lê sem conferir se existe.
+A imagem da loja grava a sessão do PHP em `/tmp`, porque a 3.0.0.0 usa o `session.save_path` do PHP, vazio na imagem oficial, e faz o OPcache conferir os arquivos a cada requisição, para a configuração aberta logo depois do envio do pacote já usar o controller novo. O teste grava o cookie `language`, que o JavaScript do checkout e da página do produto da 3.0.0.0 lê sem conferir se existe. O instalador do OpenCart recusa um pacote enviado menos de 5 segundos depois do anterior ("please wait a few seconds"); nesse caso o teste espera e envia de novo.
 
 Para rodar na máquina, com o Docker:
 
