@@ -269,6 +269,10 @@ O pacote é o `frenet.ocmod.zip`, com a pasta `upload/` do commit da tag (`git a
 4. Na tag, o workflow `Package` confere que ela é igual a `Module::VERSION` e que o `CHANGELOG.md` tem a seção da versão, roda o CI e o E2E nas quatro versões e só então cria o release da tag com o `frenet.ocmod.zip` anexado e a seção do changelog como descrição. Se o release já existir, troca só o zip.
 5. Baixe o zip do release e publique na [extensão 26072](https://www.opencart.com/index.php?route=marketplace/extension/info&extension_id=26072) do marketplace do OpenCart, com a compatibilidade de 3.0.0.0 a 3.0.5.1.
 
+## Actions do CI
+
+As actions dos workflows são fixadas pelo hash completo do commit, com a versão em comentário (`actions/checkout@<hash> # v7.0.1`), como recomenda o [guia de segurança do GitHub Actions](https://docs.github.com/en/actions/reference/security/secure-use): uma tag pode ser movida para outro commit, o hash não. Isso importa mais no `package.yml`, que gera o zip publicado e escreve na release. O Dependabot (`.github/dependabot.yml`) abre toda semana um PR para a `3.0-develop` com as versões novas, atualizando hash e comentário juntos. Ao adicionar uma action, use o mesmo formato.
+
 ## Branches e commits
 
 - `master`: só recebe versões publicadas.
