@@ -26,7 +26,7 @@ jobs:
     name: Build frenet.ocmod.zip
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Match the tag with the module version and the changelog
         if: github.ref_type == 'tag'
         run: |
@@ -34,7 +34,7 @@ jobs:
           [ "$version" = "$GITHUB_REF_NAME" ] || { echo "::error::Tag $GITHUB_REF_NAME does not match Module::VERSION $version"; exit 1; }
           grep -qx "## $version" CHANGELOG.md || { echo "::error::CHANGELOG.md has no '## $version' section"; exit 1; }
       - run: git archive --format=zip --output=frenet.ocmod.zip HEAD upload
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frenet.ocmod.zip
           path: frenet.ocmod.zip
@@ -65,8 +65,8 @@ jobs:
           - opencart: 3.0.5.1
             php: '8.2'
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v8
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: frenet.ocmod.zip
       - name: Build the package of the published version
@@ -79,7 +79,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
         working-directory: tests/e2e
       - run: tests/e2e/run.sh ${{ matrix.opencart }} ${{ matrix.php }} frenet.ocmod.zip ${{ matrix.mode == 'upgrade' && 'previous.ocmod.zip' || '' }}
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: e2e-${{ matrix.mode }}-opencart-${{ matrix.opencart }}
@@ -96,8 +96,8 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v8
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: frenet.ocmod.zip
       - name: Release notes from the changelog
